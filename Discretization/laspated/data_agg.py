@@ -181,7 +181,8 @@ class DataAggregator():
         self,
         seasonality_type: str,
         window: int = 1,
-        frequency: int = 1
+        frequency: int = 1, 
+        column_name: str = None
     ):
         '''
         Applies seasonality index as time discretization new column.
@@ -223,13 +224,16 @@ class DataAggregator():
             raise AttributeError('Please inform events data using `add_events_data` method.')
 
         # get new column name
-        i_col = 1
-        while True:
-            t_col = f'tdiscr_{i_col}'
-            if t_col in self.events_data.columns:
-                i_col += 1
-            else:
-                break
+        if column_name is None:    
+            i_col = 1
+            while True:
+                t_col = f'tdiscr_{i_col}'
+                if t_col in self.events_data.columns:
+                    i_col += 1
+                else:
+                    break
+        else:
+            t_col = column_name
 
         # if dataframe passed, apply custom events time discretization
         if type(seasonality_type) == pd.DataFrame:
