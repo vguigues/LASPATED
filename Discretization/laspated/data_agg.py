@@ -55,7 +55,7 @@ class DataAggregator():
                 print(f'''Limit borders data is not set with CRS information. Will assume "{self.crs}".''')
                 self.max_borders = data
 
-            # If CRS indetified, set new one if needed
+            # If CRS identified, set new one if needed
             elif data.crs != self.crs:
                 self.max_borders = data.to_crs(self.crs)
 
@@ -480,3 +480,15 @@ class DataAggregator():
             on='id',
             how='left'
         )
+
+
+
+def main():
+    # initial map used as max borders
+    max_borders = gpd.read_file(r'../Data/rj/')
+    print(type(max_borders))
+
+
+
+if __name__ == "__main__":
+    main()
