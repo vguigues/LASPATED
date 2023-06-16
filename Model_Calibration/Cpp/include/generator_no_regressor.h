@@ -34,7 +34,7 @@ public:
 	xt::xarray<double> regressors;
 
 	std::vector<std::vector<int>> neighbors;
-	std::vector<int> type;
+	std::vector<int> type_region;
 	xt::xarray<double> distance;
 	xt::xarray<int> sample;
 	xt::xarray<double> theoretical_lambda;
@@ -67,7 +67,7 @@ public:
 
 	void write_params(xt::xarray<double>& x);
 
-	void print_var(xt::xarray<double>& x);
+	void print_var(xt::xarray<double>& x, std::string prefix);
 };
 
 

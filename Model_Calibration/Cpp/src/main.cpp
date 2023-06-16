@@ -17,9 +17,8 @@ int main(int argc, char* argv[]){
 	std::string info_path = fmt::format("{}/info.dat", g_params.generator_folder);
 
 
-	GRBEnv env;
 	if(g_params.model == "no_reg"){
-		GeneratorNoRegressor gen(env);
+		GeneratorNoRegressor gen;
 		auto t0 = std::chrono::high_resolution_clock::now();
 		gen.test();
 		auto dt = std::chrono::high_resolution_clock::now();
@@ -27,7 +26,9 @@ int main(int argc, char* argv[]){
 			/ pow(10,9);
 		fmt::print("Run time final = {}\n", run_time_old);
 	}else if(g_params.model == "reg"){
+		GRBEnv env;
 		GeneratorRegressor gen(env);
+		// GeneratorRegressor gen(env, calls_path, neighbors_path, info_path);
 		auto t0 = std::chrono::high_resolution_clock::now();
 		gen.test();
 		auto dt = std::chrono::high_resolution_clock::now();

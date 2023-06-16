@@ -433,7 +433,7 @@ class DataAggregator():
             self.events_data.drop('gdiscr', axis=1, errors='ignore'),
             self.geo_discretization[['geometry', 'id']],
             how='left',
-            op='within'
+            predicate='within'
         ).drop('index_right', axis=1)\
             .rename({'id': 'gdiscr'}, axis=1)
 

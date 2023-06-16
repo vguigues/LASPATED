@@ -52,11 +52,11 @@ public:
 		std::string neighbors_path, std::string info_path);
 	~GeneratorRegressor() = default;
 
-	xt::xarray<double> oracle_gradient_model2(xt::xarray<double>& x_beta);
-	double oracle_objective_model2(xt::xarray<double>& x_beta);
-	xt::xarray<double> projection_regressors(xt::xarray<double>& x_beta);
-	std::vector<double> projected_gradient_armijo_boundary(xt::xarray<double>& x_beta,
-		xt::xarray<double>& x_delta, double alpha, double sigma, double beta_bar);
+	xt::xarray<double> oracle_gradient_model2(xt::xarray<double>& x);
+	double oracle_objective_model2(xt::xarray<double>& x);
+	xt::xarray<double> projection_regressors(xt::xarray<double>& x);
+	// std::vector<double> projected_gradient_armijo_boundary(xt::xarray<double>& x,
+	// 	xt::xarray<double>& x, double alpha, double sigma, double beta_bar);
 	std::vector<double> projected_gradient_armijo_feasible(xt::xarray<double>& 
 		x_beta);
 
@@ -65,12 +65,14 @@ public:
 	void test();
 	bool is_neighbor(int r, int s);
 
-	double average_difference(xt::xarray<double>& x_beta);
+	double average_difference(xt::xarray<double>& x);
 
 	double mat_prod(xt::xarray<double>& a, xt::xarray<double>& b);
 
 	void comp_wise_max(xt::xarray<double>& z ,xt::xarray<double>& a, double eps);	
 
-	void write_params(xt::xarray<double>& x_beta);
+	void write_params(xt::xarray<double>& x);
+
+	void print_vars(xt::xarray<double>& x, std::string prefix);
 };
 #endif
