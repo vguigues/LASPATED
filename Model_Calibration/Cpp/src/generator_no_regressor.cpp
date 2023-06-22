@@ -132,7 +132,6 @@ GeneratorNoRegressor::GeneratorNoRegressor(){
 	nb_years = 1;
 	int nb_observations_total = nb_weeks*nb_years;
 	int max_obs = nb_observations_total;
-	int nb_vars = 1;
 	sample = xt::zeros<int>({T,R,C,static_cast<ulong>(max_obs)});
 	durations = vector<double>(T,6);
 	// std::default_random_engine gen(600);
@@ -143,35 +142,34 @@ GeneratorNoRegressor::GeneratorNoRegressor(){
 	// static_cast<ulong>(7*nb_weeks)
 	nb_observations = xt::zeros<int>({C,R,T});
 	nb_arrivals = xt::zeros<int>({C,R,T});
-	ifstream sample_arq("sample6.txt",std::ios::in);
-	int st, sr, sp, sk, sval;
-	while(!sample_arq.eof()){
-		sample_arq >> st >> sr >> sp >> sk >> sval;
-		sample(st-1,sr-1,sp-1,sk-1) = sval;
-		nb_arrivals(sp-1,sr-1,st-1) += sample(st-1,sr-1,sp-1,sk-1);
-		++nb_observations(sp-1,sr-1,st-1);
-	}
-	sample_arq.close();
-	// xt::random::seed(600);
-	// for(int t = 0; t < T; ++t){
-	// 	for(int r = 0; r < R; ++r){
-	// 		for(int c = 0; c < C; ++c){
-	// 			nb_observations(c,r,t) = nb_observations_total;
-	// 			double sum = 0;
-	// 			poisson_distribution<int> pd(theoretical_lambda(t,r,c)*durations[t]);
-	// 			for(int k = 0; k < nb_observations_total; ++k){
-	// 				sample(t,r,c,k) = pd(gen);
-	// 				// sample(t,r,c,k) = floor(theoretical_lambda(t,r,c)*durations[t]) + 1;
-	// 				sum += sample(t,r,c,k);
-	// 				nb_arrivals(c,r,t) += sample(t,r,c,k);
-	// 			}
-	// 			// fmt::print("mean = {}, theoretical = {}\n", static_cast<double>(sum) / nb_observations_total,
-	// 			// 	theoretical_lambda(t,r,c)*durations[t]);
-	// 			// cin.get();
-	// 			++nb_vars;
-	// 		}
-	// 	}
+	// ifstream sample_arq("sample6.txt",std::ios::in);
+	// int st, sr, sp, sk, sval;
+	// while(!sample_arq.eof()){
+	// 	sample_arq >> st >> sr >> sp >> sk >> sval;
+	// 	sample(st-1,sr-1,sp-1,sk-1) = sval;
+	// 	nb_arrivals(sp-1,sr-1,st-1) += sample(st-1,sr-1,sp-1,sk-1);
+	// 	++nb_observations(sp-1,sr-1,st-1);
 	// }
+	// sample_arq.close();
+	xt::random::seed(600);
+	for(int t = 0; t < T; ++t){
+		for(int r = 0; r < R; ++r){
+			for(int c = 0; c < C; ++c){
+				nb_observations(c,r,t) = nb_observations_total;
+				double sum = 0;
+				poisson_distribution<int> pd(theoretical_lambda(t,r,c)*durations[t]);
+				for(int k = 0; k < nb_observations_total; ++k){
+					sample(t,r,c,k) = pd(gen);
+					// sample(t,r,c,k) = floor(theoretical_lambda(t,r,c)*durations[t]) + 1;
+					sum += sample(t,r,c,k);
+					nb_arrivals(c,r,t) += sample(t,r,c,k);
+				}
+				// fmt::print("mean = {}, theoretical = {}\n", static_cast<double>(sum) / nb_observations_total,
+				// 	theoretical_lambda(t,r,c)*durations[t]);
+				// cin.get();
+			}
+		}
+	}
 
 	// for(int c = 0; c < C; ++c){
 	// 	for(int t = 0; t < T; ++t){
@@ -323,17 +321,19 @@ GeneratorNoRegressor::GeneratorNoRegressor(){
 GeneratorNoRegressor::GeneratorNoRegressor(std::string calls_path, 
 		std::string neighbors_path, std::string info_path){
 	auto info_arq = ifstream(info_path, ios::in);
-	info_arq >> T >> D >> R >> C >> nb_land_types >> nb_holidays_years;
+	info_arq >> T >> D >> R >> C >> nb_regressors >> nb_holidays_years;
 	slot_duration = 24 / T;
 	fmt::print("info: {} {} {} {} {} {}\n", T,D,R,C,nb_land_types, nb_holidays_years);
 	daily_obs = std::vector<int>(D, 0);
 	for(int d = 0; d < D; ++d){
 		info_arq >> daily_obs[d];
 	}
+	fmt::print("daily obs: {}\n", daily_obs);
 	info_arq.close();
+	nb_land_types = nb_regressors - 2;
 	nb_regressors = 1 + nb_land_types;
 	unsigned long max_obs = *max_element(daily_obs.begin(), daily_obs.end());
-
+	unsigned long min_obs = *min_element(daily_obs.begin(), daily_obs.end());
 
 	xt::xarray<int> nb_observations_file = xt::zeros<int>({C,D,T,R});
 	xt::xarray<int> sample_file = xt::zeros<int>({C,D,T,R, max_obs});
@@ -350,6 +350,7 @@ GeneratorNoRegressor::GeneratorNoRegressor(std::string calls_path,
 		std::istringstream ss(aux_str);
 		int t, d, r, c, j, h, val;
 		ss >> t >> d >> r >> c >> j >> val >> h;
+		// fmt::print("calls {} {} {} {} {} {} {}\n",t,d,r,c,j,val,h);
 		sample_file(c,d,t,r,j) = val;
 		nb_arrivals_file(c,d,t,r) += val;
 		nb_observations_file(c,d,t,r) += 1;
@@ -376,6 +377,7 @@ GeneratorNoRegressor::GeneratorNoRegressor(std::string calls_path,
 	distance = xt::zeros<double>({R, R});
 	regions = std::vector<Location>(R, null_location);
 	auto neighbors_arq = ifstream(neighbors_path, ios::in);
+	double pop1,pop2;
 	while(true){
 		int ind, terrain_type, s; 
 		double lat, longi, dist;
@@ -390,13 +392,49 @@ GeneratorNoRegressor::GeneratorNoRegressor(std::string calls_path,
 		for(int j = 0; j < nb_land_types; ++j){
 			ss >> regressors(j,ind);
 		}
+		ss >> pop1 >> pop2;
+		regressors(nb_regressors-1, ind) = pop1 + pop2;
 		while(ss >> s >> dist){
 			distance(ind,s) = dist;
 			neighbors[ind].push_back(s);
 		}
 	}
 	neighbors_arq.close();
-		
+
+	sample = xt::zeros<int>({7*T,R,C,min_obs});
+	nb_observations = xt::zeros<int>({C,R,7*T});
+	nb_arrivals = xt::zeros<int>({C,R,7*T});
+	durations = vector<double>(7*T,0.5);
+
+	for(int c = 0; c < C; ++c){
+		for(int r = 0; r < R; ++r){
+			for(int d = 0; d < D; ++d){
+				for(int t = 0; t < T; ++t){
+					int index = d*t + t;
+					nb_observations(c,r,index) = nb_observations_file(c,d,t,r);
+					nb_arrivals(c,r,index) = nb_arrivals_file(c,d,t,r);
+					for(int j = 0; j < min_obs; ++j){
+						sample(index,r,c,j) = sample_file(c,d,t,r,j);
+					}
+				}
+			}
+		}
+	}
+	T = 7*T;
+	which_group = vector<int>(T, 0);
+	groups = vector<vector<int>>(T,vector<int>());
+	for(int t = 0; t < T; ++t){
+		groups[t].push_back(t);
+		which_group[t] = t;
+		// fmt::print("which_group {} = {}\n", t+1, which_group[t]+1);
+	}
+	// cin.get();
+	sigma = 0.5;
+	beta_bar = 1;
+	max_iter = 30;
+	weight = 0.1;
+	alpha = 0.1;
+	durations = vector<double>(T,0.5);
 	std::cout << "Initialized No Regressor Real Data\n";
 }
 
@@ -404,45 +442,47 @@ GeneratorNoRegressor::GeneratorNoRegressor(std::string calls_path,
 void GeneratorNoRegressor::test(){
 	double epsilon = 0.001;
 	// x = theoretical_lambda;
-	vector<double> test_weights = {0,0.01,0.05,0.01,0.1,1,5,10,20,30,40,50,60,70,80,90,100,
-		110,120,130,140,150,160,170,180,190,200,210,220,230,240,250,260,
-		270,280,290,300,310,320,330,340,350,360,370,380,390,400};
-	// vector<double> test_weights = {0.05};
+	// vector<double> test_weights = {0,0.01,0.05,0.01,0.1,1,5,10,20,30,40,50,60,70,80,90,100,
+	// 	110,120,130,140,150,160,170,180,190,200,210,220,230,240,250,260,
+	// 	270,280,290,300,310,320,330,340,350,360,370,380,390,400};
+	vector<double> test_weights = {0.1};
 	vector<double> alphas = test_weights;
-	xt::xarray<double> x = epsilon*xt::ones<double>({C,R,T});
-	ofstream err_arq(fmt::format("err_no_reg_d{}.txt", durations[0]), std::ios::out);
+	xt::xarray<double> x = xt::ones<double>({C,R,T});
+	// ofstream err_arq(fmt::format("err_no_reg_d{}.txt", durations[0]), std::ios::out);
+	ofstream week_arq(fmt::format("week_no_reg_d{}.txt", durations[0]), std::ios::out);
 	for(int i = 0; i < test_weights.size(); ++i){
 		x = epsilon*xt::ones<double>({C,R,T});
-		// print_var(x, "x pre armijo");
-		// cin.get();
 		alpha = alphas[i];
 		// alpha = 0;
 		weights = vector<double>(groups.size(), test_weights[i]);
 		// weights = vector<double>(groups.size(), 0);
 		auto f_val = projected_gradient_armijo_feasible(x);
-		fmt::print("alpha = {}, weight = {}, diff = {}\n",alpha, weights[0], average_difference(x));
-		// for(int c = 0; c < C; ++c){
-		// 	for(int r = 0; r < R; ++r){
-		// 		for(int t = 0; t < T; ++t){
-		// 			fmt::print("{:.7f} {:.7f}\n", x(c,r,t), theoretical_lambda(c,r,t));
-		// 		}
-		// 		cin.get();
-		// 	}
-		// }
-		err_arq << fmt::format("{:.7f}",average_difference(x)) << "\n";
-		// cin.get();
+		// fmt::print("alpha = {}, weight = {}, diff = {}\n",alpha, weights[0], average_difference(x));
+		vector<double> week_lambda(T, 0);
+		for(int c = 0; c < C; ++c){
+			for(int r = 0; r < R; ++r){
+				for(int t = 0; t < T; ++t){
+					week_lambda[t] += x(c,r,t);
+				}
+			}
+		}
+		for(auto lam: week_lambda){
+			week_arq << fmt::format("{:.7f}\n",lam);
+		}
+		// err_arq << fmt::format("{:.7f}",average_difference(x)) << "\n";f
 	}
 	fmt::print("End test_weights\n");
-
+	test_weights = {0,1,10,100,1000,10000};
+	alphas = test_weights;
 	auto result = cross_validation(0.2, alphas, test_weights);
 	fmt::print("Cross validation time = {}\n",result.cpu_time);
 	fmt::print("Cross validation weight = {}\n",result.weight);
 	double best_w = result.weight;
 	x = result.lambda;
 	auto f_val = projected_gradient_armijo_feasible(x);
-	fmt::print("best_weight err = {}\n", average_difference(x));
-	err_arq << fmt::format("{:.3f}\n{:.7f}\n", best_w, average_difference(x));
-	err_arq.close();
+	// fmt::print("best_weight err = {}\n", average_difference(x));
+	// err_arq << fmt::format("{:.3f}\n{:.7f}\n", best_w, average_difference(x));
+	// err_arq.close();
 	ofstream x_arq(fmt::format("x_no_reg_d{}.txt", durations[0]), std::ios::out);
 	for(int c = 0; c < C; ++c){
 		for(int r = 0; r < R; ++r){
@@ -456,10 +496,9 @@ void GeneratorNoRegressor::test(){
 
 std::vector<double> GeneratorNoRegressor::projected_gradient_armijo_feasible(
 	xt::xarray<double>& x){
-	using xt::linalg::dot;
 	double eps = 0.001;
 	xt::xarray<double> z = xt::zeros<double>(x.shape());
-	// fmt::print("alpha = {}, weights = {}\n", alpha, weights);
+	// fmt::print("alpha = {}\n", alpha);
 	int k = 0;
 	std::vector<double> f_val;
 	double b_param = 2;
@@ -477,13 +516,13 @@ std::vector<double> GeneratorNoRegressor::projected_gradient_armijo_feasible(
 		j = 0;
 		xt::xarray<double> diff_aux = x-z;
 		double rhs = mat_prod(gradient, diff_aux);
-		// fmt::print("fold = {:.17f} rhs = {:.17f}\n", fold, rhs);
+		// fmt::print("fold = {:.6f} rhs = {:.6f}\n", fold, rhs);
 		double f = GRB_INFINITY;
 		xt::xarray<double> z_aux = xt::zeros<double>(x.shape());
 		while(!stop){
 			z_aux = x + (1/pow(2,j))*(z - x);
 			f = oracle_objective_model(z_aux);
-			// fmt::print("\tj = {} f = {:.17f} test = {:.17f}\n", j, f, fold -(sigma/pow(2,j))*rhs);
+			// fmt::print("\tj = {} f = {:.6f} test = {:.6f}\n", j, f, fold -(sigma/pow(2,j))*rhs);
 			if(f <= fold - (sigma/pow(2,j))*rhs){
 				stop = true;
 			}else{
@@ -493,7 +532,7 @@ std::vector<double> GeneratorNoRegressor::projected_gradient_armijo_feasible(
 		f_val.push_back(f);
 		x = z_aux;
 		// print_var(x,fmt::format("final x iter {}", k));
-		// fmt::print("k = {} diff = {:.17f}\n", k+1, average_difference(x));
+		// fmt::print("k = {}\n", k+1);
 		beta_k = b_param / pow(2,j);
 		++k;
 		// cin.get();
@@ -671,7 +710,7 @@ CrossValidationResult GeneratorNoRegressor::cross_validation(double proportion, 
 					for(int r = 0; r < R; ++r){
 						for(int t = 0; t < T; ++t){
 							++nb_observations_current(c,r,t);
-							nb_calls_current(c,r,t) += sample(c,r,t,index); 
+							nb_calls_current(c,r,t) += sample(t,r,c,index); 
 						}
 					}
 				}
@@ -680,13 +719,12 @@ CrossValidationResult GeneratorNoRegressor::cross_validation(double proportion, 
 			nb_observations = nb_observations_current;
 			nb_arrivals = nb_calls_current;
 			auto f_val = projected_gradient_armijo_feasible(x);
-
 			xt::xarray<int> nb_calls_remaining = xt::zeros<int>({C,R,T});
 			for(int index = 0; index < index_cross*nb_in_block; ++index){
 				for(int c = 0; c < C; ++c){
 					for(int r = 0; r < R; ++r){
 						for(int t = 0; t < T; ++t){
-							nb_calls_remaining += sample(c,r,t,index);
+							nb_calls_remaining(c,r,t) += sample(t,r,c,index);
 						}
 					}
 				}					
@@ -695,12 +733,11 @@ CrossValidationResult GeneratorNoRegressor::cross_validation(double proportion, 
 				for(int c = 0; c < C; ++c){
 					for(int r = 0; r < R; ++r){
 						for(int t = 0; t < T; ++t){
-							nb_calls_remaining += sample(c,r,t,index);
+							nb_calls_remaining(c,r,t) += sample(t,r,c,index);
 						}
 					}
 				}						
 			}
-
 			double f = 0;
 			for(int c = 0; c < C; ++c){
 				for(int r = 0; r < R; ++r){
@@ -711,9 +748,11 @@ CrossValidationResult GeneratorNoRegressor::cross_validation(double proportion, 
 					}
 				}
 			}
+			// fmt::print("f test set = {}\n",f);
 			likelihood += f;
 		}
 		likelihood = likelihood / floor(1/proportion);
+		// fmt::print("Likelihood current_alpha {} = {}\n", alphas[index_alpha], likelihood);
 		if(likelihood < min_loss){
 			min_loss = likelihood;
 			best_alpha = alphas[index_alpha];
@@ -728,7 +767,7 @@ CrossValidationResult GeneratorNoRegressor::cross_validation(double proportion, 
 		for(int r = 0; r < R; ++r){
 			for(int t = 0; t < T; ++t){
 				for(int index = 0; index < nb_observations_total; ++index){
-					nb_calls_current(c,r,t) += sample(c,r,t);
+					nb_calls_current(c,r,t) += sample(t,r,c,index);
 					++nb_observations_current(c,r,t);
 				}
 			}

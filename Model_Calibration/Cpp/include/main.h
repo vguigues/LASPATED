@@ -45,7 +45,6 @@
 #include <xtensor/xmath.hpp>
 #include <xtensor/xnorm.hpp>
 #include <xtensor/xview.hpp>
-#include <xtensor-blas/xlinalg.hpp>
 #include <xtensor/xrandom.hpp>
 
 

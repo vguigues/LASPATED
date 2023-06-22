@@ -273,7 +273,7 @@ GeneratorRegressor::GeneratorRegressor(GRBEnv& env): env(env){
 GeneratorRegressor::GeneratorRegressor(GRBEnv& env, std::string calls_path, 
 		std::string neighbors_path, std::string info_path): env(env){
 	auto info_arq = ifstream(info_path, ios::in);
-	info_arq >> T >> D >> R >> C >> nb_land_types >> nb_holidays_years;
+	info_arq >> T >> D >> R >> C >> nb_regressors >> nb_holidays_years;
 	slot_duration = 24 / T;
 	fmt::print("info: {} {} {} {} {} {}\n", T,D,R,C,nb_land_types, nb_holidays_years);
 	daily_obs = std::vector<int>(D, 0);
@@ -281,8 +281,10 @@ GeneratorRegressor::GeneratorRegressor(GRBEnv& env, std::string calls_path,
 		info_arq >> daily_obs[d];
 	}
 	info_arq.close();
+	nb_land_types = nb_regressors - 2;
 	nb_regressors = 1 + nb_land_types;
 	int max_obs = *max_element(daily_obs.begin(), daily_obs.end());
+	int min_obs = *min_element(daily_obs.begin(), daily_obs.end());
 
 
 	nb_observations = xt::zeros<int>({C,D,T,R});
@@ -318,14 +320,13 @@ GeneratorRegressor::GeneratorRegressor(GRBEnv& env, std::string calls_path,
 		}
 	}
 
-
-	nb_regressors = nb_land_types;
 	type = std::vector<int>(R,-1);
 	regressors = xt::zeros<double>({nb_regressors, R});
 	neighbors = std::vector<vector<int>>(R, std::vector<int>());
 	distance = xt::zeros<double>({R, R});
 	regions = std::vector<Location>(R, null_location);
 	auto neighbors_arq = ifstream(neighbors_path, ios::in);
+	double pop1,pop2;
 	while(true){
 		int ind, terrain_type, s; 
 		double lat, longi, dist;
@@ -338,8 +339,10 @@ GeneratorRegressor::GeneratorRegressor(GRBEnv& env, std::string calls_path,
 		type[ind] = terrain_type;
 		regions[ind] = make_pair(lat, longi);
 		for(int j = 0; j < nb_land_types; ++j){
-			ss >> regressors(j,ind);
+			ss >> regressors(j,ind); 
 		}
+		ss >> pop1 >> pop2;
+		regressors(nb_regressors-1, ind) = pop1 + pop2;
 		while(ss >> s >> dist){
 			distance(ind,s) = dist;
 			neighbors[ind].push_back(s);
@@ -347,8 +350,19 @@ GeneratorRegressor::GeneratorRegressor(GRBEnv& env, std::string calls_path,
 	}
 	neighbors_arq.close();
 	max_iter = 30;
+	double epsilon = pow(10,-5);
+	int t2 = regressors.shape(1);
+	for(int i = 0; i < t2; ++i){
+		double sum = 0;
+		for(int j = 0; j < regressors.shape(0); ++j){
+			sum += regressors(j,i);
+		}
+		if(sum < epsilon){
+			regressors(nb_regressors-1,i) = epsilon;
+		}
+	}
 
-	g_params.EPS = pow(10,-6);
+	g_params.EPS = epsilon;
 	sigma = 0.5;
 	max_iter = 30;
     weights = vector<double>(groups.size(), 1); 
@@ -532,10 +546,8 @@ CrossValidationResult GeneratorRegressor::cross_validation(double proportion,
 }
 
 
-
 std::vector<double> GeneratorRegressor::projected_gradient_armijo_feasible(
 	xt::xarray<double>& x){
-	using xt::linalg::dot;
 	xt::xarray<double> z = xt::zeros<double>(x.shape());
 	double eps = g_params.EPS;
 
@@ -632,26 +644,26 @@ xt::xarray<double> GeneratorRegressor::oracle_gradient_model2(xt::xarray<double>
 			}
 		}
 	}
-    if(groups.size() > 0){
-        for(int c = 0; c < C; ++c){
-            for(int d = 0; d < D; ++d){
-                for(int t = 0; t < T; ++t){
-                    for(auto& e1: groups[which_group[d][t]]){
-                        int d1 = e1.first;
-                        int t1 = e1.second;
-                        if((d1 != d) || (t1 != t)){
-                            for(int j = 0; j < nb_regressors; ++j){
-                                gradient(c,d,t,j) += (2*weights[which_group[d][t]] / durations[t]) *
-                                    ((gradient(c,d,t,j) / 
-                                    durations[t]) - (gradient(c,d1,t1,j) / 
-                                    durations[t1]));
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
+    // if(groups.size() > 0){
+    //     for(int c = 0; c < C; ++c){
+    //         for(int d = 0; d < D; ++d){
+    //             for(int t = 0; t < T; ++t){
+    //                 for(auto& e1: groups[which_group[d][t]]){
+    //                     int d1 = e1.first;
+    //                     int t1 = e1.second;
+    //                     if((d1 != d) || (t1 != t)){
+    //                         for(int j = 0; j < nb_regressors; ++j){
+    //                             gradient(c,d,t,j) += (2*weights[which_group[d][t]] / durations[t]) *
+    //                                 ((gradient(c,d,t,j) / 
+    //                                 durations[t]) - (gradient(c,d1,t1,j) / 
+    //                                 durations[t1]));
+    //                         }
+    //                     }
+    //                 }
+    //             }
+    //         }
+    //     }
+    // }
 
 	return gradient;
 }
@@ -682,27 +694,27 @@ double GeneratorRegressor::oracle_objective_model2(xt::xarray<double>& x){
 		}
 	}
 
-	for(int m = 0; m < groups.size(); ++m){ // for m=1:length(Groups)
-        auto& group = groups[m];
-		for(auto& e1: group){
-			int d1 = e1.first;
-			int t1 = e1.second;
-			for(auto& e2: group){
-				if(e1 != e2){
-					int d2 = e2.first;
-					int t2 = e2.second;
-					for(int c = 0; c < C; ++c){
-						for(int j = 0; j < nb_regressors; ++j){
-							f += (weights[m]/2) * pow(
-								(x(c,d1,t1,j)/durations[t1]) - 
-								(x(c,d2,t2,j)/durations[t2]),
-								2);
-						}
-					}
-				}
-			}
-		}	
-	}
+	// for(int m = 0; m < groups.size(); ++m){ // for m=1:length(Groups)
+    //     auto& group = groups[m];
+	// 	for(auto& e1: group){
+	// 		int d1 = e1.first;
+	// 		int t1 = e1.second;
+	// 		for(auto& e2: group){
+	// 			if(e1 != e2){
+	// 				int d2 = e2.first;
+	// 				int t2 = e2.second;
+	// 				for(int c = 0; c < C; ++c){
+	// 					for(int j = 0; j < nb_regressors; ++j){
+	// 						f += (weights[m]/2) * pow(
+	// 							(x(c,d1,t1,j)/durations[t1]) - 
+	// 							(x(c,d2,t2,j)/durations[t2]),
+	// 							2);
+	// 					}
+	// 				}
+	// 			}
+	// 		}
+	// 	}	
+	// }
 	return f;
 }
 

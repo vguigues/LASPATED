@@ -18,7 +18,8 @@ int main(int argc, char* argv[]){
 
 
 	if(g_params.model == "no_reg"){
-		GeneratorNoRegressor gen;
+		// GeneratorNoRegressor gen;
+		GeneratorNoRegressor gen(calls_path, neighbors_path, info_path);
 		auto t0 = std::chrono::high_resolution_clock::now();
 		gen.test();
 		auto dt = std::chrono::high_resolution_clock::now();

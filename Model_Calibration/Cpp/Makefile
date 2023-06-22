@@ -15,7 +15,7 @@ CPPLIB  	= -L$(GUROBI_HOME)/lib -lboost_program_options -lboost_system -pthread 
 			-lgurobi_c++ -lgurobi100 -L/usr/local/lib -lrt -lz -fuse-ld=gold \
 			-Wl,--disable-new-dtags -Wl,--gc-sections -Wl,-O1 -Wl,--hash-style=gnu \
 			-Wl,--sort-common -lboost_date_time -lboost_chrono -lboost_filesystem \
-			-lboost_iostreams -lboost_thread -lboost_system -ltbb -ltbbmalloc -lfmt -lblas -llapack
+			-lboost_iostreams -lboost_thread -lboost_system -ltbb -ltbbmalloc -lfmt
 INCLUDE_DIR	= include
 SRC_DIR		= src
 OBJ_DIR		= obj

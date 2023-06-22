@@ -6,13 +6,6 @@ import numpy as np
 
 import laspated as spated
 
-
-def read_calls(calls_path):
-    arq = open(calls_path, "r")
-
-    arq.close()
-
-
 # def read_emergencies():
 #     df =  pd.read_csv("../Data/emergency_calls_rio_de_janeiro_old.csv")
 #     df["data_hora"] = df["data"] + " " + df["hora"]
@@ -22,14 +15,14 @@ def read_calls(calls_path):
 
 
 def main():
-    max_borders = gpd.read_file(r'../Data/rj/')
     app = spated.DataAggregator(crs="epsg:4326")
+    max_borders = gpd.read_file(r'../Data/rj/')
     app.add_max_borders(max_borders)
+    events = pd.read_csv(r'../Data/emergency_calls_rio_de_janeiro.csv', encoding = "ISO-8859-1", sep=",")
     # app.max_borders.plot()
     # plt.show()
-    events = pd.read_csv(r'../Data/emergency_calls_rio_de_janeiro.csv', encoding = "ISO-8859-1", sep=",")
     # print(events.head(10))
-    app.add_events_data(events, datetime_col='data_hora', lat_col='lat', lon_col="long", feature_cols=['prioridade'])
+    app.add_events_data(events, datetime_col='data', lat_col='lat', lon_col="long", feature_cols=['prioridade'])
     app.add_time_discretization('D', 1, 7, column_name="dow")
     app.add_time_discretization('m', 30, 60*24, column_name="hhs")
     print(app.events_data.head(100))
