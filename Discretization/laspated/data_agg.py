@@ -8,7 +8,7 @@ from shapely.geometry import Polygon, MultiPolygon
 from .time_discretization_utils import calculate_seasonality, apply_custom_time_events
 from .squares import rectangle_discretization
 from .h3_utils import generate_H3_discretization
-from .add_regressors import addRegressorUniformDistribution
+from .add_regressors import addRegressorUniformDistribution, addRegressorWeightedAverage
 
 
 class DataAggregator():
@@ -469,7 +469,12 @@ class DataAggregator():
             geo_disc = geo_disc.to_crs('epsg:4088')
             regr_data = regr_data.to_crs('epsg:4088')
 
-        regr_intersection = addRegressorUniformDistribution(
+        # regr_intersection = addRegressorUniformDistribution(
+        #     geo_disc,
+        #     regr_data,
+        #     discr_id_col='id'
+        # )
+        regr_intersection = addRegressorWeightedAverage(
             geo_disc,
             regr_data,
             discr_id_col='id'
