@@ -32,7 +32,20 @@ import laspated as spated
 
 
 def distance(p1, p2):
-    pass
+    R = 6370
+    pi = np.pi
+    lat1 = p1[0]
+    long1 = p1[1]
+    lat2 = p2[0]
+    long2 = p2[1]
+    cos = np.cos
+    sin = np.sin
+    asin = np.arcsin
+    point1=(R*cos((pi/180)*lat1)*cos((pi/180)*long1), R*cos((pi/180)*lat1)*sin((pi/180)*long1), R*sin((pi/180)*lat1))
+    point2=(R*cos((pi/180)*lat2)*cos((pi/180)*long2), R*cos((pi/180)*lat2)*sin((pi/180)*long2), R*sin((pi/180)*lat2))
+    d=np.linalg.norm(np.array(point1)-np.array(point2))
+    dearth = 2*R*asin(d/(2*R))
+    return dearth
 
 def write_files(app):
     num_time_windows = 48
@@ -47,20 +60,109 @@ def write_files(app):
     info_file.write("%d %d %d %d %d %d\n" % (num_time_windows, num_days, num_regions, num_feature_types, num_regressors, num_holidays))
     for i in range(7):
         info_file.write("%d " % (len(app.events_data[ app.events_data["dow"] == i])))
+    info_file.write("END")
     info_file.close()
 
-    print(app.geo_discretization.head(10))
     centers = app.geo_discretization.geometry.to_crs("epsg:29193").centroid.to_crs(app.geo_discretization.crs)
     coords = centers.apply(lambda x: x.representative_point().coords[:][0])
-    
+    print(coords)
     neighbors_file = open("neighbors.dat", "w")
-    for row in app.geo_discretization.iterrows():
+    for i,row in app.geo_discretization.iterrows():
         land_type = 1
-        neighbors_file.write("%d %.6f %.6f %d " % (row["id"], centers["lat"], centers["long"], land_type))
-        
+        id_region = row["id"]
+        lat = coords[id_region][1]
+        lon = coords[id_region][0]
+        neighbors = row["neighbors"]
+        regs = [row["populacao_"],0,0,0,0]
+        neighbors_file.write("%d %.6f %.6f 0" % (id_region, lat, lon))
+        for reg in regs:
+            neighbors_file.write("%.4f " % reg)
+        for neighbor in neighbors:
+            row_neighbor = app.geo_discretization[app.geo_discretization["id"] == neighbor].iloc[0]
+            id_neighbor = row_neighbor["id"]
+            lat2,lon2 = coords[id_neighbor][1], coords[id_neighbor][0]
+            d = distance((lat,lon), (lat2,lon2))
+            neighbors_file.write("%d %.3f " % (row_neighbor["id"], d))
+        neighbors_file.write("\n")
+    neighbors_file.write("END")
+    neighbors_file.close()
 
-    input()
+    calls_file = open("calls.dat", "w")
+    print(app.events_data.sample(10))
+    nb_observations = np.zeros((num_time_windows, num_days, num_regions, num_feature_types))
+    for i,row in app.events_data.iterrows():
+        try:
+            t = int(row["hhs"])
+            g = int(row["dow"])
+            r = int(row["gdiscr"])
+            p = int(row["prioridade"])
+        except ValueError:
+            continue
+        nb_obs = nb_observations[t,g,r,p]
+        calls_file.write("%d %d %d %d %d 1 -1\n" % 
+            (t, g, r, p, nb_obs))
+        nb_observations[t,g,r,p] += 1
+    calls_file.write("END")
+    calls_file.close()
 
+
+def write_files_ny(app):
+    num_time_windows = 48
+    num_days = 7
+    print(pd.unique(app.events_data["prioridade"]), app.events_data.count())
+    num_feature_types = 3
+    print(app.geo_discretization.sample(10))
+    num_regions = np.max(app.geo_discretization["id"]) + 1
+    num_regressors = 0
+    num_holidays = 0
+    info_file = open("info.dat", "w")
+    info_file.write("%d %d %d %d %d %d\n" % (num_time_windows, num_days, num_regions, num_feature_types, num_regressors, num_holidays))
+    for i in range(7):
+        info_file.write("%d " % (len(app.events_data[ app.events_data["dow"] == i])))
+    info_file.write("END")
+    info_file.close()
+
+    centers = app.geo_discretization.geometry.to_crs("epsg:29193").centroid.to_crs(app.geo_discretization.crs)
+    coords = centers.apply(lambda x: x.representative_point().coords[:][0])
+    print(coords)
+    neighbors_file = open("neighbors.dat", "w")
+    for i,row in app.geo_discretization.iterrows():
+        land_type = 1
+        id_region = row["id"]
+        lat = coords[id_region][1]
+        lon = coords[id_region][0]
+        neighbors = row["neighbors"]
+        regs = [row["populacao_"],0,0,0,0]
+        neighbors_file.write("%d %.6f %.6f 0" % (id_region, lat, lon))
+        for reg in regs:
+            neighbors_file.write("%.4f " % reg)
+        for neighbor in neighbors:
+            row_neighbor = app.geo_discretization[app.geo_discretization["id"] == neighbor].iloc[0]
+            id_neighbor = row_neighbor["id"]
+            lat2,lon2 = coords[id_neighbor][1], coords[id_neighbor][0]
+            d = distance((lat,lon), (lat2,lon2))
+            neighbors_file.write("%d %.3f " % (row_neighbor["id"], d))
+        neighbors_file.write("\n")
+    neighbors_file.write("END")
+    neighbors_file.close()
+
+    calls_file = open("calls.dat", "w")
+    print(app.events_data.sample(10))
+    nb_observations = np.zeros((num_time_windows, num_days, num_regions, num_feature_types))
+    for i,row in app.events_data.iterrows():
+        try:
+            t = int(row["hhs"])
+            g = int(row["dow"])
+            r = int(row["gdiscr"])
+            p = int(row["prioridade"])
+        except ValueError:
+            continue
+        nb_obs = nb_observations[t,g,r,p]
+        calls_file.write("%d %d %d %d %d 1 -1\n" % 
+            (t, g, r, p, nb_obs))
+        nb_observations[t,g,r,p] += 1
+    calls_file.write("END")
+    calls_file.close()
 
 def example_ny():
     app = spated.DataAggregator(crs="epsg:4326")
@@ -107,7 +209,7 @@ def example_rj():
     coords = centers.apply(lambda x: x.representative_point().coords[:][0])
 
     population = gpd.read_file(r'../Data/regressores/populacao/')
-    population = population[['populacao_','populaca_1','populaca_2','populaca_3','geometry']].copy()
+    population = population[['populacao_','geometry']].copy()
     app.add_geo_variable(population)
     land_use = gpd.read_file(r'../Data/regressores/uso_do_solo/')
     print(land_use.columns)
@@ -120,16 +222,21 @@ def example_rj():
                 ['Áreas residenciais']]
     for i,sub_group in enumerate(sub_groups):
         land_use["sub_group_%d" % (i)] = land_use["usoagregad"]
-        print(land_use.groupby("sub_group_%d" % (i))["id"].apply(list))
-        land_use["sub_group_%d" % (i)] = np.where(land_use["sub_group_%d" % (i)] in sub_group, 1, 0)
+    
+    print(land_use.columns)
+    for i,row in land_use.iterrows():
+        uso = row["usoagregad"]
+        for j,sub_group in enumerate(sub_groups):
+            row["sub_group_%d" % (j)] = row["shape_Area"] if uso in sub_group else 0
+        land_use.iloc[i] = row
 
-    print(land_use.sample(10))
+    # print(land_use.sample(10))
     # land_use["grupo_id"] = np.nan
     # land_use["grupo_id"] = land_use["grupo"]
     # land_use["grupo_id"] = np.where(land_use["grupo_id"] == "Áreas urbanizadas", 1, 0)
-    # land_use = land_use[['grupo_id','geometry']].copy()
+    land_use = land_use[['sub_group_0', 'sub_group_1', 'sub_group_2', 'sub_group_3','geometry']].copy()
     app.add_geo_variable(land_use)
-    print(app.geo_discretization.sample(10))
+    print(app.geo_discretization[["id", "center_lat", "center_lon", "populacao_", "sub_group_0", "sub_group_1", "sub_group_2", "sub_group_3"]].sample(10))
     write_files(app)
 
 def main():

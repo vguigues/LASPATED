@@ -469,16 +469,16 @@ class DataAggregator():
             geo_disc = geo_disc.to_crs('epsg:4088')
             regr_data = regr_data.to_crs('epsg:4088')
 
-        # regr_intersection = addRegressorUniformDistribution(
-        #     geo_disc,
-        #     regr_data,
-        #     discr_id_col='id'
-        # )
-        regr_intersection = addRegressorWeightedAverage(
+        regr_intersection = addRegressorUniformDistribution(
             geo_disc,
             regr_data,
             discr_id_col='id'
         )
+        # regr_intersection = addRegressorWeightedAverage(
+        #     geo_disc,
+        #     regr_data,
+        #     discr_id_col='id'
+        # )
         self.geo_discretization = pd.merge(
             self.geo_discretization,
             regr_intersection.drop('geometry', axis=1),
