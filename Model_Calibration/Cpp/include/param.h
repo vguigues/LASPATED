@@ -16,6 +16,7 @@ public:
 	int max_iter;
 	double sigma, beta_bar;
 	double EPS = 0.001;
+	vector<double> weights;
 
 
 	Param& operator=(const Param& p);
