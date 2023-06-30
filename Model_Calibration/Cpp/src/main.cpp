@@ -75,6 +75,10 @@ Param load_params(int argc, char** argv){
 			"Sigma parameter for armijo procedures. default = 0.5")
 		("beta_bar", po::value<double>()->default_value(1),
 			"Beta_bar parameter for armijo procedures. default = 1.0")
+		("weights_file", po::value<std::string>()->default_value(""),
+			"path for file containing weights to be used. default = \"\"")
+		("weights_list", po::value<std::vector<double>>()->multitoken()->default_value({1}),
+			"list of weights to be used. default = {1}")
 	;
 
 	po::options_description cmdline_options;

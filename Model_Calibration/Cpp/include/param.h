@@ -16,7 +16,8 @@ public:
 	int max_iter;
 	double sigma, beta_bar;
 	double EPS = 0.001;
-	vector<double> weights;
+	std::string weights_file;
+	std::vector<double> weights_list;
 
 
 	Param& operator=(const Param& p);

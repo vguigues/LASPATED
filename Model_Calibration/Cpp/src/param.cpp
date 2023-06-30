@@ -9,7 +9,9 @@ Param::Param(const Param &p):
 	max_iter(p.max_iter),
 	EPS(p.EPS),
 	sigma(p.sigma),
-	beta_bar(p.beta_bar){}
+	beta_bar(p.beta_bar),
+	weights_file(p.weights_file),
+	weights_list(p.weights_list){}
 
 Param::Param(boost::program_options::variables_map vm): 
 	generator_folder{vm["generator_folder"].as<std::string>()},
@@ -18,7 +20,9 @@ Param::Param(boost::program_options::variables_map vm):
 	max_iter{vm["max_iter"].as<int>()},
 	EPS{vm["EPS"].as<double>()},
 	sigma{vm["sigma"].as<double>()},
-	beta_bar{vm["beta_bar"].as<double>()}{
+	beta_bar{vm["beta_bar"].as<double>()}
+	weights_file{vm["weights_file"].as<std::string>()},
+	weights_list{vm["weights_list"].as<std::vector<double>>()}{
 }
 
 Param& Param::operator=(const Param& p){
@@ -32,6 +36,8 @@ Param& Param::operator=(const Param& p){
 	EPS = p.EPS;
 	sigma = p.sigma;
 	beta_bar = p.beta_bar;
+	weights_file = p.weights_file;
+	weights_list = p.weights_list;
 	return *this;
 }
 
