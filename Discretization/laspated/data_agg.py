@@ -486,6 +486,35 @@ class DataAggregator():
             how='left'
         )
 
+        def write_files(self, geo_discretization_path: str,
+            events_data_path: str):
+            ''' Write discretization DataFrames into files provided by geo_discretization_path and events_data_path.
+                Files are saved as csv.
+            Parameters
+            ----------
+            geo_discretization_path: str
+                path containing location where to save the geo_discretization DataFrame.
+            events_data_path: str
+                path containing location where to save the events DataFrame.
+            '''
+
+            self.geo_discretization.to_csv(geo_discretization_path, index=False)
+            self.events_data.to_csv(events_data_path, index=False)
+
+        
+        def get_intersection(self, df_geo1 : gpd.GeoDataFrame, df_geo2: gpd.GeoDataFrame):
+            '''
+                Calculates the intersection between GeoDataFrames df_geo1 and df_geo2
+            Parameters
+            ----------
+            df_geo1: gpd.GeoDataFrame
+            df_geo2: gpd.GeoDataFrame
+            '''
+            intersec = df_geo1.overlay(df_geo2,how="intersection")
+            print(intersec.sample(10))
+
+
+
 
 
 def main():

@@ -233,8 +233,8 @@ def example_rj():
     # fig, ax = plt.subplots()
     # app.max_borders.plot(ax=ax)
     # app.events_data.plot(markersize=10, color='red', ax=ax)
-    # # plt.show()
-    # plt.savefig("convex_rj.png")
+    # plt.show()
+
 
 
     app.add_time_discretization('D', 1, 7, column_name="dow")
@@ -255,6 +255,8 @@ def example_rj():
 
     population = gpd.read_file(r'../Data/regressores/populacao/')
     population = population[['populacao_','geometry']].copy()
+    app.get_intersection(app.geo_discretization, population)
+    input("End intersec")
     app.add_geo_variable(population)
     land_use = gpd.read_file(r'../Data/regressores/uso_do_solo/')
     print(land_use.columns)

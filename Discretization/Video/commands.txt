@@ -1,0 +1,93 @@
+Python:
+1 - Import modules
+
+import pandas as pd
+import geopandas as gpd
+
+import matplotlib.pyplot as plt
+import numpy as np
+import geodatasets as gds
+
+import laspated as spated
+
+2 - Create DataAggregator:
+
+app = spated.DataAggregator(crs="epsg:4326")
+
+3 - Read borders data:
+
+max_borders = gpd.read_file(r'../Data/rj/rj.shp')
+
+4 - Add borders:
+
+app.add_max_borders(max_borders)
+app.add_max_borders(method="rectangle") # Need events data already in the DataAggregator
+app.add_max_borders(method="convex") # Need events data already in the DataAggregator. Slow when many events are added.
+
+5 - Plot borders:
+
+app.max_borders.plot()
+plt.show()
+
+6 - Read events data:
+
+events = pd.read_csv(r'../Data/emergency_calls_rio_de_janeiro.csv')
+
+7 - Add events data to aggregator:
+
+app.add_events_data(events, datetime_col='data_hora', lat_col='lat', lon_col="long", feature_cols=['prioridade'], datetime_format="%m/%d/%y %H:%M:%S")
+
+
+8 - Plot events and borders together
+
+fig, ax = plt.subplots()
+app.max_borders.plot(ax=ax)
+app.events_data.plot(markersize=10, color='red', ax=ax)
+plt.show()
+
+9 - Add time discretization:
+
+app.add_time_discretization('D', 1, 7, column_name="dow")
+
+app.add_time_discretization('m', 30, 60*24, column_name="hhs")
+
+app.add_time_discretization('M', [3,4,2,1,2], 12)
+
+time_disc_df = pd.DataFrame([
+    ["2016-01-01", "2016-01-01", 1, "yearly"],
+    ["2016-02-06", "2016-02-11", 2, None],
+    ["2017-02-24", "2017-03-06", 2, None],
+], columns=["start", "end", "t", "repetition"])
+
+app.add_time_discretization(time_disc_df)
+
+10 - Add geo discretization:
+
+app.add_geo_discretization(
+    discr_type='R',
+    rect_discr_param_x=10,
+    rect_discr_param_y=10
+)
+
+app.add_geo_discretization(
+    discr_type='H',
+    hex_discr_param=7
+)
+
+custom_map = gpd.read_file(r'../Data/rio_de_janeiro_neighborhoods/rio_neighborhoods.shp')
+app.add_geo_discretization('C', custom_data=custom_map)
+
+
+
+11 - Reading geo features data:
+
+population = gpd.read_file(r'../Data/regressores/populacao/')
+
+
+12 - Filtering columns to calculate intersection
+
+population = population[['populacao_','geometry']].copy()
+
+13 - Adding geo features
+
+app.add_geo_variable(population)
