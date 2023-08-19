@@ -3,7 +3,6 @@ import geopandas as gpd
 
 import matplotlib.pyplot as plt
 import numpy as np
-import geodatasets as gds
 
 import laspated as spated
 
@@ -90,7 +89,7 @@ def write_files(app):
     num_time_windows = 48
     num_days = 7
     print(pd.unique(app.events_data["prioridade"]), app.events_data.count())
-    num_feature_types = 3
+    num_feature_types = 4
     print(app.geo_discretization.sample(10))
     num_regions = np.max(app.geo_discretization["id"]) + 1
     num_regressors = 1
@@ -129,6 +128,7 @@ def write_files(app):
     calls_file = open("arrivals.dat", "w")
     print(app.events_data.sample(10))
     nb_observations = np.zeros((num_time_windows, num_days, num_regions, num_feature_types))
+
     for i,row in app.events_data.iterrows():
         try:
             t = int(row["hhs"])
@@ -137,6 +137,7 @@ def write_files(app):
             p = int(row["prioridade"])
         except ValueError:
             continue
+        
         nb_obs = nb_observations[t,g,r,p]
         calls_file.write("%d %d %d %d %d 1 -1\n" % 
             (t, g, r, p, nb_obs))
@@ -223,19 +224,20 @@ def example_ny():
 def example_rj():
     app = spated.DataAggregator(crs="epsg:4326") # initializes data aggregator
     max_borders = gpd.read_file(r'../Data/rj/rj.shp') # Load the geometry of region of interest
-    # app.add_max_borders(max_borders) # Add the border of region 
+    app.add_max_borders(max_borders) # Add the border of region 
     events = pd.read_csv(r'../Data/emergency_calls_rio_de_janeiro.csv', encoding = "ISO-8859-1", sep=",")
-    events = events.drop(events[events["prioridade"] > 2].index)
-    app.add_events_data(events.sample(20), datetime_col='data_hora', lat_col='lat', lon_col="long", feature_cols=['prioridade']) # %m/%d/%y %H:%M:%S
+    # events = events.drop(events[events["prioridade"] > 3].index)
+    # events.to_csv(r'../Data/emergency_calls_corrected.csv', sep=",", index=False)
+    # input("Ended correction")
+    app.add_events_data(events, datetime_col='data_hora', lat_col='lat', lon_col="long", feature_cols=['prioridade'],
+                        datetime_format="%m/%d/%y %H:%M:%S") # %m/%d/%y %H:%M:%S
     # print(app.events_data.sample(20))
     # app.add_max_borders(method="convex")
-    # # # app.max_borders.plot()
+    # app.max_borders.plot()
     # fig, ax = plt.subplots()
     # app.max_borders.plot(ax=ax)
     # app.events_data.plot(markersize=10, color='red', ax=ax)
     # plt.show()
-
-
 
     app.add_time_discretization('D', 1, 7, column_name="dow")
     app.add_time_discretization('m', 30, 60*24, column_name="hhs")
@@ -247,50 +249,69 @@ def example_rj():
         rect_discr_param_y=10
     )
 
-    # print(app.events_data.head(30))
-    # input()
-
-    # centers = app.geo_discretization.geometry.to_crs("epsg:29193").centroid.to_crs(app.geo_discretization.crs)
-    # coords = centers.apply(lambda x: x.representative_point().coords[:][0])
 
     population = gpd.read_file(r'../Data/regressores/populacao/')
-    population = population[['populacao_','geometry']].copy()
-    app.get_intersection(app.geo_discretization, population)
-    input("End intersec")
+    population = population[['population','geometry']].copy()
     app.add_geo_variable(population)
-    land_use = gpd.read_file(r'../Data/regressores/uso_do_solo/')
-    print(land_use.columns)
-    print(np.unique(land_use["usoagregad"]))
-    groups = [x for x in pd.unique(land_use["grupo"])]
-    sub_groups = [['Afloramentos rochosos e depósitos sedimentares', 'Cobertura arbórea e arbustiva', 
-                'Cobertura gramíneo lenhosa', 'Corpos hídricos', 'Áreas de exploração mineral',
-                'Áreas não edificadas'], ['Favela', 'Áreas sujeitas à inundação', 'Áreas agrícolas'], 
-                ['Áreas de educação e saúde', 'Áreas de lazer', 'Áreas de transporte', 'Áreas institucionais e de infraestrutura pública'],
-                ['Áreas residenciais']]
-    for i,sub_group in enumerate(sub_groups):
-        land_use["sub_group_%d" % (i)] = land_use["usoagregad"]
-    
-    print(land_use.columns)
-    for i,row in land_use.iterrows():
-        uso = row["usoagregad"]
-        for j,sub_group in enumerate(sub_groups):
-            row["sub_group_%d" % (j)] = 1 if uso in sub_group else 0
-        land_use.iloc[i] = row
 
-    print(land_use.sample(10))
-    # land_use["grupo_id"] = np.nan
-    # land_use["grupo_id"] = land_use["grupo"]
-    # land_use["grupo_id"] = np.where(land_use["grupo_id"] == "Áreas urbanizadas", 1, 0)
-    land_use = land_use[['sub_group_0', 'sub_group_1', 'sub_group_2', 'sub_group_3','geometry']].copy()
+    land_use = gpd.read_file(r'../Data/regressores/uso_do_solo/')
+    land_use = land_use[['subgroup_0', 'subgroup_1', 'subgroup_2', 'subgroup_3','geometry']].copy()
     app.add_geo_variable(land_use)
-    print(app.geo_discretization.sample(10))
-    write_files(app)
+
+
+    A = app.get_events_aggregated()
+    print(A.shape)
+    app.write_arrivals("test.dat")
+    app.write_regions("testr.dat")
 
 def main():
     # read_calls()
-    # example_rj()
-    example_ny()
+    example_rj()
+    # example_ny()
 
 if __name__ == "__main__":
     main()
 
+
+
+    # centers = app.geo_discretization.geometry.to_crs("epsg:29193").centroid.to_crs(app.geo_discretization.crs)
+    # coords = centers.apply(lambda x: x.representative_point().coords[:][0])
+
+    # fig, ax = plt.subplots()
+    # app.geo_discretization.boundary.plot(ax=ax,aspect=1)
+    # app.events_data.head(10).dropna(subset=['gdiscr']).plot(markersize=15, color='red', ax=ax)
+    # for ind, row in app.geo_discretization.iterrows():
+    #     # print(coords.loc[ind])
+    #     plt.annotate(row["id"],coords.loc[ind], 
+    #                  horizontalalignment="center", 
+    #                  verticalalignment="center", 
+    #                  color='black', 
+    #                  fontsize=9)
+
+    # increments_dic = {0: (0.015,0), 1: (0.01,0.025), 2: (0,0.014), 
+    #                   3: (0.015,0.017), 4: (0.01,-0.02), 5: (0.01,0),
+    #                   6: (-0.01,-0.02), 7: (-0.02,-0.02), 8: (-0.01,-0.02),
+    #                   9: (-0.01,0.02)}
+
+
+    # for ind,row in app.events_data.iterrows():
+    #     if ind >= 10:
+    #         break
+    #     event_row = events.loc[ind]
+    #     # print((event_row["long"], event_row["lat"]))
+    #     inc_x, inc_y = increments_dic[ind]
+    #     val = row["hhs"] if ind != 8 else 6
+    #     plt.annotate(
+    #         # ind, row["hhs"]
+    #         val, (event_row["long"] + inc_x, event_row["lat"] + inc_y),
+    #         horizontalalignment="center",
+    #         verticalalignment="center",
+    #         color='green', fontsize=13
+    #     )
+    # plt.savefig("Video/first_10_calls_with_discretization.png")
+    # plt.show()
+    # print("Saved new fig")
+    # quit()
+
+    # print(app.events_data)
+    # input()

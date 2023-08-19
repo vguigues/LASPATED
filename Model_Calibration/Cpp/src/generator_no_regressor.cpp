@@ -440,12 +440,11 @@ GeneratorNoRegressor::GeneratorNoRegressor(std::string calls_path,
 
 
 void GeneratorNoRegressor::test(){
-	double epsilon = 0.001;
-	// x = theoretical_lambda;
+	double epsilon = g_params.EPS;
 	// vector<double> test_weights = {0,0.01,0.05,0.01,0.1,1,5,10,20,30,40,50,60,70,80,90,100,
 	// 	110,120,130,140,150,160,170,180,190,200,210,220,230,240,250,260,
 	// 	270,280,290,300,310,320,330,340,350,360,370,380,390,400};
-	vector<double> test_weights = {0.1};
+	vector<double> test_weights = g_params.weights_list;
 	vector<double> alphas = test_weights;
 	xt::xarray<double> x = xt::ones<double>({C,R,T});
 	// ofstream err_arq(fmt::format("err_no_reg_d{}.txt", durations[0]), std::ios::out);
@@ -471,7 +470,7 @@ void GeneratorNoRegressor::test(){
 		}
 		// err_arq << fmt::format("{:.7f}",average_difference(x)) << "\n";f
 	}
-	fmt::print("End test_weights\n");
+	fmt::print("End calibration_weights\n");
 	test_weights = {0,1,10,100,1000,10000};
 	alphas = test_weights;
 	auto result = cross_validation(0.2, alphas, test_weights);
@@ -492,6 +491,71 @@ void GeneratorNoRegressor::test(){
 		}
 	}
 	x_arq.close();
+}
+
+void GeneratorNoRegressor::calibrate(){
+	double epsilon = g_params.EPS;
+	vector<double> test_weights = g_params.weights_list;
+	vector<double> alphas = test_weights;
+	xt::xarray<double> x = xt::ones<double>({C,R,T});
+	
+	ofstream err_arq(fmt::format("err_no_reg.txt"), std::ios::out);
+	double min_err = 10e100;
+	int min_w = -1;
+	for(int i = 0; i < test_weights.size(); ++i){
+		x = epsilon*xt::ones<double>({C,R,T});
+		alpha = alphas[i];
+		// alpha = 0;
+		weights = vector<double>(groups.size(), test_weights[i]);
+		// weights = vector<double>(groups.size(), 0);
+		auto f_val = projected_gradient_armijo_feasible(x);
+		// fmt::print("alpha = {}, weight = {}, diff = {}\n",alpha, weights[0], average_difference(x));
+		// vector<double> week_lambda(T, 0);
+		// for(int c = 0; c < C; ++c){
+		// 	for(int r = 0; r < R; ++r){
+		// 		for(int t = 0; t < T; ++t){
+		// 			week_lambda[t] += x(c,r,t);
+		// 		}
+		// 	}
+		// }
+		double err = average_difference(x);
+		if(err < min_err){
+			min_err = err;
+			min_w = i;
+		}
+		err_arq << fmt::format("{:.7f}",average_difference(x)) << "\n";
+	}
+	fmt::print("End calibration_weights\n");
+	alpha = alphas[min_w];
+	weights = vector<double>(groups.size(), test_weights[min_w]);
+	x = epsilon*xt::ones<double>({C,R,T});
+	auto f_val = projected_gradient_armijo_feasible(x);
+
+	ofstream x_arq(fmt::format("x_no_reg.txt"), std::ios::out);
+	for(int c = 0; c < C; ++c){
+		for(int r = 0; r < R; ++r){
+			for(int t = 0; t < T; ++t){
+				x_arq << fmt::format("{} {} {} = {}\n",c,r,t, x(c,r,t));
+			}
+		}
+	}
+	x_arq.close();
+}
+
+
+void GeneratorNoRegressor::write_cv_results(CrossValidationResult& cv_result){
+	ofstream arq("cv_x_no_reg.txt", std::ios::out);
+	arq << "Best weight = "<< cv_result.weight << ", cpu time (s) = " << cv_result.cpu_time << "\n";
+	xt::xarray<double> x = g_params.EPS*xt::ones<double>(cv_result.lambda.shape());
+	auto f_val = projected_gradient_armijo_feasible(x);
+	for(int c = 0; c < C; ++c){
+		for(int r = 0; r < R; ++r){
+			for(int t = 0; t < T; ++t){
+				arq << c << " " << r << " " << t << " " << x(c,r,t) << "\n";
+			}
+		}
+	}
+	arq.close();
 }
 
 std::vector<double> GeneratorNoRegressor::projected_gradient_armijo_feasible(

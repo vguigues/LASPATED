@@ -57,7 +57,9 @@ public:
 	CrossValidationResult cross_validation(double proportion, std::vector<double>& alphas, 
 		std::vector<double>& group_weights);
 	void test();
+	void calibrate();
 	bool is_neighbor(int r, int s);
+	void write_cv_results(CrossValidationResult& cv_result);
 
 	double average_difference(xt::xarray<double>& x);
 

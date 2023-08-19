@@ -1,13 +1,20 @@
 
 CXX_FLAGS =  -DBOOST_TEST_DYN_LINK -DBOOST_SPIRIT_USE_PHOENIX_V3 \
 			-DBOOST_RESULT_OF_USE_DECLTYPE -DBOOST_FILESYSTEM_NO_DEPRECATED -rdynamic
-		
+
+
+BOOST_INCLUDE 	= -I/usr/local/include/boost
+XTL_INCLUDE 	= -I/usr/local/include/xtl
+XTENSOR_INCLUDE = -I/usr/local/include/xtensor
+FMT_INCLUDE     = -I/usr/local/include/fmt
+GUROBI_INCLUDE 	= -I$(GUROBI_HOME)/include
+
 PLATFORM	= linux64
 # INC     	= -I/usr/local/include/boost -I$(GUROBI_HOME)/include -I/usr/include/lua5.2 \
 # 			-I/usr/local/include -I/usr/local/include/osrm -I/usr/local/include/xtensor \
 # 			-I/usr/local/include/xtl -I/usr/local/include/fmt
-INC     	:= -I/usr/local/include/boost \
-			-I/usr/local/include/xtl -I/usr/local/include/xtensor -I$(GUROBI_HOME)/include \
+INC     	:= $(BOOST_INCLUDE) $(FMT_INCLUDE) \
+			$(XTL_INCLUDE) $(XTENSOR_INCLUDE) $(GUROBI_INCLUDE) \
 
 CPP     	= /usr/bin/g++-9
 CARGS   	= -m64 -std=c++14 -Wfatal-errors -Wno-ignored-attributes $(CXX_FLAGS)

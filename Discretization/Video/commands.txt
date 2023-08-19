@@ -1,57 +1,65 @@
 Python:
-1 - Import modules
+
+Install modules:
+
+Linux:
+
+python3 -m pip install pandas geopandas matplotlib numpy h3 
+
+Windows:
+
+python -m pip install pandas geopandas matplotlib numpy h3 
+
+# 1 - Import modules
 
 import pandas as pd
 import geopandas as gpd
 
 import matplotlib.pyplot as plt
 import numpy as np
-import geodatasets as gds
 
 import laspated as spated
 
-2 - Create DataAggregator:
+#2 - Create DataAggregator:
 
 app = spated.DataAggregator(crs="epsg:4326")
 
-3 - Read borders data:
-
-max_borders = gpd.read_file(r'../Data/rj/rj.shp')
-
-4 - Add borders:
-
-app.add_max_borders(max_borders)
-app.add_max_borders(method="rectangle") # Need events data already in the DataAggregator
-app.add_max_borders(method="convex") # Need events data already in the DataAggregator. Slow when many events are added.
-
-5 - Plot borders:
-
-app.max_borders.plot()
-plt.show()
-
-6 - Read events data:
+# 3 - Read events data:
 
 events = pd.read_csv(r'../Data/emergency_calls_rio_de_janeiro.csv')
 
-7 - Add events data to aggregator:
+# 4 - Add events data to aggregator:
 
 app.add_events_data(events, datetime_col='data_hora', lat_col='lat', lon_col="long", feature_cols=['prioridade'], datetime_format="%m/%d/%y %H:%M:%S")
 
+# 5.1 - Add borders from map:
 
-8 - Plot events and borders together
+max_borders = gpd.read_file(r'../Data/rj/rj.shp')
+app.add_max_borders(max_borders)
+
+
+# 5.2 - Add rectangular borders from events
+
+app.add_max_borders(method="rectangle") # Need events data already in the DataAggregator
+
+# 5.3 - Add convex borders from events
+
+app.add_max_borders(method="convex") # Need events data already in the DataAggregator. Slow when many events are added.
+
+# 6 - Plot events and borders together
 
 fig, ax = plt.subplots()
 app.max_borders.plot(ax=ax)
-app.events_data.plot(markersize=10, color='red', ax=ax)
+app.events_data.sample(10).plot(markersize=10, color='red', ax=ax)
 plt.show()
 
-9 - Add time discretization:
+# 7 - Add time discretizations:
 
-app.add_time_discretization('D', 1, 7, column_name="dow")
+app.add_time_discretization('D', 1, 7, column_name="week_day")
 
-app.add_time_discretization('m', 30, 60*24, column_name="hhs")
+app.add_time_discretization('m', 30, 60*24, column_name="half_hour_index")
 
-app.add_time_discretization('M', [3,4,2,1,2], 12)
+app.add_time_discretization('M', [3,4,2,1,2], 12, column_name="variable_time_index")
 
 time_disc_df = pd.DataFrame([
     ["2016-01-01", "2016-01-01", 1, "yearly"],
@@ -61,7 +69,7 @@ time_disc_df = pd.DataFrame([
 
 app.add_time_discretization(time_disc_df)
 
-10 - Add geo discretization:
+# 10.1 - Add rectangular geo discretization:
 
 app.add_geo_discretization(
     discr_type='R',
@@ -69,25 +77,113 @@ app.add_geo_discretization(
     rect_discr_param_y=10
 )
 
+
+# 10.2 - Add rectangular geo discretization:
+
 app.add_geo_discretization(
     discr_type='H',
     hex_discr_param=7
 )
 
+# 10.3 - Custom Discretization from map
+
 custom_map = gpd.read_file(r'../Data/rio_de_janeiro_neighborhoods/rio_neighborhoods.shp')
+custom_map = custom_map.set_crs('epsg:29193')
 app.add_geo_discretization('C', custom_data=custom_map)
 
+# 11 Plotting geo_discretization:
+
+app.geo_discretization["center"] = app.geo_discretization.geometry.to_crs("epsg:29193").centroid.to_crs(app.geo_discretization.crs)
+app.geo_discretization["coords"] = app.geo_discretization["center"].apply(lambda x: x.representative_point().coords[:][0])
+
+fig, ax = plt.subplots(figsize=(12, 8))
+app.geo_discretization.boundary.plot(ax=ax,aspect=1)
+app.events_data.dropna(subset=['gdiscr']).plot(markersize=5, color='red', ax=ax)
+for _, row in app.geo_discretization.iterrows():
+    plt.annotate(
+        text=row["id"],
+        xy=row['coords'],
+        horizontalalignment="center",
+        verticalalignment="center",
+        color='black', fontsize=11
+    )
 
 
-11 - Reading geo features data:
+# 11.1 - Adding population geo features:
 
+# Read file
 population = gpd.read_file(r'../Data/regressores/populacao/')
 
-
-12 - Filtering columns to calculate intersection
-
+# Filter  columns of  interest
 population = population[['populacao_','geometry']].copy()
 
-13 - Adding geo features
-
+# Calculate intersection
 app.add_geo_variable(population)
+
+
+# 11.2 - Adding Land Use geo features:
+
+# Read file
+land_use = gpd.read_file(r'../Data/regressores/uso_do_solo/')
+
+# Filter  columns of  interest
+land_use = land_use[['subgroup_0', 'subgroup_1', 'subgroup_2', 'subgroup_3','geometry']].copy()
+
+# Calculate intersection
+app.add_geo_variable(land_use)
+
+
+
+# 12 - get events_aggregated:
+
+M = app.get_events_aggregated()
+
+
+# 13 - Write arrivals:
+
+app.write_arrivals("arrivals.dat")
+
+## 14 - Write Regions:
+
+app.write_regions("neighbors.dat")
+
+
+
+
+
+C++:
+    Boost installation:
+        $ sudo apt-get install libboost-all-dev
+
+    Gurobi:
+        No install needed.
+        Set GUROBI_HOME environment variable  to path of gurobi directory
+
+    xtl, xtensor, fmt:
+        - Download source code at github
+            https://github.com/fmtlib/fmt
+            https://github.com/xtensor-stack/xtensor
+            https://github.com/xtensor-stack/xtl
+
+        - enter the downloaded directory of each library
+        - $ mkdir build
+        - $ cd build
+        - $ cmake ..
+        - $ make
+        - $ sudo make install
+
+
+# No reg simulated data
+./laspated -f test.cfg --model=no_reg
+
+# No reg real data
+
+./laspated -f test.cfg --model=no_reg --generator_folder=calibration/SAMU
+
+# Reg simulated data
+
+./laspated -f test.cfg --model=reg
+
+# Reg real data
+
+./laspated -f test.cfg --model=reg --generator_folder=calibration/SAMU

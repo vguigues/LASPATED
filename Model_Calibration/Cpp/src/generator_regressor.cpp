@@ -374,20 +374,28 @@ GeneratorRegressor::GeneratorRegressor(GRBEnv& env, std::string calls_path,
 
 void GeneratorRegressor::test(){
 	double epsilon = g_params.EPS;
-	vector<double> test_weights{1};
+	vector<double> test_weights = g_params.weights_list;
 	xt::xarray<double> x = epsilon*xt::ones<double>(l_bounds.shape());
-	for(auto w: test_weights){
+	double min_err = 10e100;
+	int min_w = -1;
+	for(int i = 0; i < test_weights.size(); ++i){
+		double w = test_weights[i];
 		weights = vector<double>(groups.size(), w); 
 		x = epsilon*xt::ones<double>(l_bounds.shape());
 		auto f_val = projected_gradient_armijo_feasible(x);
-		fmt::print("weight {}, diff = {:.3f}\n", w, average_difference(x));
+		double err = average_difference(x);
+		if(err < min_err){
+			min_err = err;
+			min_w = i;
+		}
+		fmt::print("weight {}, diff = {:.3f}\n", w, err);
 	}
 
 	weights = vector<double>(groups.size(), 1); 
 	x = epsilon*xt::ones<double>(l_bounds.shape());
 	auto f_val = projected_gradient_armijo_feasible(x);
 
-	ofstream x_arq(fmt::format("x_reg_w{}_d{}.txt", weights[0], durations[0]), std::ios::out);
+	ofstream x_arq(fmt::format("x_reg.txt"), std::ios::out);
 	for(int c = 0; c < C; ++c){
 		for(int d = 0; d < D; ++d){
 			for(int t = 0; t < T; ++t){
@@ -414,6 +422,41 @@ void GeneratorRegressor::test(){
 	// fmt::print("Average difference = {}\n", average_difference(x));
 
 
+}
+
+
+void GeneratorRegressor::calibrate(){
+	double epsilon = g_params.EPS;
+	vector<double> test_weights = {0};
+	xt::xarray<double> x = epsilon*xt::ones<double>(l_bounds.shape());
+	double min_err = 10e100;
+	int min_w = -1;
+	ofstream err_arq(fmt::format("err_reg.txt"), std::ios::out);
+	for(int i = 0; i < test_weights.size(); ++i){
+		double w = test_weights[i];
+		weights = vector<double>(groups.size(), w); 
+		x = epsilon*xt::ones<double>(l_bounds.shape());
+		auto f_val = projected_gradient_armijo_feasible(x);
+		double err = average_difference(x);
+		if(err < min_err){
+			min_err = err;
+			min_w = i;
+		}
+		fmt::print("weight {}, diff = {:.3f}\n", w, err);
+		err_arq << err << "\n";
+	}
+
+	ofstream x_arq(fmt::format("x_reg.txt"), std::ios::out);
+	for(int c = 0; c < C; ++c){
+		for(int d = 0; d < D; ++d){
+			for(int t = 0; t < T; ++t){
+				for(int r = 0; r < R; ++r){
+					x_arq << c << " " << d << " " << t << " " << r << " " << x(c,d,t,r) << "\n";
+				}
+			}
+		}
+	}
+	x_arq.close();
 }
 
 CrossValidationResult GeneratorRegressor::cross_validation(double proportion, 

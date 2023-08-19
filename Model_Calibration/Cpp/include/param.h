@@ -11,10 +11,10 @@ public:
 	Param(const Param& p);
 	explicit Param(boost::program_options::variables_map vm);
 
-	std::string generator_folder, model;
+	std::string generator_folder, method, model;
 	bool debug;
 	int max_iter;
-	double sigma, beta_bar;
+	double sigma, beta_bar, cv_proportion;
 	double EPS = 0.001;
 	std::string weights_file;
 	std::vector<double> weights_list;

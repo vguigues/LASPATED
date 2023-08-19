@@ -11,6 +11,24 @@ from .h3_utils import generate_H3_discretization
 from .add_regressors import addRegressorUniformDistribution, addRegressorWeightedAverage
 
 
+def distance(p1, p2):
+    R = 6370
+    pi = np.pi
+    lat1 = p1[0]
+    long1 = p1[1]
+    lat2 = p2[0]
+    long2 = p2[1]
+    cos = np.cos
+    sin = np.sin
+    asin = np.arcsin
+    point1=(R*cos((pi/180)*lat1)*cos((pi/180)*long1), R*cos((pi/180)*lat1)*sin((pi/180)*long1), R*sin((pi/180)*lat1))
+    point2=(R*cos((pi/180)*lat2)*cos((pi/180)*long2), R*cos((pi/180)*lat2)*sin((pi/180)*long2), R*sin((pi/180)*lat2))
+    d=np.linalg.norm(np.array(point1)-np.array(point2))
+    dearth = 2*R*asin(d/(2*R))
+
+
+    return dearth
+
 class DataAggregator():
 
     def __init__(self, crs: str = 'epsg:4326'):
@@ -165,7 +183,7 @@ class DataAggregator():
         if datetime_col is not None:
             ts = self.events_data[datetime_col]
             if ts.dtype == 'O':
-                self.events_data['ts'] = pd.to_datetime(ts, format=datetime_format, infer_datetime_format=True)
+                self.events_data['ts'] = pd.to_datetime(ts, format=datetime_format)
             else:
                 self.events_data['ts'] = ts.copy()
             self.events_data.sort_values('ts', ascending=True, inplace=True)
@@ -502,27 +520,89 @@ class DataAggregator():
             self.events_data.to_csv(events_data_path, index=False)
 
         
-        def get_intersection(self, df_geo1 : gpd.GeoDataFrame, df_geo2: gpd.GeoDataFrame):
-            '''
-                Calculates the intersection between GeoDataFrames df_geo1 and df_geo2
-            Parameters
-            ----------
-            df_geo1: gpd.GeoDataFrame
-            df_geo2: gpd.GeoDataFrame
-            '''
-            intersec = df_geo1.overlay(df_geo2,how="intersection")
-            print(intersec.sample(10))
+    def get_intersection(self, df_geo1 : gpd.GeoDataFrame, df_geo2: gpd.GeoDataFrame):
+        '''
+            Calculates the intersection between GeoDataFrames df_geo1 and df_geo2
+        Parameters
+        ----------
+        df_geo1: gpd.GeoDataFrame
+        df_geo2: gpd.GeoDataFrame
+        '''
+        df_geo1 = df_geo1.assign(row_number_1=range(len(df_geo1)))
+        df_geo2 = df_geo2.assign(row_number_2=range(len(df_geo2)))
+
+        intersec = df_geo1.overlay(df_geo2,how="intersection")
+
+        A = np.zeros((len(df_geo1), len(df_geo2)))
+        intersec = intersec.to_crs('epsg:32633')
+        for k,row in intersec.iterrows():
+            i = int(row["row_number_1"])
+            j = int(row["row_number_2"])
+            A[i,j] += row["geometry"].area / 10**6
+        
+        df_geo1.drop(columns=["row_number_1"])
+        df_geo2.drop(columns=["row_number_2"])
+        return A
+    
+    def get_events_aggregated(self):
+        limits = []
+        for time_index in self.time_indexes:
+            limits.append(np.max(self.events_data[time_index]) + 1)
+        limits.append(int(np.max(self.events_data["gdiscr"]) + 1))
+        for feature in self.events_features:
+            limits.append(np.max(self.events_data[feature]) + 1)
+        
+        samples = np.empty(tuple(limits),dtype=object)
+        for index, val in np.ndenumerate(samples):
+            samples[index] = []
+
+        i = 0
+        print(samples.shape)
+        while i < len(self.events_data):
+            row = self.events_data.iloc[i]
+            index_i = [row[time_index] for time_index in self.time_indexes] + [int(row["gdiscr"])] + [row[feature] for feature in self.events_features]
+            count = 1
+            for j in range(i+1, len(self.events_data)):
+                row_j = self.events_data.iloc[j]
+                index_j = [row_j[time_index] for time_index in self.time_indexes] + [int(row_j["gdiscr"])] + [row_j[feature] for feature in self.events_features]
+                if index_i == index_j:
+                    count += 1
+                else:
+                    break
+            samples[tuple(index_i)].append(count)
+            i += count
+        
+        return samples
+
+    def write_arrivals(self,path="arrivals.dat"):        
+        samples = self.get_events_aggregated()
+        arrivals_file = open(path, "w")
+        arrivals_file.write("%s\n"% (" ".join([str(x)  for x in samples.shape])))
+
+        for index,sample in np.ndenumerate(samples):
+            for i,val in enumerate(sample):
+                line = "%s %d %d\n" % (" ".join([str(x) for x in index]), i, val)
+                arrivals_file.write(line)
+        arrivals_file.close()
 
 
-
-
-
-def main():
-    # initial map used as max borders
-    max_borders = gpd.read_file(r'../Data/rj/')
-    print(type(max_borders))
-
-
-
-if __name__ == "__main__":
-    main()
+    def write_regions(self, path="neighbors.dat"):
+        centers = self.geo_discretization.geometry.to_crs("epsg:29193").centroid.to_crs(self.geo_discretization.crs)
+        coords = centers.apply(lambda x: x.representative_point().coords[:][0])
+        neighbors_file = open(path, "w")
+        neighbors_file.write("%d %d\n" % (len(centers), len(self.geo_features)))
+        for i,row in self.geo_discretization.iterrows():
+            id_region = row["id"]
+            lat = coords[id_region][1]
+            lon = coords[id_region][0]
+            neighbors = row["neighbors"]
+            features = [row[feature] for feature in self.geo_features]
+            neighbors_file.write("%d %.6f %.6f %s " % (id_region, lat, lon, " ".join([str(x) for x in features])))
+            for neighbor in neighbors:
+                row_neighbor = self.geo_discretization[self.geo_discretization["id"] == neighbor].iloc[0]
+                id_neighbor = row_neighbor["id"]
+                lat2,lon2 = coords[id_neighbor][1], coords[id_neighbor][0]
+                d = distance((lat,lon), (lat2,lon2))
+                neighbors_file.write("%d %.3f " % (row_neighbor["id"], d))
+            neighbors_file.write("\n")
+        neighbors_file.close()
