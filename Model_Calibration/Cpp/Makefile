@@ -6,7 +6,7 @@ CXX_FLAGS =  -DBOOST_TEST_DYN_LINK -DBOOST_SPIRIT_USE_PHOENIX_V3 \
 BOOST_INCLUDE 	= -I/usr/local/include/boost
 XTL_INCLUDE 	= -I/usr/local/include/xtl
 XTENSOR_INCLUDE = -I/usr/local/include/xtensor
-FMT_INCLUDE     = -I/usr/local/include/fmt
+# FMT_INCLUDE     = -I/usr/local/include/fmt
 GUROBI_INCLUDE 	= -I$(GUROBI_HOME)/include
 
 PLATFORM	= linux64

@@ -323,12 +323,12 @@ GeneratorNoRegressor::GeneratorNoRegressor(std::string calls_path,
 	auto info_arq = ifstream(info_path, ios::in);
 	info_arq >> T >> D >> R >> C >> nb_regressors >> nb_holidays_years;
 	slot_duration = 24 / T;
-	fmt::print("info: {} {} {} {} {} {}\n", T,D,R,C,nb_land_types, nb_holidays_years);
+	// fmt::print("info: {} {} {} {} {} {}\n", T,D,R,C,nb_regressors, nb_holidays_years);
 	daily_obs = std::vector<int>(D, 0);
 	for(int d = 0; d < D; ++d){
 		info_arq >> daily_obs[d];
 	}
-	fmt::print("daily obs: {}\n", daily_obs);
+	// fmt::print("daily obs: {}\n", daily_obs);
 	info_arq.close();
 	nb_land_types = nb_regressors - 2;
 	nb_regressors = 1 + nb_land_types;
@@ -447,8 +447,10 @@ void GeneratorNoRegressor::test(){
 	vector<double> test_weights = g_params.weights_list;
 	vector<double> alphas = test_weights;
 	xt::xarray<double> x = xt::ones<double>({C,R,T});
-	// ofstream err_arq(fmt::format("err_no_reg_d{}.txt", durations[0]), std::ios::out);
-	ofstream week_arq(fmt::format("week_no_reg_d{}.txt", durations[0]), std::ios::out);
+	ofstream err_arq("err_no_reg.txt", std::ios::out);
+	ofstream week_arq(fmt::format("week_no_reg.txt"), std::ios::out);
+	double min_err = 10e100;
+	double min_w = -1;
 	for(int i = 0; i < test_weights.size(); ++i){
 		x = epsilon*xt::ones<double>({C,R,T});
 		alpha = alphas[i];
@@ -456,22 +458,20 @@ void GeneratorNoRegressor::test(){
 		weights = vector<double>(groups.size(), test_weights[i]);
 		// weights = vector<double>(groups.size(), 0);
 		auto f_val = projected_gradient_armijo_feasible(x);
-		// fmt::print("alpha = {}, weight = {}, diff = {}\n",alpha, weights[0], average_difference(x));
-		vector<double> week_lambda(T, 0);
-		for(int c = 0; c < C; ++c){
-			for(int r = 0; r < R; ++r){
-				for(int t = 0; t < T; ++t){
-					week_lambda[t] += x(c,r,t);
-				}
+
+		if(g_params.generator_folder == ""){
+			double err = average_difference(x);
+			if(err < min_err){
+				min_err = err;
+				min_w = i;
 			}
+			err_arq << fmt::format("{:.7f}",err) << "\n";
 		}
-		for(auto lam: week_lambda){
-			week_arq << fmt::format("{:.7f}\n",lam);
-		}
-		// err_arq << fmt::format("{:.7f}",average_difference(x)) << "\n";f
 	}
-	fmt::print("End calibration_weights\n");
-	test_weights = {0,1,10,100,1000,10000};
+	if(g_params.generator_folder == ""){
+		fmt::print("Wrote weight results at err_no_reg.txt\n");
+	}
+
 	alphas = test_weights;
 	auto result = cross_validation(0.2, alphas, test_weights);
 	fmt::print("Cross validation time = {}\n",result.cpu_time);
@@ -486,11 +486,12 @@ void GeneratorNoRegressor::test(){
 	for(int c = 0; c < C; ++c){
 		for(int r = 0; r < R; ++r){
 			for(int t = 0; t < T; ++t){
-				x_arq << fmt::format("{} {} {} = {}\n",c+1,r+1,t+1, result.lambda(c,r,t));
+				x_arq << fmt::format("{} {} {} = {}\n",c,r,t, result.lambda(c,r,t));
 			}
 		}
 	}
 	x_arq.close();
+	fmt::print("Wrote cross_validation intensities at {}\n", fmt::format("x_no_reg_d{}.txt", durations[0]));
 }
 
 void GeneratorNoRegressor::calibrate(){
@@ -498,8 +499,9 @@ void GeneratorNoRegressor::calibrate(){
 	vector<double> test_weights = g_params.weights_list;
 	vector<double> alphas = test_weights;
 	xt::xarray<double> x = xt::ones<double>({C,R,T});
-	
+	fmt::print("Running projected gradient for weights {}\n", test_weights);
 	ofstream err_arq(fmt::format("err_no_reg.txt"), std::ios::out);
+	ofstream week_arq(fmt::format("week_no_reg.txt"), std::ios::out);
 	double min_err = 10e100;
 	int min_w = -1;
 	for(int i = 0; i < test_weights.size(); ++i){
@@ -510,23 +512,22 @@ void GeneratorNoRegressor::calibrate(){
 		// weights = vector<double>(groups.size(), 0);
 		auto f_val = projected_gradient_armijo_feasible(x);
 		// fmt::print("alpha = {}, weight = {}, diff = {}\n",alpha, weights[0], average_difference(x));
-		// vector<double> week_lambda(T, 0);
-		// for(int c = 0; c < C; ++c){
-		// 	for(int r = 0; r < R; ++r){
-		// 		for(int t = 0; t < T; ++t){
-		// 			week_lambda[t] += x(c,r,t);
-		// 		}
-		// 	}
-		// }
-		double err = average_difference(x);
-		if(err < min_err){
-			min_err = err;
-			min_w = i;
+		
+		if(g_params.generator_folder == ""){
+			double err = average_difference(x);
+			if(err < min_err){
+				min_err = err;
+				min_w = i;
+			}
+			err_arq << fmt::format("{:.7f}",err) << "\n";
 		}
-		err_arq << fmt::format("{:.7f}",average_difference(x)) << "\n";
 	}
-	fmt::print("End calibration_weights\n");
 	alpha = alphas[min_w];
+	if(g_params.generator_folder == ""){
+		fmt::print("Best weight = {} {}\n", alpha, min_w);
+		fmt::print("Wrote weight results at err_no_reg.txt\n");
+	}
+	
 	weights = vector<double>(groups.size(), test_weights[min_w]);
 	x = epsilon*xt::ones<double>({C,R,T});
 	auto f_val = projected_gradient_armijo_feasible(x);
@@ -540,6 +541,7 @@ void GeneratorNoRegressor::calibrate(){
 		}
 	}
 	x_arq.close();
+	fmt::print("Wrote intensities at x_no_reg.txt\n");
 }
 
 
@@ -555,6 +557,7 @@ void GeneratorNoRegressor::write_cv_results(CrossValidationResult& cv_result){
 			}
 		}
 	}
+	fmt::print("Wrote intensities at cv_x_no_reg.txt\n");
 	arq.close();
 }
 
@@ -760,12 +763,12 @@ CrossValidationResult GeneratorNoRegressor::cross_validation(double proportion, 
 	fmt::print("cross validation weights.size = {}\n", group_weights.size());
 	double best_alpha = GRB_INFINITY;
 	double best_weight = GRB_INFINITY;
-
+	fmt::print("Running cross validation with proportion = {} and weights = {}\n", proportion, group_weights);
 	for(int index_alpha = 0; index_alpha < alphas.size(); ++index_alpha){
 		double likelihood = 0;
 		alpha = alphas[index_alpha];
 		weights = vector<double>(groups.size(), group_weights[index_alpha]);
-		fmt::print("Testing weight/alpha = {} / {}\n", group_weights[index_alpha], alpha);
+		fmt::print("Testing weight = {}\n", group_weights[index_alpha]);
 		for(int index_cross = 0; index_cross < floor(1/proportion); ++index_cross){
 			xt::xarray<int> nb_observations_current = xt::zeros<int>({C,R,T});
 			xt::xarray<int> nb_calls_current = xt::zeros<int>({C,R,T});

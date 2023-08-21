@@ -96,7 +96,7 @@ app.add_geo_discretization('C', custom_data=custom_map)
 app.geo_discretization["center"] = app.geo_discretization.geometry.to_crs("epsg:29193").centroid.to_crs(app.geo_discretization.crs)
 app.geo_discretization["coords"] = app.geo_discretization["center"].apply(lambda x: x.representative_point().coords[:][0])
 
-fig, ax = plt.subplots(figsize=(12, 8))
+fig, ax = plt.subplots()
 app.geo_discretization.boundary.plot(ax=ax,aspect=1)
 app.events_data.dropna(subset=['gdiscr']).plot(markersize=5, color='red', ax=ax)
 for _, row in app.geo_discretization.iterrows():
@@ -148,9 +148,6 @@ app.write_arrivals("arrivals.dat")
 app.write_regions("neighbors.dat")
 
 
-
-
-
 C++:
     Boost installation:
         $ sudo apt-get install libboost-all-dev
@@ -173,12 +170,19 @@ C++:
         - $ sudo make install
 
 
-# No reg simulated data
-./laspated -f test.cfg --model=no_reg
 
-# No reg real data
+# No reg projected_gradient for simulated data using set of weights
 
-./laspated -f test.cfg --model=no_reg --generator_folder=calibration/SAMU
+./laspated -f test.cfg --model=no_reg --method=calibration --weights_list=10 20 30
+
+# No reg projected_gradient for real data using set of weights
+
+./laspated -f test.cfg --model=no_reg --method=calibration --generator_folder=calibration/SAMU --weights_list=10 20 30
+
+# No reg cross_validation for simulated data using set of weights
+
+./laspated -f test.cfg --model=no_reg --method=cross_validation --cv_proportion=0.2 --weights_list=10 20 30
+
 
 # Reg simulated data
 

@@ -212,43 +212,42 @@ GeneratorRegressor::GeneratorRegressor(GRBEnv& env): env(env){
 	nb_observations = xt::zeros<int>({C,D,T,R});
 	nb_arrivals = xt::zeros<int>({C,D,T,R});
 
-	// int max_obs = 0;
-	// for(int index = 0; index < nb_weeks*7; ++index){ //each day in sample space
-	// 	int day = index % 7;
+	int max_obs = 0;
+	for(int index = 0; index < nb_weeks*7; ++index){ //each day in sample space
+		int day = index % 7;
 
-	// 	if(is_holidays[index].first){
-	// 		day = 7 + is_holidays[index].second;
-	// 	}
-	// 	for(int c = 0; c < C; ++c){ //1
-	// 		for(int t = 0; t < T; ++t){ //4
-	// 			for(int r = 0; r < R; ++r){ // 100
-	// 				double rate = 0;
-	// 				for(int j = 0; j < nb_regressors; ++j){
-	// 					rate += theoretical_beta(c,day,t,j)*regressors(j,r);
-	// 				}
-	// 				poisson_distribution<int> pd(rate);
-	// 				// int this_nb_arrival = floor(rate)+1;
-	// 				int this_nb_arrival = pd(gen);
-	// 				// fmt::print("Sample {} {} {} {} {}: {}\n", c,day,t,r, nb_observations(c,day,t,r),
-	// 				// 	this_nb_call);
-	// 				sample(c,day,t,r).push_back(this_nb_arrival);
-    //                 ++nb_observations(c,day,t,r);
-	// 				nb_arrivals(c,day,t,r) += this_nb_arrival;
-	// 			}
-	// 		}
-	// 	}
-	// }
-
-
-	ifstream sample_arq("sample6reg.txt", std::ios::in);
-	int sc, sd, st, si, sk, sval;
-	while(!sample_arq.eof()){
-		sample_arq >> sc >> sd >> st >> si >> sk >> sval;
-		sample(sc-1,sd-1,st-1,si-1).push_back(sval);
-		nb_arrivals(sc-1,sd-1,st-1,si-1) += sval;
-		++nb_observations(sc-1,sd-1,st-1,si-1);
+		if(is_holidays[index].first){
+			day = 7 + is_holidays[index].second;
+		}
+		for(int c = 0; c < C; ++c){ //1
+			for(int t = 0; t < T; ++t){ //4
+				for(int r = 0; r < R; ++r){ // 100
+					double rate = 0;
+					for(int j = 0; j < nb_regressors; ++j){
+						rate += theoretical_beta(c,day,t,j)*regressors(j,r);
+					}
+					poisson_distribution<int> pd(rate);
+					// int this_nb_arrival = floor(rate)+1;
+					int this_nb_arrival = pd(gen);
+					// fmt::print("Sample {} {} {} {} {}: {}\n", c,day,t,r, nb_observations(c,day,t,r),
+					// 	this_nb_call);
+					sample(c,day,t,r).push_back(this_nb_arrival);
+                    ++nb_observations(c,day,t,r);
+					nb_arrivals(c,day,t,r) += this_nb_arrival;
+				}
+			}
+		}
 	}
-	sample_arq.close();
+
+	// ifstream sample_arq("sample6reg.txt", std::ios::in);
+	// int sc, sd, st, si, sk, sval;
+	// while(!sample_arq.eof()){
+	// 	sample_arq >> sc >> sd >> st >> si >> sk >> sval;
+	// 	sample(sc-1,sd-1,st-1,si-1).push_back(sval);
+	// 	nb_arrivals(sc-1,sd-1,st-1,si-1) += sval;
+	// 	++nb_observations(sc-1,sd-1,st-1,si-1);
+	// }
+	// sample_arq.close();
     
     obs_days = vector<double>(D, 0);
     obs_before = vector<double>(nb_weeks*7, 0);
@@ -275,7 +274,7 @@ GeneratorRegressor::GeneratorRegressor(GRBEnv& env, std::string calls_path,
 	auto info_arq = ifstream(info_path, ios::in);
 	info_arq >> T >> D >> R >> C >> nb_regressors >> nb_holidays_years;
 	slot_duration = 24 / T;
-	fmt::print("info: {} {} {} {} {} {}\n", T,D,R,C,nb_land_types, nb_holidays_years);
+	// fmt::print("info: {} {} {} {} {} {}\n", T,D,R,C,nb_land_types, nb_holidays_years);
 	daily_obs = std::vector<int>(D, 0);
 	for(int d = 0; d < D; ++d){
 		info_arq >> daily_obs[d];
@@ -366,7 +365,7 @@ GeneratorRegressor::GeneratorRegressor(GRBEnv& env, std::string calls_path,
 	sigma = 0.5;
 	max_iter = 30;
     weights = vector<double>(groups.size(), 1); 
-	l_bounds = xt::zeros<double>({C,D,T,R});
+	l_bounds = xt::zeros<double>({C,D,T,nb_regressors});
 
 	std::cout << "Initialized Regressors Real data\n";
 }
@@ -375,20 +374,20 @@ GeneratorRegressor::GeneratorRegressor(GRBEnv& env, std::string calls_path,
 void GeneratorRegressor::test(){
 	double epsilon = g_params.EPS;
 	vector<double> test_weights = g_params.weights_list;
-	xt::xarray<double> x = epsilon*xt::ones<double>(l_bounds.shape());
+	xt::xarray<double> x = epsilon*xt::ones<double>({C,D,T,nb_regressors});
 	double min_err = 10e100;
 	int min_w = -1;
+	fmt::print("Running test method\n");
 	for(int i = 0; i < test_weights.size(); ++i){
 		double w = test_weights[i];
 		weights = vector<double>(groups.size(), w); 
-		x = epsilon*xt::ones<double>(l_bounds.shape());
+		x = epsilon*xt::ones<double>({C,D,T,nb_regressors});
 		auto f_val = projected_gradient_armijo_feasible(x);
 		double err = average_difference(x);
 		if(err < min_err){
 			min_err = err;
 			min_w = i;
 		}
-		fmt::print("weight {}, diff = {:.3f}\n", w, err);
 	}
 
 	weights = vector<double>(groups.size(), 1); 
@@ -412,7 +411,8 @@ void GeneratorRegressor::test(){
 	}
 	x_arq << fmt::format("{}\n{:.7f}\n", weights[0], average_difference(x));
 	x_arq.close();
-	fmt::print("weight {}, diff = {:.7f}\n", weights[0], average_difference(x));
+	fmt::print("Wrote intensities at x_reg.txt\n");
+	// fmt::print("weight {}, diff = {:.7f}\n", weights[0], average_difference(x));
 	// auto result = cross_validation(0.2,test_weights);
 	// fmt::print("Cross validation time = {}\n",result.cpu_time);
 	// fmt::print("Cross validation weight = {}\n",result.weight);
@@ -427,22 +427,24 @@ void GeneratorRegressor::test(){
 
 void GeneratorRegressor::calibrate(){
 	double epsilon = g_params.EPS;
-	vector<double> test_weights = {0};
+	vector<double> test_weights = g_params.weights_list;
 	xt::xarray<double> x = epsilon*xt::ones<double>(l_bounds.shape());
 	double min_err = 10e100;
 	int min_w = -1;
+
+	fmt::print("Running projected gradient\n");
 	ofstream err_arq(fmt::format("err_reg.txt"), std::ios::out);
 	for(int i = 0; i < test_weights.size(); ++i){
 		double w = test_weights[i];
 		weights = vector<double>(groups.size(), w); 
-		x = epsilon*xt::ones<double>(l_bounds.shape());
+		x = epsilon*xt::ones<double>({C,D,T,nb_regressors});
 		auto f_val = projected_gradient_armijo_feasible(x);
 		double err = average_difference(x);
 		if(err < min_err){
 			min_err = err;
 			min_w = i;
 		}
-		fmt::print("weight {}, diff = {:.3f}\n", w, err);
+		// fmt::print("weight {}, diff = {:.3f}\n", w, err);
 		err_arq << err << "\n";
 	}
 
@@ -457,137 +459,8 @@ void GeneratorRegressor::calibrate(){
 		}
 	}
 	x_arq.close();
+	fmt::print("Wrote intensities at x_reg.txt\n");
 }
-
-CrossValidationResult GeneratorRegressor::cross_validation(double proportion, 
-	std::vector<double>& group_weights){
-	auto t0 = std::chrono::high_resolution_clock::now();
-	double cpu_time = 0;
-	double best_weight = GRB_INFINITY;
-	double max_likelihood = GRB_INFINITY;
-
-	int nb_in_block = floor(nb_obs*proportion);
-	xt::xarray<int> initial_nb_obs = nb_observations;
-	xt::xarray<int> initial_nb_arrivals = nb_arrivals;
-
-
-	for(int index_weight = 0; index_weight < group_weights.size(); ++index_weight){
-		fmt::print("Cross validation w  = {}\n", group_weights[index_weight]);
-		double likelihood = 0;
-		weights = vector<double>(groups.size(), group_weights[index_weight]);
-		for(int index_cross = 0; index_cross < floor(1/proportion); ++index_cross){
-			xt::xarray<int> nb_observations_current = xt::zeros<int>({C,D,T,R});
-			xt::xarray<int> nb_calls_current = xt::zeros<int>({C,D,T,R});
-			for(int index = index_cross*nb_in_block; index < (index_cross+1)*nb_in_block; ++index){
-				for(int c = 0; c < C; ++c){
-					for(int d = 0; d < D; ++d){
-						for(int t = 0; t < T; ++t){
-							for(int r = 0; r < R; ++r){
-								int day = index % 7;
-								if(is_holidays[index].first){
-									day = 7 + is_holidays[index].second;
-								}
-								++nb_observations_current(c,day,t,r);
-								nb_calls_current(c,day,t,r) +=  sample(c,day,t,r)[obs_before[index]];
-							}
-						}
-					}
-				}
-			}
-			xt::xarray<double> x = g_params.EPS*xt::ones<double>({C,D,T,nb_regressors});
-			nb_observations = nb_observations_current;
-			nb_arrivals = nb_calls_current;
-			auto f_val = projected_gradient_armijo_feasible(x);
-			xt::xarray<int> nb_observations_remaining = xt::zeros<int>({C,D,T,R});
-			xt::xarray<int> nb_calls_remaining = xt::zeros<int>({C,D,T,R});
-			for(int index = 0; index < index_cross*nb_in_block; ++index){
-				for(int c = 0; c < C; ++c){
-					for(int d = 0; d < D; ++d){
-						for(int t = 0; t < T; ++t){
-							for(int r = 0; r < R; ++r){
-								int day = index % 7;
-								if(is_holidays[index].first){
-									day = 7 + is_holidays[index].second;
-								}
-								++nb_observations_remaining(c,day,t,r);
-								nb_calls_remaining(c,day,t,r) +=  sample(c,day,t,r)[obs_before[index]];
-							}
-						}
-					}
-				}
-			}
-			for(int index = (index_cross+1)*nb_in_block; index < nb_obs; ++index){
-				for(int c = 0; c < C; ++c){
-					for(int d = 0; d < D; ++d){
-						for(int t = 0; t < T; ++t){
-							for(int r = 0; r < R; ++r){
-								int day = index % 7;
-								if(is_holidays[index].first){
-									day = 7 + is_holidays[index].second;
-								}
-								++nb_observations_remaining(c,day,t,r);
-								nb_calls_remaining(c,day,t,r) +=  sample(c,day,t,r)[obs_before[index]];
-							}
-						}
-					}
-				}
-			}
-
-			double f = 0;
-			for(int c = 0; c < C; ++c){
-				for(int d = 0; d < D; ++d){
-					for(int t = 0; t < T; ++t){
-						for(int r = 0; r < R; ++r){
-							double rates = 0;
-							for(int j = 0; j < nb_regressors; ++j){
-								rates += x(c,d,t,j)*regressors(j,r);
-							}
-							if(rates < 0.0000001){
-								rates = 0.0000001;
-							}
-							f += nb_observations_remaining(c,d,t,r)*rates - 
-								nb_calls_remaining(c,d,t,r)*log(rates);
-						}
-					}
-				}
-			}
-			likelihood += f;
-		}
-		
-		if(likelihood < max_likelihood){
-			max_likelihood = likelihood;
-			best_weight = group_weights[index_weight];
-		}
-	}
-
-	weights = vector<double>(groups.size(), best_weight);
-	nb_observations = xt::zeros<int>({C,D,T,R});
-	nb_arrivals = xt::zeros<int>({C,D,T,R});
-
-	for(int index = 0; index < nb_obs; ++index){
-		for(int c = 0; c < C; ++c){
-			for(int d = 0; d < D; ++d){
-				for(int t = 0; t < T; ++t){
-					for(int r = 0; r < R; ++r){
-						int day = index % 7;
-						if(is_holidays[index].first){
-							day = 7 + is_holidays[index].second;
-						}
-						++nb_observations(c,day,t,r);
-						nb_arrivals(c,day,t,r) +=  sample(c,day,t,r)[obs_before[index]];
-					}
-				}
-			}
-		}
-	}
-	xt::xarray<double> x = g_params.EPS*xt::ones<double>({C,D,T,nb_regressors});
-	auto f_val = projected_gradient_armijo_feasible(x);
-
-	auto dt = std::chrono::high_resolution_clock::now();
-	cpu_time = std::chrono::duration_cast<std::chrono::seconds>(dt - t0).count();
-	return {cpu_time, best_weight, x};
-}
-
 
 std::vector<double> GeneratorRegressor::projected_gradient_armijo_feasible(
 	xt::xarray<double>& x){
@@ -605,11 +478,7 @@ std::vector<double> GeneratorRegressor::projected_gradient_armijo_feasible(
 	while(k < max_iter){
 		double fold = oracle_objective_model2(x);
 		xt::xarray<double> gradient = oracle_gradient_model2(x);
-		// print_vars(gradient, fmt::format("grad {}", k));
-		// cin.get();
 		xt::xarray<double> x_aux = x - beta_k*gradient;
-		// print_vars(x_aux, fmt::format("x_aux {}", k));
-		// cin.get();
 		try{
 			z = projection_regressors(x_aux);
 		}catch(GRBException& ex){
@@ -637,12 +506,14 @@ std::vector<double> GeneratorRegressor::projected_gradient_armijo_feasible(
 		x = z_aux;
 		// if(k % 1 == 0){
 		// 	fmt::print("k = {}, f = {}, j = {}\n", k, f, j);
+		// 	// print_vars(x,"x");
 		// }
 		beta_k = b_param / pow(2,j);
 		++k;
 		// cin.get();
 	}
-	// fmt::print("End weight = {}: diff_l2 = {}\n", weights[0], average_difference(x));
+	// print_vars(x,"x_");
+	// fmt::print("End 0: diff_l2 = {}\n", average_difference(x));
 	// cin.get();
 	return f_val;
 }
@@ -761,7 +632,7 @@ double GeneratorRegressor::oracle_objective_model2(xt::xarray<double>& x){
 	return f;
 }
 
-xt::xarray<double> GeneratorRegressor::projection_regressors(xt::xarray<double>& x){
+xt::xarray<double> GeneratorRegressor::	projection_regressors(xt::xarray<double>& x){
 
 	xt::xarray<GRBVar> y(x.shape());
 
@@ -902,6 +773,135 @@ void GeneratorRegressor::print_vars(xt::xarray<double>& x, std::string prefix){
 		}
 	}
 	fmt::print("================== End print {} =========================\n", prefix);
+}
+
+CrossValidationResult GeneratorRegressor::cross_validation(double proportion, 
+	std::vector<double>& group_weights){
+	auto t0 = std::chrono::high_resolution_clock::now();
+	double cpu_time = 0;
+	double best_weight = GRB_INFINITY;
+	double max_likelihood = GRB_INFINITY;
+
+	int nb_in_block = floor(nb_obs*proportion);
+	xt::xarray<int> initial_nb_obs = nb_observations;
+	xt::xarray<int> initial_nb_arrivals = nb_arrivals;
+
+
+	for(int index_weight = 0; index_weight < group_weights.size(); ++index_weight){
+		fmt::print("Cross validation w  = {}\n", group_weights[index_weight]);
+		double likelihood = 0;
+		weights = vector<double>(groups.size(), group_weights[index_weight]);
+		for(int index_cross = 0; index_cross < floor(1/proportion); ++index_cross){
+			xt::xarray<int> nb_observations_current = xt::zeros<int>({C,D,T,R});
+			xt::xarray<int> nb_calls_current = xt::zeros<int>({C,D,T,R});
+			for(int index = index_cross*nb_in_block; index < (index_cross+1)*nb_in_block; ++index){
+				for(int c = 0; c < C; ++c){
+					for(int d = 0; d < D; ++d){
+						for(int t = 0; t < T; ++t){
+							for(int r = 0; r < R; ++r){
+								int day = index % 7;
+								if(is_holidays[index].first){
+									day = 7 + is_holidays[index].second;
+								}
+								++nb_observations_current(c,day,t,r);
+								nb_calls_current(c,day,t,r) +=  sample(c,day,t,r)[obs_before[index]];
+							}
+						}
+					}
+				}
+			}
+			xt::xarray<double> x = g_params.EPS*xt::ones<double>({C,D,T,nb_regressors});
+			nb_observations = nb_observations_current;
+			nb_arrivals = nb_calls_current;
+			auto f_val = projected_gradient_armijo_feasible(x);
+			xt::xarray<int> nb_observations_remaining = xt::zeros<int>({C,D,T,R});
+			xt::xarray<int> nb_calls_remaining = xt::zeros<int>({C,D,T,R});
+			for(int index = 0; index < index_cross*nb_in_block; ++index){
+				for(int c = 0; c < C; ++c){
+					for(int d = 0; d < D; ++d){
+						for(int t = 0; t < T; ++t){
+							for(int r = 0; r < R; ++r){
+								int day = index % 7;
+								if(is_holidays[index].first){
+									day = 7 + is_holidays[index].second;
+								}
+								++nb_observations_remaining(c,day,t,r);
+								nb_calls_remaining(c,day,t,r) +=  sample(c,day,t,r)[obs_before[index]];
+							}
+						}
+					}
+				}
+			}
+			for(int index = (index_cross+1)*nb_in_block; index < nb_obs; ++index){
+				for(int c = 0; c < C; ++c){
+					for(int d = 0; d < D; ++d){
+						for(int t = 0; t < T; ++t){
+							for(int r = 0; r < R; ++r){
+								int day = index % 7;
+								if(is_holidays[index].first){
+									day = 7 + is_holidays[index].second;
+								}
+								++nb_observations_remaining(c,day,t,r);
+								nb_calls_remaining(c,day,t,r) +=  sample(c,day,t,r)[obs_before[index]];
+							}
+						}
+					}
+				}
+			}
+
+			double f = 0;
+			for(int c = 0; c < C; ++c){
+				for(int d = 0; d < D; ++d){
+					for(int t = 0; t < T; ++t){
+						for(int r = 0; r < R; ++r){
+							double rates = 0;
+							for(int j = 0; j < nb_regressors; ++j){
+								rates += x(c,d,t,j)*regressors(j,r);
+							}
+							if(rates < 0.0000001){
+								rates = 0.0000001;
+							}
+							f += nb_observations_remaining(c,d,t,r)*rates - 
+								nb_calls_remaining(c,d,t,r)*log(rates);
+						}
+					}
+				}
+			}
+			likelihood += f;
+		}
+		
+		if(likelihood < max_likelihood){
+			max_likelihood = likelihood;
+			best_weight = group_weights[index_weight];
+		}
+	}
+
+	weights = vector<double>(groups.size(), best_weight);
+	nb_observations = xt::zeros<int>({C,D,T,R});
+	nb_arrivals = xt::zeros<int>({C,D,T,R});
+
+	for(int index = 0; index < nb_obs; ++index){
+		for(int c = 0; c < C; ++c){
+			for(int d = 0; d < D; ++d){
+				for(int t = 0; t < T; ++t){
+					for(int r = 0; r < R; ++r){
+						int day = index % 7;
+						if(is_holidays[index].first){
+							day = 7 + is_holidays[index].second;
+						}
+						++nb_observations(c,day,t,r);
+						nb_arrivals(c,day,t,r) +=  sample(c,day,t,r)[obs_before[index]];
+					}
+				}
+			}
+		}
+	}
+	xt::xarray<double> x = g_params.EPS*xt::ones<double>({C,D,T,nb_regressors});
+	auto f_val = projected_gradient_armijo_feasible(x);
+
+	auto dt = std::chrono::high_resolution_clock::now();
+	cpu_time = std::chrono::duration_cast<std::chrono::seconds>(dt - t0).count();
+	return {cpu_time, best_weight, x};
 }
 
 

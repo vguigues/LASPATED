@@ -9,14 +9,59 @@ Param g_params;
 
 int main(int argc, char* argv[]){
 	srand(time(NULL));
-	
+	using namespace std;
 	g_params = load_params(argc,argv);
-
 	std::string calls_path = fmt::format("{}/calls.dat", g_params.generator_folder);
 	std::string neighbors_path = fmt::format("{}/neighbors.dat", g_params.generator_folder);
 	std::string info_path = fmt::format("{}/info.dat", g_params.generator_folder);
 
 	bool is_custom_data = g_params.generator_folder != "";
+	if(g_params.method == ""){
+		if(g_params.model == "no_reg"){
+			if(is_custom_data){
+				std::string calls_path = fmt::format("{}/calls.dat", g_params.generator_folder);
+				std::string neighbors_path = fmt::format("{}/neighbors.dat", g_params.generator_folder);
+				std::string info_path = fmt::format("{}/info.dat", g_params.generator_folder);
+				GeneratorNoRegressor gen(calls_path, neighbors_path, info_path);
+				auto t0 = std::chrono::high_resolution_clock::now();
+				gen.calibrate();
+				auto dt = std::chrono::high_resolution_clock::now();
+				double run_time_old = std::chrono::duration_cast<std::chrono::nanoseconds>(dt - t0).count() 
+					/ pow(10,9);
+				fmt::print("Run time = {}\n", run_time_old);
+			}else{
+				GeneratorNoRegressor gen;
+				auto t0 = std::chrono::high_resolution_clock::now();
+				gen.test();
+				auto dt = std::chrono::high_resolution_clock::now();
+				double run_time_old = std::chrono::duration_cast<std::chrono::nanoseconds>(dt - t0).count() 
+					/ pow(10,9);
+				fmt::print("Run time = {}\n", run_time_old);
+			}
+		}else if(g_params.model == "reg"){
+			GRBEnv env;
+			if(is_custom_data){
+				std::string calls_path = fmt::format("{}/calls.dat", g_params.generator_folder);
+				std::string neighbors_path = fmt::format("{}/neighbors.dat", g_params.generator_folder);
+				std::string info_path = fmt::format("{}/info.dat", g_params.generator_folder);
+				GeneratorRegressor gen(env, calls_path, neighbors_path, info_path);
+				auto t0 = std::chrono::high_resolution_clock::now();
+				gen.calibrate();
+				auto dt = std::chrono::high_resolution_clock::now();
+				double run_time_old = std::chrono::duration_cast<std::chrono::nanoseconds>(dt - t0).count() 
+					/ pow(10,9);
+				fmt::print("Run time = {}\n", run_time_old);
+			}else{
+				GeneratorRegressor gen(env);
+				auto t0 = std::chrono::high_resolution_clock::now();
+				gen.calibrate();
+				auto dt = std::chrono::high_resolution_clock::now();
+				double run_time_old = std::chrono::duration_cast<std::chrono::nanoseconds>(dt - t0).count() 
+					/ pow(10,9);
+				fmt::print("Run time = {}\n", run_time_old);
+			}
+		}
+	}
 
 	if(g_params.model == "no_reg" && g_params.method == "calibration"){
 		if(is_custom_data){
@@ -31,7 +76,7 @@ int main(int argc, char* argv[]){
 				/ pow(10,9);
 			fmt::print("Run time = {}\n", run_time_old);
 		}else{
-			GeneratorNoRegressor gen();
+			GeneratorNoRegressor gen;
 			auto t0 = std::chrono::high_resolution_clock::now();
 			gen.calibrate();
 			auto dt = std::chrono::high_resolution_clock::now();
@@ -46,19 +91,24 @@ int main(int argc, char* argv[]){
 			std::string info_path = fmt::format("{}/info.dat", g_params.generator_folder);
 			GeneratorNoRegressor gen(calls_path, neighbors_path, info_path);
 			auto t0 = std::chrono::high_resolution_clock::now();
-			gen.cross_validation();
+
+			double proportion = g_params.cv_proportion;
+			auto weights = g_params.weights_list;
+			auto alpha = weights;
+			auto result = gen.cross_validation(proportion, alpha, weights);
 			auto dt = std::chrono::high_resolution_clock::now();
+			gen.write_cv_results(result);
 			double run_time_old = std::chrono::duration_cast<std::chrono::nanoseconds>(dt - t0).count() 
 				/ pow(10,9);
 			fmt::print("Run time = {}\n", run_time_old);
 		}else{
-			GeneratorNoRegressor gen();
+			GeneratorNoRegressor gen;
 			double proportion = g_params.cv_proportion;
 			vector<double> test_weights = g_params.weights_list;
-			vector<double> alphas = test_weights;s
+			vector<double> alphas = test_weights;
 			auto t0 = std::chrono::high_resolution_clock::now();
 			auto result = gen.cross_validation(proportion, alphas, test_weights);
-			write_cv_results(result);s
+			gen.write_cv_results(result);
 			auto dt = std::chrono::high_resolution_clock::now();
 			double run_time_old = std::chrono::duration_cast<std::chrono::nanoseconds>(dt - t0).count() 
 				/ pow(10,9);
@@ -88,27 +138,6 @@ int main(int argc, char* argv[]){
 		}
 	}
 
-	// if(g_params.model == "no_reg"){
-	// 	// GeneratorNoRegressor gen;
-	// 	GeneratorNoRegressor gen(calls_path, neighbors_path, info_path);
-	// 	auto t0 = std::chrono::high_resolution_clock::now();
-	// 	gen.test();
-	// 	auto dt = std::chrono::high_resolution_clock::now();
-	// 	double run_time_old = std::chrono::duration_cast<std::chrono::nanoseconds>(dt - t0).count() 
-	// 		/ pow(10,9);
-	// 	fmt::print("Run time final = {}\n", run_time_old);
-	// }else if(g_params.model == "reg"){
-	// 	GRBEnv env;
-	// 	GeneratorRegressor gen(env);
-	// 	// GeneratorRegressor gen(env, calls_path, neighbors_path, info_path);
-	// 	auto t0 = std::chrono::high_resolution_clock::now();
-	// 	gen.test();
-	// 	auto dt = std::chrono::high_resolution_clock::now();
-	// 	double run_time_old = std::chrono::duration_cast<std::chrono::nanoseconds>(dt - t0).count() 
-	// 		/ pow(10,9);
-	// 	fmt::print("Run time final = {}\n", run_time_old);
-	// }
-
 }
 
 
@@ -127,6 +156,7 @@ Param load_params(int argc, char** argv){
     	("file,f", po::value<std::string>(&config_file),
                   "configuration file path.")
     ;
+
     // Declare a group of options that will be 
 	// allowed both on command line and in
 	// config file
@@ -153,17 +183,21 @@ Param load_params(int argc, char** argv){
 		("weights_file", po::value<std::string>()->default_value(""),
 			"path for file containing weights to be used. default = \"\"")
 		("weights_list", po::value<std::vector<double>>()->multitoken(),
-			"list of weights to be used. default = {1}")
+			"list of weights to be used.")
 	;
-
+	
 	po::options_description cmdline_options;
     cmdline_options.add(generic).add(config);
 
     po::options_description config_file_options;
 	config_file_options.add(config);
 
+	
+
 	po::options_description visible("Allowed Options");
 	visible.add(generic).add(config);
+
+	
 
 	po::variables_map vm;
     store(po::command_line_parser(argc, argv).
@@ -180,6 +214,7 @@ Param load_params(int argc, char** argv){
         notify(vm);
     }
 
+
     if (vm.count("help")) {
         std::cout << visible << "\n";
     }
@@ -187,6 +222,12 @@ Param load_params(int argc, char** argv){
     	//TODO: ler versão do SVN?
         version();
     }
+
+	try{
+		auto params = Param(vm);
+	}catch(boost::wrapexcept<boost::bad_any_cast>& e){
+		std::cerr << "Erro: " << e.what() << "\n";
+	}
 
     return Param(vm);
 }
