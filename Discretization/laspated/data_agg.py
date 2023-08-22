@@ -606,3 +606,22 @@ class DataAggregator():
                 neighbors_file.write("%d %.3f " % (row_neighbor["id"], d))
             neighbors_file.write("\n")
         neighbors_file.close()
+
+    def plot_discretization(self):
+        import matplotlib.pyplot as plt
+
+        self.geo_discretization["center"] = self.geo_discretization.geometry.to_crs("epsg:29193").centroid.to_crs(self.geo_discretization.crs)
+        self.geo_discretization["coords"] = self.geo_discretization["center"].apply(lambda x: x.representative_point().coords[:][0])
+
+        fig, ax = plt.subplots()
+        self.geo_discretization.boundary.plot(ax=ax,aspect=1)
+        self.events_data.dropna(subset=['gdiscr']).plot(markersize=5, color='red', ax=ax)
+        for _, row in self.geo_discretization.iterrows():
+            plt.annotate(
+                text=row["id"],
+                xy=row['coords'],
+                horizontalalignment="center",
+                verticalalignment="center",
+                color='black', fontsize=11
+            )
+        plt.show()

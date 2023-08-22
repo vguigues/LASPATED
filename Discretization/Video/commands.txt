@@ -20,7 +20,7 @@ import numpy as np
 
 import laspated as spated
 
-#2 - Create DataAggregator:
+# 2 - Create DataAggregator:
 
 app = spated.DataAggregator(crs="epsg:4326")
 
@@ -37,23 +37,32 @@ app.add_events_data(events, datetime_col='data_hora', lat_col='lat', lon_col="lo
 max_borders = gpd.read_file(r'../Data/rj/rj.shp')
 app.add_max_borders(max_borders)
 
+fig, ax = plt.subplots()
+app.max_borders.plot(ax=ax)
+app.events_data.plot(markersize=10, color='red', ax=ax)
+plt.show()
+
 
 # 5.2 - Add rectangular borders from events
 
 app.add_max_borders(method="rectangle") # Need events data already in the DataAggregator
 
+fig, ax = plt.subplots()
+app.max_borders.plot(ax=ax)
+app.events_data.plot(markersize=10, color='red', ax=ax)
+plt.show()
+
 # 5.3 - Add convex borders from events
 
 app.add_max_borders(method="convex") # Need events data already in the DataAggregator. Slow when many events are added.
 
-# 6 - Plot events and borders together
-
 fig, ax = plt.subplots()
 app.max_borders.plot(ax=ax)
-app.events_data.sample(10).plot(markersize=10, color='red', ax=ax)
+app.events_data.plot(markersize=10, color='red', ax=ax)
 plt.show()
 
-# 7 - Add time discretizations:
+
+# 6 - Add time discretizations:
 
 app.add_time_discretization('D', 1, 7, column_name="week_day")
 
@@ -69,7 +78,7 @@ time_disc_df = pd.DataFrame([
 
 app.add_time_discretization(time_disc_df)
 
-# 10.1 - Add rectangular geo discretization:
+# 7.1 - Add rectangular geo discretization:
 
 app.add_geo_discretization(
     discr_type='R',
@@ -77,39 +86,27 @@ app.add_geo_discretization(
     rect_discr_param_y=10
 )
 
+app.plot_discretization()
 
-# 10.2 - Add rectangular geo discretization:
+
+# 7.2 - Add hexagonal geo discretization:
 
 app.add_geo_discretization(
     discr_type='H',
     hex_discr_param=7
 )
 
-# 10.3 - Custom Discretization from map
+app.plot_discretization()
+
+# 7.3 - Custom Discretization from map
 
 custom_map = gpd.read_file(r'../Data/rio_de_janeiro_neighborhoods/rio_neighborhoods.shp')
 custom_map = custom_map.set_crs('epsg:29193')
 app.add_geo_discretization('C', custom_data=custom_map)
 
-# 11 Plotting geo_discretization:
+app.plot_discretization()
 
-app.geo_discretization["center"] = app.geo_discretization.geometry.to_crs("epsg:29193").centroid.to_crs(app.geo_discretization.crs)
-app.geo_discretization["coords"] = app.geo_discretization["center"].apply(lambda x: x.representative_point().coords[:][0])
-
-fig, ax = plt.subplots()
-app.geo_discretization.boundary.plot(ax=ax,aspect=1)
-app.events_data.dropna(subset=['gdiscr']).plot(markersize=5, color='red', ax=ax)
-for _, row in app.geo_discretization.iterrows():
-    plt.annotate(
-        text=row["id"],
-        xy=row['coords'],
-        horizontalalignment="center",
-        verticalalignment="center",
-        color='black', fontsize=11
-    )
-
-
-# 11.1 - Adding population geo features:
+# 8.1 - Adding population geo features:
 
 # Read file
 population = gpd.read_file(r'../Data/regressores/populacao/')
@@ -120,8 +117,10 @@ population = population[['populacao_','geometry']].copy()
 # Calculate intersection
 app.add_geo_variable(population)
 
+print(app.geo_discretization)
 
-# 11.2 - Adding Land Use geo features:
+
+# 8.2 - Adding Land Use geo features:
 
 # Read file
 land_use = gpd.read_file(r'../Data/regressores/uso_do_solo/')
@@ -132,18 +131,18 @@ land_use = land_use[['subgroup_0', 'subgroup_1', 'subgroup_2', 'subgroup_3','geo
 # Calculate intersection
 app.add_geo_variable(land_use)
 
+print(app.geo_discretization)
 
-
-# 12 - get events_aggregated:
+# 9 - get events_aggregated:
 
 M = app.get_events_aggregated()
 
 
-# 13 - Write arrivals:
+# 10 - Write arrivals:
 
 app.write_arrivals("arrivals.dat")
 
-## 14 - Write Regions:
+## 11 - Write Regions:
 
 app.write_regions("neighbors.dat")
 
