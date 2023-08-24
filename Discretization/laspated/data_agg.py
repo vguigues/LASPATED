@@ -557,7 +557,6 @@ class DataAggregator():
             samples[index] = []
 
         i = 0
-        print(samples.shape)
         while i < len(self.events_data):
             row = self.events_data.iloc[i]
             index_i = [row[time_index] for time_index in self.time_indexes] + [int(row["gdiscr"])] + [row[feature] for feature in self.events_features]

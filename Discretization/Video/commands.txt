@@ -4,11 +4,11 @@ Install modules:
 
 Linux:
 
-python3 -m pip install pandas geopandas matplotlib numpy h3 
+python3 -m pip install pandas geopandas matplotlib numpy h3
 
 Windows:
 
-python -m pip install pandas geopandas matplotlib numpy h3 
+python -m pip install pandas geopandas matplotlib numpy h3
 
 # 1 - Import modules
 
@@ -78,6 +78,8 @@ time_disc_df = pd.DataFrame([
 
 app.add_time_discretization(time_disc_df)
 
+print(app.events_data.sample(10)[["ts", "week_day", "half_hour_index", "variable_time_index", "tdiscr_1"]])
+
 # 7.1 - Add rectangular geo discretization:
 
 app.add_geo_discretization(
@@ -135,7 +137,14 @@ print(app.geo_discretization)
 
 # 9 - get events_aggregated:
 
-M = app.get_events_aggregated()
+A = app.get_events_aggregated()
+print(A.shape)
+
+# Show first index and value of non-empty observation:
+for index, val in np.ndenumerate(A):
+    if len(val) > 0:
+        print(index,val)
+        break
 
 
 # 10 - Write arrivals:
@@ -167,7 +176,6 @@ C++:
         - $ cmake ..
         - $ make
         - $ sudo make install
-
 
 
 # No reg projected_gradient for simulated data using set of weights
