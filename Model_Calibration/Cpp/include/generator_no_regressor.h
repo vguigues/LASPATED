@@ -24,7 +24,7 @@ public:
 	std::vector<std::pair<bool, int>> is_holidays;
 	std::vector<Location> regions;
 
-	double alpha, sigma, beta, beta_bar, weight;
+	double sigma, beta, beta_bar, weight;
 	std::vector<double> weights;
 	int max_iter;
 
@@ -32,6 +32,7 @@ public:
 	xt::xarray<int> nb_arrivals;
 
 	xt::xarray<double> regressors;
+	xt::xarray<double> alpha;
 
 	std::vector<std::vector<int>> neighbors;
 	std::vector<int> type_region;
@@ -43,6 +44,10 @@ public:
 	GeneratorNoRegressor();
 	GeneratorNoRegressor(std::string calls_path, 
 		std::string neighbors_path, std::string info_path);
+	GeneratorNoRegressor(xt::xarray<int>& N, xt::xarray<int>& M, std::vector<double>& a_durations, 
+		std::vector<std::vector<int>>& a_groups, std::vector<double>& a_weights, 
+		xt::xarray<double>& alphas, xt::xarray<double>& a_distance, std::vector<int>& a_type, 
+		std::vector<std::vector<int>>& a_neighbors);
 	~GeneratorNoRegressor() = default;
 
 	xt::xarray<double> oracle_gradient_model(xt::xarray<double>& x);
@@ -71,6 +76,11 @@ public:
 
 	void print_var(xt::xarray<double>& x, std::string prefix);
 };
+
+xt::xarray<double> laspated_no_reg(xt::xarray<int>& N, xt::xarray<int>& M, std::vector<double>& a_durations, 
+		std::vector<std::vector<int>>& a_groups, std::vector<double>& a_weights, 
+		xt::xarray<double>& alphas, xt::xarray<double>& a_distance, std::vector<int>& a_type, 
+		std::vector<std::vector<int>>& a_neighbors, xt::xarray<double>& x);
 
 
 #endif

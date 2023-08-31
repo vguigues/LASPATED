@@ -48,8 +48,8 @@ public:
     std::vector<double> obs_before;
 
 	GeneratorRegressor(GRBEnv& env);
-	GeneratorRegressor(GRBEnv& env, std::string calls_path, 
-		std::string neighbors_path, std::string info_path);
+	GeneratorRegressor(GRBEnv& env, std::string calls_path, std::string neighbors_path, std::string info_path);
+	GeneratorRegressor(GRBEnv& env, xt::xarray<int>& N, xt::xarray<int>& M, xt::xarray<double>& reg);
 	~GeneratorRegressor() = default;
 
 	xt::xarray<double> oracle_gradient_model2(xt::xarray<double>& x);
@@ -76,4 +76,7 @@ public:
 
 	void print_vars(xt::xarray<double>& x, std::string prefix);
 };
+
+xt::xarray<double> laspated_reg(xt::xarray<int>& N, xt::xarray<int>& M, xt::xarray<double>& reg, xt::xarray<double>& x);
+
 #endif

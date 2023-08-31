@@ -323,12 +323,12 @@ GeneratorNoRegressor::GeneratorNoRegressor(std::string calls_path,
 	auto info_arq = ifstream(info_path, ios::in);
 	info_arq >> T >> D >> R >> C >> nb_regressors >> nb_holidays_years;
 	slot_duration = 24 / T;
-	// fmt::print("info: {} {} {} {} {} {}\n", T,D,R,C,nb_regressors, nb_holidays_years);
+	fmt::print("info: {} {} {} {} {} {}\n", T,D,R,C,nb_regressors, nb_holidays_years);
 	daily_obs = std::vector<int>(D, 0);
 	for(int d = 0; d < D; ++d){
 		info_arq >> daily_obs[d];
 	}
-	// fmt::print("daily obs: {}\n", daily_obs);
+	fmt::print("daily obs: {}\n", daily_obs);
 	info_arq.close();
 	nb_land_types = nb_regressors - 2;
 	nb_regressors = 1 + nb_land_types;
@@ -399,6 +399,17 @@ GeneratorNoRegressor::GeneratorNoRegressor(std::string calls_path,
 			neighbors[ind].push_back(s);
 		}
 	}
+	double epsilon = pow(10,-5);
+	int t2 = regressors.shape(1);
+	for(int i = 0; i < t2; ++i){
+		double sum = 0;
+		for(int j = 0; j < regressors.shape(0); ++j){
+			sum += regressors(j,i);
+		}
+		if(sum < epsilon){
+			regressors(nb_regressors-1,i) = epsilon;
+		}
+	}
 	neighbors_arq.close();
 
 	sample = xt::zeros<int>({7*T,R,C,min_obs});
@@ -434,9 +445,79 @@ GeneratorNoRegressor::GeneratorNoRegressor(std::string calls_path,
 	max_iter = 30;
 	weight = 0.1;
 	alpha = 0.1;
+	g_params.EPS = 0.001;
 	durations = vector<double>(T,0.5);
 	std::cout << "Initialized No Regressor Real Data\n";
 }
+
+
+
+GeneratorNoRegressor::GeneratorNoRegressor(xt::xarray<int>& N, xt::xarray<int>& M, std::vector<double>& a_durations, 
+		std::vector<std::vector<int>>& a_groups, std::vector<double>& a_weights, 
+		xt::xarray<double>& alphas, xt::xarray<double>& a_distance, std::vector<int>& a_type, 
+		std::vector<std::vector<int>>& a_neighbors){
+	if(N.dimension() !=  3){ //N should be C,R,T
+		fmt::print("Error: N has {} dimensions but should be 3. Problem was not set.\n",N.dimension());
+		exit(1);
+	}
+	if(M.dimension() != 3){ //M also should be C,R,T
+		fmt::print("Error: M has {} dimensions but should be 3. Problem was not set.\n",M.dimension());
+		exit(1);
+	}
+
+	C = N.shape(0);
+	R = N.shape(1);
+	T = N.shape(2);
+
+	nb_observations = N;
+	nb_arrivals = M;
+	durations  = a_durations;
+	alpha = alphas;
+	weights = a_weights;
+	distance = a_distance;
+	neighbors = a_neighbors;
+	type_region = a_type;
+	groups = a_groups;
+	int nb_groups = groups.size();
+
+	which_group = vector<int>(T, 0);
+	for(int g = 0; g < nb_groups; ++g){
+		for(auto i: groups[g]){
+			which_group[i] = g;
+		}
+	}
+
+	g_params.EPS = pow(10,-3);
+	sigma = 0.5;
+	beta_bar = 1;
+	max_iter = 30;
+}
+
+
+xt::xarray<double> laspated_no_reg(xt::xarray<int>& N, xt::xarray<int>& M, std::vector<double>& a_durations, 
+		std::vector<std::vector<int>>& a_groups, std::vector<double>& a_weights, 
+		xt::xarray<double>& alphas, xt::xarray<double>& a_distance, std::vector<int>& a_type, 
+		std::vector<std::vector<int>>& a_neighbors, xt::xarray<double>& x){
+	
+	GeneratorNoRegressor gen(N,M,a_durations, a_groups, a_weights, alphas,  a_distance, a_type, a_neighbors);
+
+	if(x.dimension() != 3){
+		fmt::print("Error: x has {} dimensions but must be 3.\n", x.dimension());
+		exit(1);
+	}
+
+	if(x.shape(0) != gen.C || x.shape(1) != gen.R || x.shape(2) != gen.T){
+		std::string shape_x = fmt::format("({},{},{})", x.shape(0), x.shape(1), x.shape(2));
+		fmt::print("Error: x has shape {}, but expected is ({},{},{}).\n", shape_x,gen.C, gen.R, gen.T);
+		exit(1);
+	}
+
+	auto lambda = x;
+	auto f_val = gen.projected_gradient_armijo_feasible(lambda);
+	return lambda;
+
+}
+
 
 
 void GeneratorNoRegressor::test(){
@@ -474,6 +555,7 @@ void GeneratorNoRegressor::test(){
 
 	alphas = test_weights;
 	auto result = cross_validation(0.2, alphas, test_weights);
+	write_cv_results(result);
 	fmt::print("Cross validation time = {}\n",result.cpu_time);
 	fmt::print("Cross validation weight = {}\n",result.weight);
 	double best_w = result.weight;
@@ -557,8 +639,50 @@ void GeneratorNoRegressor::write_cv_results(CrossValidationResult& cv_result){
 			}
 		}
 	}
-	fmt::print("Wrote intensities at cv_x_no_reg.txt\n");
 	arq.close();
+	fmt::print("Wrote intensities at cv_x_no_reg.txt\n");
+	ofstream weekly_total("weekly_total_no_reg.txt", std::ios::out);
+	for(int t = 0; t < T; ++t){
+		double sum = 0;
+		for(int c = 0; c < C; ++c){
+			for(int r = 0; r < R; ++r){
+				sum += x(c,r,t);
+			}
+		}
+		weekly_total << sum << "\n";
+	}
+	weekly_total.close();
+
+	ofstream weekly0("weekly_0_no_reg.txt", std::ios::out);
+	for(int t = 0; t < T; ++t){
+		double sum = 0;
+		for(int r = 0; r < R; ++r){
+			sum += x(0,r,t);
+		}
+		weekly0 << sum << "\n";
+	}
+	weekly0.close();
+
+	ofstream weekly1("weekly_1_no_reg.txt", std::ios::out);
+	for(int t = 0; t < T; ++t){
+		double sum = 0;
+		for(int r = 0; r < R; ++r){
+			sum += x(1,r,t);
+		}
+		weekly1 << sum << "\n";
+	}
+	weekly1.close();
+
+	ofstream weekly2("weekly_2_no_reg.txt", std::ios::out);
+	for(int t = 0; t < T; ++t){
+		double sum = 0;
+		for(int r = 0; r < R; ++r){
+			sum += x(1,r,t);
+		}
+		weekly2 << sum << "\n";
+	}
+	weekly2.close();
+
 }
 
 std::vector<double> GeneratorNoRegressor::projected_gradient_armijo_feasible(
@@ -635,7 +759,7 @@ xt::xarray<double> GeneratorNoRegressor::oracle_gradient_model(xt::xarray<double
 				// double sum_neighbors = 0;
 				for(int s: neighbors[r]){
 					if(type_region[r] == type_region[s]){
-						grad_component += 2*alpha*(x(c,r,t) - x(c,s,t)) / (distance(r,s));
+						grad_component += 2*alpha(r,s)*(x(c,r,t) - x(c,s,t)) / (distance(r,s));
 						// sum_neighbors  +=  2*alpha*(x(c,r,t) - x(c,s,t)) / (distance(r,s));
 					}
 				}
@@ -673,30 +797,30 @@ double GeneratorNoRegressor::oracle_objective_model(xt::xarray<double>& x){
 					nb_arrivals(c,r,t)*log(current_lambda*durations[t]);
 				for(int s: neighbors[r]){
 					if(type_region[r] == type_region[s]){
-						f += (0.5*alpha)*pow(x(c,r,t)- x(c,s,t), 2)/distance(r,s);
+						f += (0.5*alpha(r,s))*pow(x(c,r,t)- x(c,s,t), 2) / distance(r,s);
 					}
 				}
 			}
 		}
 	}
 	//sum_{c \in C}sum{r \in R}sum_{t \in T}\sum_{t' \neq t \in which_group[t]}
-	for(int c = 0; c < C; ++c){
-		for(int r = 0; r < R; ++r){
-			for(int grindex = 0; grindex < groups.size(); ++grindex){
-				auto& group = groups[grindex];
-				for(int j = 0; j < group.size(); ++j){
-					int t = group[j];
-					for(int itp = 0; itp < group.size(); ++itp){
-						int tp = group[itp];
-						if(tp != t){
-							f += (0.5*weights[grindex])*(pow(x(c,r,t) - 
-								x(c,r,tp), 2));
-						}
-					}
-				}
-			}
-		}
-	}
+	// for(int c = 0; c < C; ++c){
+	// 	for(int r = 0; r < R; ++r){
+	// 		for(int grindex = 0; grindex < groups.size(); ++grindex){
+	// 			auto& group = groups[grindex];
+	// 			for(int j = 0; j < group.size(); ++j){
+	// 				int t = group[j];
+	// 				for(int itp = 0; itp < group.size(); ++itp){
+	// 					int tp = group[itp];
+	// 					if(tp != t){
+	// 						f += (0.5*weights[grindex])*(pow(x(c,r,t) - 
+	// 							x(c,r,tp), 2));
+	// 					}
+	// 				}
+	// 			}
+	// 		}
+	// 	}
+	// }
 
 	return f;
 }

@@ -166,14 +166,14 @@ GeneratorRegressor::GeneratorRegressor(GRBEnv& env): env(env){
 	// }
 	// cin.get();
 
-	std::default_random_engine gen(600);
+    type = vector<int>(R, -1);
+	std::default_random_engine gen;
 	std::uniform_real_distribution<double> rnd(0,1);
     int count = 0;
-    type = vector<int>(R, -1);
     for(int i = 0; i < n_y / 2; ++i){
         for(int j = 0; j < n_x/2; ++j){
             type[count] = 0;
-            regressors(0, count) = 50 + 50; //50 + 50*rnd(gen)
+            regressors(0, count) = 50 + 50*rnd(gen);
 			regressors(1, count) = 0.5;
 			regressors(2, count) = 0.25;
             ++count;
@@ -181,7 +181,7 @@ GeneratorRegressor::GeneratorRegressor(GRBEnv& env): env(env){
 
         for(int j = 0; j < n_x/2; ++j){
             type[count] = 1;
-            regressors(0, count) = 50; // 50*rnd(gen)
+            regressors(0, count) = 50*rnd(gen);
 			regressors(1, count) = 0.25;
 			regressors(2, count) = 0.5;
             ++count;
@@ -191,7 +191,7 @@ GeneratorRegressor::GeneratorRegressor(GRBEnv& env): env(env){
     for(int i = n_y/2; i < n_y; ++i){
         for(int j = 0; j < n_x/2; ++j){
             type[count] = 1;
-            regressors(0, count) = 50; // 50*rnd(gen)
+            regressors(0, count) = 50*rnd(gen);
 			regressors(1, count) = 0.25;
 			regressors(2, count) = 0.5;
             ++count;
@@ -199,7 +199,7 @@ GeneratorRegressor::GeneratorRegressor(GRBEnv& env): env(env){
 
         for(int j = 0; j < n_x/2; ++j){
             type[count] = 0;
-            regressors(0, count) = 50 + 50; //50 + 50*rnd(gen)
+            regressors(0, count) = 50 + 50*rnd(gen);
 			regressors(1, count) = 0.5;
 			regressors(2, count) = 0.25;
             ++count;
@@ -369,6 +369,40 @@ GeneratorRegressor::GeneratorRegressor(GRBEnv& env, std::string calls_path,
 
 	std::cout << "Initialized Regressors Real data\n";
 }
+
+
+GeneratorRegressor::GeneratorRegressor(GRBEnv& env, xt::xarray<int>& N, xt::xarray<int>& M, xt::xarray<double>& reg): env(env){
+	if(N.dimension() !=  4){ //N should be C,D,T,R
+		fmt::print("Error: N has {} dimensions but should be 4. Problem was not set.\n",N.dimension());
+		exit(1);
+	}
+	if(M.dimension() != 4){ //M also should be C,D,T,R
+		fmt::print("Error: M has {} dimensions but should be 4. Problem was not set.\n",M.dimension());
+		exit(1);
+	}
+
+	if(reg.dimension() != 2){ //R should be nb_regressors,R
+		fmt::print("Error: regressor array has {} dimensons but should be 2. Problem was not set.\n", reg.dimension());
+		exit(1);
+	}
+
+	C = N.shape(0);
+	D = N.shape(1);
+	T = N.shape(2);
+	R = N.shape(3);
+	nb_regressors = reg.shape(0);
+
+	nb_observations = N;
+	nb_arrivals = M;
+	regressors = reg;
+
+
+	g_params.EPS = pow(10,-5);
+	sigma = 0.5;
+	max_iter = 30;
+	l_bounds = xt::zeros<double>({C,D,T,nb_regressors});
+}
+
 
 
 void GeneratorRegressor::test(){
@@ -632,9 +666,9 @@ double GeneratorRegressor::oracle_objective_model2(xt::xarray<double>& x){
 	return f;
 }
 
-xt::xarray<double> GeneratorRegressor::	projection_regressors(xt::xarray<double>& x){
+xt::xarray<double> GeneratorRegressor::projection_regressors(xt::xarray<double>& x){
 
-	xt::xarray<GRBVar> y(x.shape());
+	xt::xarray<GRBVar> y({C,D,T,nb_regressors});
 
 	GRBModel model(env);
 	stringstream name;
@@ -904,6 +938,24 @@ CrossValidationResult GeneratorRegressor::cross_validation(double proportion,
 	return {cpu_time, best_weight, x};
 }
 
+xt::xarray<double> laspated_reg(xt::xarray<int>& N, xt::xarray<int>& M, xt::xarray<double>& reg, xt::xarray<double>& x){
+	GRBEnv env;
+	GeneratorRegressor gen(env,N,M,reg);
+	if(x.dimension() != 4){
+		fmt::print("Error: x has {} dimensions but must be 4.\n", x.dimension());
+		exit(1);
+	}
+
+	if(x.shape(0) != gen.C || x.shape(1) != gen.D || x.shape(2) != gen.T || x.shape(3) != gen.nb_regressors){
+		std::string shape_x = fmt::format("({},{},{},{})", x.shape(0), x.shape(1), x.shape(2), x.shape(3));
+		fmt::print("Error: x has shape {}, but expected is ({},{},{},{}).\n", shape_x,gen.C, gen.D, gen.T, gen.nb_regressors);
+		exit(1);
+	}
+
+	auto lambda = x;
+	auto f_val = gen.projected_gradient_armijo_feasible(lambda);
+	return lambda;
+}
 
 void GeneratorRegressor::write_params(xt::xarray<double>& x_beta){
 	// ofstream out_file(fmt::format("{}/xRegressorT{}G{}I{}P{}K{}J{}_alpha{}.txt",
