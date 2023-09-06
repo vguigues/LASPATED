@@ -74,6 +74,8 @@ public:
 
 	void write_params(xt::xarray<double>& x);
 
+	double get_population(int r);
+
 	void print_vars(xt::xarray<double>& x, std::string prefix);
 };
 

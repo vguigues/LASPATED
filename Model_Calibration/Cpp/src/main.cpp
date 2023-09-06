@@ -348,140 +348,139 @@ int main(int argc, char* argv[]){
 	using namespace std;
 	g_params = load_params(argc,argv);
 
-	test_laspated_reg();
+	// test_laspated_reg();
 	// test_laspated_no_reg();
-	// std::string calls_path = fmt::format("{}/calls.dat", g_params.generator_folder);
-	// std::string neighbors_path = fmt::format("{}/neighbors.dat", g_params.generator_folder);
-	// std::string info_path = fmt::format("{}/info.dat", g_params.generator_folder);
+	std::string calls_path = fmt::format("{}/calls.dat", g_params.generator_folder);
+	std::string neighbors_path = fmt::format("{}/neighbors.dat", g_params.generator_folder);
+	std::string info_path = fmt::format("{}/info.dat", g_params.generator_folder);
 
-	// bool is_custom_data = g_params.generator_folder != "";
-	// if(g_params.method == ""){
-	// 	if(g_params.model == "no_reg"){
-	// 		if(is_custom_data){
-	// 			std::string calls_path = fmt::format("{}/calls.dat", g_params.generator_folder);
-	// 			std::string neighbors_path = fmt::format("{}/neighbors.dat", g_params.generator_folder);
-	// 			std::string info_path = fmt::format("{}/info.dat", g_params.generator_folder);
-	// 			GeneratorNoRegressor gen(calls_path, neighbors_path, info_path);
-	// 			auto t0 = std::chrono::high_resolution_clock::now();
-	// 			gen.calibrate();
-	// 			auto dt = std::chrono::high_resolution_clock::now();
-	// 			double run_time_old = std::chrono::duration_cast<std::chrono::nanoseconds>(dt - t0).count() 
-	// 				/ pow(10,9);
-	// 			fmt::print("Run time = {}\n", run_time_old);
-	// 		}else{
-	// 			GeneratorNoRegressor gen;
-	// 			auto t0 = std::chrono::high_resolution_clock::now();
-	// 			gen.test();
-	// 			auto dt = std::chrono::high_resolution_clock::now();
-	// 			double run_time_old = std::chrono::duration_cast<std::chrono::nanoseconds>(dt - t0).count() 
-	// 				/ pow(10,9);
-	// 			fmt::print("Run time = {}\n", run_time_old);
-	// 		}
-	// 	}else if(g_params.model == "reg"){
-	// 		GRBEnv env;
-	// 		if(is_custom_data){
-	// 			std::string calls_path = fmt::format("{}/calls.dat", g_params.generator_folder);
-	// 			std::string neighbors_path = fmt::format("{}/neighbors.dat", g_params.generator_folder);
-	// 			std::string info_path = fmt::format("{}/info.dat", g_params.generator_folder);
-	// 			GeneratorRegressor gen(env, calls_path, neighbors_path, info_path);
-	// 			auto t0 = std::chrono::high_resolution_clock::now();
-	// 			gen.calibrate();
-	// 			auto dt = std::chrono::high_resolution_clock::now();
-	// 			double run_time_old = std::chrono::duration_cast<std::chrono::nanoseconds>(dt - t0).count() 
-	// 				/ pow(10,9);
-	// 			fmt::print("Run time = {}\n", run_time_old);
-	// 		}else{
-	// 			GeneratorRegressor gen(env);
-	// 			auto t0 = std::chrono::high_resolution_clock::now();
-	// 			gen.calibrate();
-	// 			auto dt = std::chrono::high_resolution_clock::now();
-	// 			double run_time_old = std::chrono::duration_cast<std::chrono::nanoseconds>(dt - t0).count() 
-	// 				/ pow(10,9);
-	// 			fmt::print("Run time = {}\n", run_time_old);
-	// 		}
-	// 	}
-	// }
+	bool is_custom_data = g_params.generator_folder != "";
+	if(g_params.method == ""){
+		if(g_params.model == "no_reg"){
+			if(is_custom_data){
+				std::string calls_path = fmt::format("{}/calls.dat", g_params.generator_folder);
+				std::string neighbors_path = fmt::format("{}/neighbors.dat", g_params.generator_folder);
+				std::string info_path = fmt::format("{}/info.dat", g_params.generator_folder);
+				GeneratorNoRegressor gen(calls_path, neighbors_path, info_path);
+				auto t0 = std::chrono::high_resolution_clock::now();
+				gen.calibrate();
+				auto dt = std::chrono::high_resolution_clock::now();
+				double run_time_old = std::chrono::duration_cast<std::chrono::nanoseconds>(dt - t0).count() 
+					/ pow(10,9);
+				fmt::print("Run time = {}\n", run_time_old);
+			}else{
+				GeneratorNoRegressor gen;
+				auto t0 = std::chrono::high_resolution_clock::now();
+				gen.test();
+				auto dt = std::chrono::high_resolution_clock::now();
+				double run_time_old = std::chrono::duration_cast<std::chrono::nanoseconds>(dt - t0).count() 
+					/ pow(10,9);
+				fmt::print("Run time = {}\n", run_time_old);
+			}
+		}else if(g_params.model == "reg"){
+			GRBEnv env;
+			if(is_custom_data){
+				std::string calls_path = fmt::format("{}/calls.dat", g_params.generator_folder);
+				std::string neighbors_path = fmt::format("{}/neighbors.dat", g_params.generator_folder);
+				std::string info_path = fmt::format("{}/info.dat", g_params.generator_folder);
+				GeneratorRegressor gen(env, calls_path, neighbors_path, info_path);
+				auto t0 = std::chrono::high_resolution_clock::now();
+				gen.calibrate();
+				auto dt = std::chrono::high_resolution_clock::now();
+				double run_time_old = std::chrono::duration_cast<std::chrono::nanoseconds>(dt - t0).count() 
+					/ pow(10,9);
+				fmt::print("Run time = {}\n", run_time_old);
+			}else{
+				GeneratorRegressor gen(env);
+				auto t0 = std::chrono::high_resolution_clock::now();
+				gen.calibrate();
+				auto dt = std::chrono::high_resolution_clock::now();
+				double run_time_old = std::chrono::duration_cast<std::chrono::nanoseconds>(dt - t0).count() 
+					/ pow(10,9);
+				fmt::print("Run time = {}\n", run_time_old);
+			}
+		}
+	}
 
-	// if(g_params.model == "no_reg" && g_params.method == "calibration"){
-	// 	if(is_custom_data){
-	// 		std::string calls_path = fmt::format("{}/calls.dat", g_params.generator_folder);
-	// 		std::string neighbors_path = fmt::format("{}/neighbors.dat", g_params.generator_folder);
-	// 		std::string info_path = fmt::format("{}/info.dat", g_params.generator_folder);
-	// 		GeneratorNoRegressor gen(calls_path, neighbors_path, info_path);
-	// 		auto t0 = std::chrono::high_resolution_clock::now();
-	// 		gen.calibrate();
-	// 		auto dt = std::chrono::high_resolution_clock::now();
-	// 		double run_time_old = std::chrono::duration_cast<std::chrono::nanoseconds>(dt - t0).count() 
-	// 			/ pow(10,9);
-	// 		fmt::print("Run time = {}\n", run_time_old);
-	// 	}else{
-	// 		GeneratorNoRegressor gen;
-	// 		auto t0 = std::chrono::high_resolution_clock::now();
-	// 		gen.calibrate();
-	// 		auto dt = std::chrono::high_resolution_clock::now();
-	// 		double run_time_old = std::chrono::duration_cast<std::chrono::nanoseconds>(dt - t0).count() 
-	// 			/ pow(10,9);
-	// 		fmt::print("Run time = {}\n", run_time_old);
-	// 	}
-	// }else if(g_params.model == "no_reg" && g_params.method == "cross_validation"){
-	// 	if(is_custom_data){
-	// 		std::string calls_path = fmt::format("{}/calls.dat", g_params.generator_folder);
-	// 		std::string neighbors_path = fmt::format("{}/neighbors.dat", g_params.generator_folder);
-	// 		std::string info_path = fmt::format("{}/info.dat", g_params.generator_folder);
-	// 		GeneratorNoRegressor gen(calls_path, neighbors_path, info_path);
-	// 		auto t0 = std::chrono::high_resolution_clock::now();
+	if(g_params.model == "no_reg" && g_params.method == "calibration"){
+		if(is_custom_data){
+			std::string calls_path = fmt::format("{}/calls.dat", g_params.generator_folder);
+			std::string neighbors_path = fmt::format("{}/neighbors.dat", g_params.generator_folder);
+			std::string info_path = fmt::format("{}/info.dat", g_params.generator_folder);
+			GeneratorNoRegressor gen(calls_path, neighbors_path, info_path);
+			auto t0 = std::chrono::high_resolution_clock::now();
+			gen.calibrate();
+			auto dt = std::chrono::high_resolution_clock::now();
+			double run_time_old = std::chrono::duration_cast<std::chrono::nanoseconds>(dt - t0).count() 
+				/ pow(10,9);
+			fmt::print("Run time = {}\n", run_time_old);
+		}else{
+			GeneratorNoRegressor gen;
+			auto t0 = std::chrono::high_resolution_clock::now();
+			gen.calibrate();
+			auto dt = std::chrono::high_resolution_clock::now();
+			double run_time_old = std::chrono::duration_cast<std::chrono::nanoseconds>(dt - t0).count() 
+				/ pow(10,9);
+			fmt::print("Run time = {}\n", run_time_old);
+		}
+	}else if(g_params.model == "no_reg" && g_params.method == "cross_validation"){
+		if(is_custom_data){
+			std::string calls_path = fmt::format("{}/calls.dat", g_params.generator_folder);
+			std::string neighbors_path = fmt::format("{}/neighbors.dat", g_params.generator_folder);
+			std::string info_path = fmt::format("{}/info.dat", g_params.generator_folder);
+			GeneratorNoRegressor gen(calls_path, neighbors_path, info_path);
+			auto t0 = std::chrono::high_resolution_clock::now();
 
-	// 		double proportion = g_params.cv_proportion;
-	// 		auto weights = g_params.weights_list;
-	// 		auto alpha = weights;
-	// 		auto result = gen.cross_validation(proportion, alpha, weights);
-	// 		auto dt = std::chrono::high_resolution_clock::now();
-	// 		gen.write_cv_results(result);
-	// 		double run_time_old = std::chrono::duration_cast<std::chrono::nanoseconds>(dt - t0).count() 
-	// 			/ pow(10,9);
-	// 		fmt::print("Run time = {}\n", run_time_old);
-	// 	}else{
-	// 		GeneratorNoRegressor gen;
-	// 		double proportion = g_params.cv_proportion;
-	// 		vector<double> test_weights = g_params.weights_list;
-	// 		vector<double> alphas = test_weights;
-	// 		auto t0 = std::chrono::high_resolution_clock::now();
-	// 		auto result = gen.cross_validation(proportion, alphas, test_weights);
-	// 		gen.write_cv_results(result);
-	// 		auto dt = std::chrono::high_resolution_clock::now();
-	// 		double run_time_old = std::chrono::duration_cast<std::chrono::nanoseconds>(dt - t0).count() 
-	// 			/ pow(10,9);
-	// 		fmt::print("Run time = {}\n", run_time_old);
-	// 	}
-	// }else if(g_params.model == "reg"){
-	// 	GRBEnv env;
-	// 	if(is_custom_data){
-	// 		std::string calls_path = fmt::format("{}/calls.dat", g_params.generator_folder);
-	// 		std::string neighbors_path = fmt::format("{}/neighbors.dat", g_params.generator_folder);
-	// 		std::string info_path = fmt::format("{}/info.dat", g_params.generator_folder);
-	// 		GeneratorRegressor gen(env, calls_path, neighbors_path, info_path);
-	// 		auto t0 = std::chrono::high_resolution_clock::now();
-	// 		gen.calibrate();
-	// 		auto dt = std::chrono::high_resolution_clock::now();
-	// 		double run_time_old = std::chrono::duration_cast<std::chrono::nanoseconds>(dt - t0).count() 
-	// 			/ pow(10,9);
-	// 		fmt::print("Run time = {}\n", run_time_old);
-	// 	}else{
-	// 		GeneratorRegressor gen(env);
-	// 		auto t0 = std::chrono::high_resolution_clock::now();
-	// 		gen.calibrate();
-	// 		auto dt = std::chrono::high_resolution_clock::now();
-	// 		double run_time_old = std::chrono::duration_cast<std::chrono::nanoseconds>(dt - t0).count() 
-	// 			/ pow(10,9);
-	// 		fmt::print("Run time = {}\n", run_time_old);
-	// 	}
-	// }
-
+			double proportion = g_params.cv_proportion;
+			auto weights = g_params.weights_list;
+			auto alpha = weights;
+			auto result = gen.cross_validation(proportion, alpha, weights);
+			auto dt = std::chrono::high_resolution_clock::now();
+			gen.write_cv_results(result);
+			double run_time_old = std::chrono::duration_cast<std::chrono::nanoseconds>(dt - t0).count() 
+				/ pow(10,9);
+			fmt::print("Run time = {}\n", run_time_old);
+		}else{
+			GeneratorNoRegressor gen;
+			double proportion = g_params.cv_proportion;
+			vector<double> test_weights = g_params.weights_list;
+			vector<double> alphas = test_weights;
+			auto t0 = std::chrono::high_resolution_clock::now();
+			auto result = gen.cross_validation(proportion, alphas, test_weights);
+			gen.write_cv_results(result);
+			auto dt = std::chrono::high_resolution_clock::now();
+			double run_time_old = std::chrono::duration_cast<std::chrono::nanoseconds>(dt - t0).count() 
+				/ pow(10,9);
+			fmt::print("Run time = {}\n", run_time_old);
+		}
+	}else if(g_params.model == "reg"){
+		GRBEnv env;
+		if(is_custom_data){
+			std::string calls_path = fmt::format("{}/calls.dat", g_params.generator_folder);
+			std::string neighbors_path = fmt::format("{}/neighbors.dat", g_params.generator_folder);
+			std::string info_path = fmt::format("{}/info.dat", g_params.generator_folder);
+			GeneratorRegressor gen(env, calls_path, neighbors_path, info_path);
+			auto t0 = std::chrono::high_resolution_clock::now();
+			gen.calibrate();
+			auto dt = std::chrono::high_resolution_clock::now();
+			double run_time_old = std::chrono::duration_cast<std::chrono::nanoseconds>(dt - t0).count() 
+				/ pow(10,9);
+			fmt::print("Run time = {}\n", run_time_old);
+		}else{
+			GeneratorRegressor gen(env);
+			auto t0 = std::chrono::high_resolution_clock::now();
+			gen.calibrate();
+			auto dt = std::chrono::high_resolution_clock::now();
+			double run_time_old = std::chrono::duration_cast<std::chrono::nanoseconds>(dt - t0).count() 
+				/ pow(10,9);
+			fmt::print("Run time = {}\n", run_time_old);
+		}
+	}
 }
 
 
 void version(){
-	std::cout << "Spatio Temporal Calibration of medical emergency events.\n" <<
+	std::cout << "Spatio Temporal Calibration of Events.\n" <<
 		"Version number 0.1 - Developed by: Victor Hugo (UFRJ-PESC-LABOTIM).\n";
 }
 
@@ -503,7 +502,7 @@ Param load_params(int argc, char** argv){
 	config.add_options()
 	    ("generator_folder,G", po::value<std::string>()->default_value(""),
 	    	"Directory with observations data. Must have a calls.dat, info.dat and neighbors.dat files. default=\"\" (use of simulated data)")
-		("method", po::value<std::string>()->default_value("calibration"),
+		("method", po::value<std::string>()->default_value(""),
 			"Type of function. calibration|cross_validation")
 		("model", po::value<std::string>()->default_value("no_reg"),
 			"Type of data. reg|no_reg are data with and without regressors.")

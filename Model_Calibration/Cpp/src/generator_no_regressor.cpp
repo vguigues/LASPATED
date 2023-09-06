@@ -8,37 +8,15 @@ GeneratorNoRegressor::GeneratorNoRegressor(){
 	n_x = n_y = 10;
 	R = n_x*n_y;
 	C = 1;
-	int nb_groups = 4;
+	int nb_groups = 2;
 	T = 4*7;
 
-	which_group = vector<int>(T, 0);
-	for(int t = 0; t < T; ++t){
-		which_group[t] = t % nb_groups;
-		// fmt::print("which_group {} = {}\n", t+1, which_group[t]+1);
-	}
-	// cin.get();
+	which_group = vector<int>(T, -1);
 	groups = vector<vector<int>>(nb_groups,vector<int>());
-	for(int i = 0; i < nb_groups; ++i){
-		groups[i].push_back(i);
-		// fmt::print("groups {} = ", i+1);
-		// for(auto j: groups[i]){
-		// 	fmt::print("{} ",j+1);
-		// }
-		// fmt::print("\n");
+	for(int t = 0; t < T; ++t){
+		groups[t % nb_groups].push_back(t);
+		which_group[t] = t % nb_groups;
 	}
-
-
-	for(int i = 0; i < nb_groups; ++i){
-		for(int j = 0; j < 6; ++j){
-			groups[i].push_back(groups[i][j]+4);
-		}
-		// fmt::print("groups {} = ", i+1);
-		// for(auto j: groups[i]){
-		// 	fmt::print("{} ",j+1);
-		// }
-		// fmt::print("\n");
-	}
-	// cin.get();
 
 	// for(int i = 0; i < nb_groups; ++i){
 	// 	fmt::print("Groups {}: ", i+1);
@@ -49,41 +27,16 @@ GeneratorNoRegressor::GeneratorNoRegressor(){
 	// }
 	// cin.get();
 
-	theoretical_lambda = xt::zeros<double>({T,R,C});
 	type_region = vector<int>(R,-1);
 	int count = 0;
 	for(int i = 0; i < n_y/2; ++i){
 		for(int j = 0; j < n_x/2; ++j){
 			type_region[count] = 0;
-			for(int k = 0; k < groups[0].size(); ++k){
-				theoretical_lambda(groups[0][k],count,0) = 0.5;
-			}
-			for(int k = 0; k < groups[2].size(); ++k){
-				theoretical_lambda(groups[2][k],count,0) = 0.5;
-			}
-			for(int k = 0; k < groups[1].size(); ++k){
-				theoretical_lambda(groups[1][k],count,0) = 0.1;
-			}
-			for(int k = 0; k < groups[3].size(); ++k){
-				theoretical_lambda(groups[3][k],count,0) = 0.1;
-			}
 			++count;
 		}
 
 		for(int j = 0; j < n_x/2; ++j){
 			type_region[count] = 1;
-			for(int k = 0; k < groups[0].size(); ++k){
-				theoretical_lambda(groups[0][k],count,0) = 0.1;
-			}
-			for(int k = 0; k < groups[1].size(); ++k){
-				theoretical_lambda(groups[1][k],count,0) = 0.5;
-			}
-			for(int k = 0; k < groups[2].size(); ++k){
-				theoretical_lambda(groups[2][k],count,0) = 0.1;
-			}
-			for(int k = 0; k < groups[3].size(); ++k){
-				theoretical_lambda(groups[3][k],count,0) = 0.5;
-			}
 			++count;
 		}
 	}
@@ -91,95 +44,219 @@ GeneratorNoRegressor::GeneratorNoRegressor(){
 	for(int i = n_y/2; i < n_y; ++i){
 		for(int j = 0; j < n_x/2; ++j){
 			type_region[count] = 1;
-			for(int k = 0; k < groups[0].size(); ++k){
-				theoretical_lambda(groups[0][k],count,0) = 0.1;
-			}
-			for(int k = 0; k < groups[1].size(); ++k){
-				theoretical_lambda(groups[1][k],count,0) = 0.5;
-			}
-			for(int k = 0; k < groups[2].size(); ++k){
-				theoretical_lambda(groups[2][k],count,0) = 0.1;
-			}
-			for(int k = 0; k < groups[3].size(); ++k){
-				theoretical_lambda(groups[3][k],count,0) = 0.5;
-			}
 			++count;
 		}
 		for(int j = 0; j < n_x/2; ++j){
 			type_region[count] = 0;
-			for(int k = 0; k < groups[0].size(); ++k){
-				theoretical_lambda(groups[0][k],count,0) = 0.5;
-			}
-			for(int k = 0; k < groups[2].size(); ++k){
-				theoretical_lambda(groups[2][k],count,0) = 0.5;
-			}
-			for(int k = 0; k < groups[1].size(); ++k){
-				theoretical_lambda(groups[1][k],count,0) = 0.1;
-			}
-			for(int k = 0; k < groups[3].size(); ++k){
-				theoretical_lambda(groups[3][k],count,0) = 0.1;
-			}
 			++count;
 		}
 	}
 
-	// for(int r = 0; r < R; ++r){
-	// 	fmt::print("Region {}, type_region = {}\n", r+1, type_region[r]+1);
-	// }
-	// cin.get();
 
-	nb_weeks = 10;
+
+	nb_weeks = 1000;
 	nb_years = 1;
 	int nb_observations_total = nb_weeks*nb_years;
 	int max_obs = nb_observations_total;
+	durations = vector<double>(T,1);
+	std::default_random_engine gen(600);
+	// std::random_device rd;
+    // std::mt19937 gen(rd());
+
+
 	sample = xt::zeros<int>({T,R,C,static_cast<ulong>(max_obs)});
-	durations = vector<double>(T,6);
-	// std::default_random_engine gen(600);
-	std::random_device rd;
-    std::mt19937 gen(rd());
-
-
-	// static_cast<ulong>(7*nb_weeks)
-	nb_observations = xt::zeros<int>({C,R,T});
+	nb_observations = nb_observations_total*xt::ones<int>({C,R,T});
 	nb_arrivals = xt::zeros<int>({C,R,T});
-	// ifstream sample_arq("sample6.txt",std::ios::in);
-	// int st, sr, sp, sk, sval;
-	// while(!sample_arq.eof()){
-	// 	sample_arq >> st >> sr >> sp >> sk >> sval;
-	// 	sample(st-1,sr-1,sp-1,sk-1) = sval;
-	// 	nb_arrivals(sp-1,sr-1,st-1) += sample(st-1,sr-1,sp-1,sk-1);
-	// 	++nb_observations(sp-1,sr-1,st-1);
-	// }
-	// sample_arq.close();
-	xt::random::seed(600);
+	uniform_real_distribution<double> rand_coord(0,1);
 	for(int t = 0; t < T; ++t){
-		for(int r = 0; r < R; ++r){
-			for(int c = 0; c < C; ++c){
-				nb_observations(c,r,t) = nb_observations_total;
-				double sum = 0;
-				poisson_distribution<int> pd(theoretical_lambda(t,r,c)*durations[t]);
-				for(int k = 0; k < nb_observations_total; ++k){
-					sample(t,r,c,k) = pd(gen);
-					// sample(t,r,c,k) = floor(theoretical_lambda(t,r,c)*durations[t]) + 1;
-					sum += sample(t,r,c,k);
-					nb_arrivals(c,r,t) += sample(t,r,c,k);
+		if(t % 2  != 0){
+			double lambda_bar_b = 75;
+			double lambda_b = 625;
+			double lambda_bar_r = 20;
+			double lambda_r = 250;
+
+			for(int n = 0; n < nb_observations_total; ++n){
+				poisson_distribution<int> pd_Nb(lambda_b);
+				int N = pd_Nb(gen);
+				for(int k = 0; k < N; ++k){
+					bool contde = true;
+					while(contde){
+						bool contd = true;
+						int x = 0,y = 0;
+						while(contd){
+							x = 9*rand_coord(gen);
+							y = 9*rand_coord(gen);
+
+							if((x < 5 && y >= 5 && y < 10) || (x >= 5 && x < 10 && y < 5)){
+								contd = false;
+							}
+						}
+						double us = lambda_bar_b*rand_coord(gen);
+						if(us <= 5*(x+y)){
+							contde = 0;
+							int ind_x = floor(x);
+							int ind_y = floor(y);
+							int zone_nb = ind_y*10+ind_x;
+							sample(t,zone_nb,0,n) += 1;
+						}
+					}
 				}
-				// fmt::print("mean = {}, theoretical = {}\n", static_cast<double>(sum) / nb_observations_total,
-				// 	theoretical_lambda(t,r,c)*durations[t]);
-				// cin.get();
+				poisson_distribution<int> pd_Nr(lambda_r);
+				N = pd_Nr(gen);
+				for(int k = 0; k < N; ++k){
+					bool contde = true;
+					while(contde){
+						bool contd = true;
+						int x = 0,y = 0;
+						while(contd){
+							x = 9*rand_coord(gen);
+							y = 9*rand_coord(gen);
+
+							if((x < 5 && y < 5) || (x >= 5 && x < 10 && y >= 5 && y < 10)){
+								contd = false;
+							}
+						}
+						double us = lambda_bar_r*rand_coord(gen);
+						if(us <= x+y){
+							contde = 0;
+							int ind_x = floor(x);
+							int ind_y = floor(y);
+							int zone_nr = ind_y*10+ind_x;
+							sample(t,zone_nr,0,n) += 1;
+						}
+					}
+				}
+			}
+		}else{
+			double lambda_bar_b = 15;
+			double lambda_b = 125;
+			double lambda_bar_r = 100;
+			double lambda_r = 1250;
+
+			for(int n = 0; n < nb_observations_total; ++n){
+				poisson_distribution<int> pd_Nb(lambda_b);
+				int N = pd_Nb(gen);
+				for(int k = 0; k < N; ++k){
+					bool contde = true;
+					while(contde){
+						bool contd = true;
+						int x = 0,y = 0;
+						while(contd){
+							x = 9*rand_coord(gen);
+							y = 9*rand_coord(gen);
+
+							if((x < 5 && y >= 5 && y < 10) || (x >= 5 && x < 10 && y < 5)){
+								contd = false;
+							}
+						}
+						double us = lambda_bar_b*rand_coord(gen);
+						if(us <= x+y){
+							contde = 0;
+							int ind_x = floor(x);
+							int ind_y = floor(y);
+							int zone_nb = ind_y*10+ind_x;
+							sample(t,zone_nb,0,n) += 1;
+						}
+					}
+				}
+				poisson_distribution<int> pd_Nr(lambda_r);
+				N = pd_Nr(gen);
+				for(int k = 0; k < N; ++k){
+					bool contde = true;
+					while(contde){
+						bool contd = true;
+						int x = 0,y = 0;
+						while(contd){
+							x = 9*rand_coord(gen);
+							y = 9*rand_coord(gen);
+
+							if((x < 5 && y < 5) || (x >= 5 && x < 10 && y >= 5 && y < 10)){
+								contd = false;
+							}
+						}
+						double us = lambda_bar_b*rand_coord(gen);
+						if(us <= 5*(x+y)){
+							contde = 0;
+							int ind_x = floor(x);
+							int ind_y = floor(y);
+							int zone_nb = ind_y*10+ind_x;
+							sample(t,zone_nb,0,n) += 1;
+						}
+					}
+				}
 			}
 		}
 	}
 
-	// for(int c = 0; c < C; ++c){
-	// 	for(int t = 0; t < T; ++t){
-	// 		for(int r = 0; r < R; ++r){
-	// 			fmt::print("c = {}, r = {} (type_region {}), t = {}, lambda = {}, obs = {}, arr = {}\n",
-	// 				c+1,r+1, type_region[r]+1,t+1, theoretical_lambda(t,r,c), nb_observations(c,r,t), nb_arrivals(c,r,t));
-	// 		}
-	// 	}
-	// }
-	// cin.get();
+
+	for(int c = 0; c < C; ++c){
+		for(int r = 0; r < R; ++r){
+			for(int t = 0; t < T; ++t){
+				for(int n = 0; n < nb_observations_total; ++n){
+					nb_arrivals(c,r,t) += sample(t,r,c,n);
+				}
+			}
+		}
+	}
+
+
+	vector<bool> is_blue(100,false);
+	int u = 0;
+	for(int k = 0; k < 5; ++k){
+		u += 5;
+		for(int i = 0; i < 5; ++i){
+			is_blue[u+i] = true;
+		}
+	}
+
+	for(int k = 0; k < 5; ++k){
+		for(int i = 0; i < 5; ++i){
+			is_blue[u+i] = true;
+		}
+		u += 10;
+	}
+
+	theoretical_lambda = xt::zeros<double>({T,R,C});
+	xt::xarray<double> integrated_lambda = xt::zeros<double>({T,R});
+
+	for(int r = 1; r <= R; ++r){
+		int i = r % 10;
+		int j = floor((r-1) / 10) + 1;
+
+		if(i == 0){
+			i = 10;
+		}
+
+		for(int t = 0; t < T; ++t){
+			if(t % 2 != 0){
+				if(is_blue[r-1]){
+					theoretical_lambda(t,r-1, 0) = 5*(i+j-1);
+					integrated_lambda(t,r-1) = 2.5*(pow(i,2)-pow(i-1,2)) + 2.5*(pow(j,2) - pow(j-1,2));
+				}else{
+					theoretical_lambda(t,r-1, 0) = i+j-1;
+					integrated_lambda(t,r-1) = 0.5*(pow(i,2)-pow(i-1,2)) + 0.5*(pow(j,2) - pow(j-1,2));
+				}
+			}else{
+				if(is_blue[r-1]){
+					theoretical_lambda(t,r-1, 0) = i+j-1;
+					integrated_lambda(t,r-1) = 0.5*(pow(i,2)-pow(i-1,2)) + 0.5*(pow(j,2) - pow(j-1,2));
+				}else{
+					theoretical_lambda(t,r-1, 0) = 5*(i+j-1);
+					integrated_lambda(t,r-1) = 2.5*(pow(i,2)-pow(i-1,2)) + 2.5*(pow(j,2) - pow(j-1,2));
+				}
+			}
+		}
+	}
+
+	xt::xarray<double> estimated = xt::zeros<double>({C,R,T});
+	for(int c = 0; c < C; ++c){
+		for(int r = 0; r < R; ++r){
+			for(int t = 0; t < T; ++t){
+				estimated(c,r,t) = nb_arrivals(c,r,t) / (nb_observations(c,r,t)*durations[t]);
+			}
+		}
+	}
+
 
 	xt::xarray<double> est = xt::zeros<double>({2,4});
 	for(int t = 0; t < 4; ++t){
@@ -195,11 +272,12 @@ GeneratorNoRegressor::GeneratorNoRegressor(){
 			}
 		}
 		// fmt::print("t = {}, est1 = {}, est2 = {}\n",t+1, est(0,t), est(1,t));
-		est(0,t) =  est(0,t) / nb_type0;
-		est(1,t) = 	est(1,t) / nb_type1;
+		est(0,t) =  est(0,t) / (nb_type0 * durations[t]);
+		est(1,t) = 	est(1,t) / (nb_type1 * durations[t]);
 		// fmt::print("t = {}, est1 = {}, est2 = {}\n",t+1, est(0,t), est(1,t));
 	}
-	// cin.get();
+
+
 
 	neighbors = vector<vector<int>>(R, vector<int>());
 	distance = GRB_INFINITY*xt::ones<double>({R, R});
@@ -214,25 +292,6 @@ GeneratorNoRegressor::GeneratorNoRegressor(){
 		if (Xi==0){
 			Xi=n_x;
 		}
-
-		// fmt::print("r = {}, Xi = {}, Yi = {}\n",r,Xi, Yi);
-
-		// int Xi = 1 + (r % n_x);
-		// int Yi = r / n_y;
-
-		// vector<pair> candidates{{Xi,Yi-1}, {Xi,Yi+1},{Xi-1,Yi},
-		// 	{Xi+1,Yi}, {Xi-1,Yi+1}, {Xi-1,Yi-1}, {Xi+1,Yi+1}, {Xi+1,Yi-1}};
-
-		// for(auto& candidate: candidates){
-		// 	int x_i = candidate.first;
-		// 	int y_i = candidate.second;
-		// 	if(x_i >= 0 && x_i < n_x && y_i >= 0 && y_i < n_y){
-		// 		neighbors[r].push_back(y_i*n_x + x_i);
-		// 		distance[r][s] = 1;
-		// 	}
-
-		// }
-
 
 		if (Yi-1>=1){
 			neighbors[r].push_back((Yi-2)*n_x+Xi - 1);     
@@ -265,7 +324,6 @@ GeneratorNoRegressor::GeneratorNoRegressor(){
 		if ((Yi-1>=1)&&(Xi+1)<=n_x){
 			neighbors[r].push_back((Yi-2)*n_x+Xi+1 - 1);
 		}
-
 	}
 
 	vector<double> absc(n_x, 0);
@@ -278,7 +336,6 @@ GeneratorNoRegressor::GeneratorNoRegressor(){
 	}
 
 	for(int r = 0; r < R; ++r){
-		vector<int> neigh;
 		int x_r = r % n_x;
 		int y_r = r / n_y;
 
@@ -294,7 +351,6 @@ GeneratorNoRegressor::GeneratorNoRegressor(){
 			// }
 			// distance(r,s) = sqrt(pow(absc[x_r] - absc[x_s], 2) + pow(ord[y_r]-ord[y_s], 2));
 			distance(r,s) = 1;
-			neigh.push_back(s);
 		}
 		// fmt::print("Neighbors {} (type_region = {}): ", r+1, type_region[r]+1);
 		// for(auto s: neighbors[r]){
@@ -331,7 +387,6 @@ GeneratorNoRegressor::GeneratorNoRegressor(std::string calls_path,
 	fmt::print("daily obs: {}\n", daily_obs);
 	info_arq.close();
 	nb_land_types = nb_regressors - 2;
-	nb_regressors = 1 + nb_land_types;
 	unsigned long max_obs = *max_element(daily_obs.begin(), daily_obs.end());
 	unsigned long min_obs = *min_element(daily_obs.begin(), daily_obs.end());
 
@@ -370,7 +425,6 @@ GeneratorNoRegressor::GeneratorNoRegressor(std::string calls_path,
 	}
 
 
-	nb_regressors = nb_land_types;
 	type_region = std::vector<int>(R,-1);
 	xt::xarray<double> regressors = xt::zeros<double>({nb_regressors, R});
 	neighbors = std::vector<vector<int>>(R, std::vector<int>());
@@ -393,21 +447,11 @@ GeneratorNoRegressor::GeneratorNoRegressor(std::string calls_path,
 			ss >> regressors(j,ind);
 		}
 		ss >> pop1 >> pop2;
-		regressors(nb_regressors-1, ind) = pop1 + pop2;
+		regressors(nb_regressors - 2, ind) = pop1;
+		regressors(nb_regressors - 1, ind) = pop1 + pop2;
 		while(ss >> s >> dist){
 			distance(ind,s) = dist;
 			neighbors[ind].push_back(s);
-		}
-	}
-	double epsilon = pow(10,-5);
-	int t2 = regressors.shape(1);
-	for(int i = 0; i < t2; ++i){
-		double sum = 0;
-		for(int j = 0; j < regressors.shape(0); ++j){
-			sum += regressors(j,i);
-		}
-		if(sum < epsilon){
-			regressors(nb_regressors-1,i) = epsilon;
 		}
 	}
 	neighbors_arq.close();
@@ -417,11 +461,11 @@ GeneratorNoRegressor::GeneratorNoRegressor(std::string calls_path,
 	nb_arrivals = xt::zeros<int>({C,R,7*T});
 	durations = vector<double>(7*T,0.5);
 
-	for(int c = 0; c < C; ++c){
-		for(int r = 0; r < R; ++r){
+	for(int r = 0; r < R; ++r){
+		for(int c = 0; c < C; ++c){
 			for(int d = 0; d < D; ++d){
 				for(int t = 0; t < T; ++t){
-					int index = d*t + t;
+					int index = d*T + t;
 					nb_observations(c,r,index) = nb_observations_file(c,d,t,r);
 					nb_arrivals(c,r,index) = nb_arrivals_file(c,d,t,r);
 					for(int j = 0; j < min_obs; ++j){
@@ -431,6 +475,7 @@ GeneratorNoRegressor::GeneratorNoRegressor(std::string calls_path,
 			}
 		}
 	}
+
 	T = 7*T;
 	which_group = vector<int>(T, 0);
 	groups = vector<vector<int>>(T,vector<int>());
@@ -444,7 +489,7 @@ GeneratorNoRegressor::GeneratorNoRegressor(std::string calls_path,
 	beta_bar = 1;
 	max_iter = 30;
 	weight = 0.1;
-	alpha = 0.1;
+	alpha = 0.1*xt::ones<double>({R,R});
 	g_params.EPS = 0.001;
 	durations = vector<double>(T,0.5);
 	std::cout << "Initialized No Regressor Real Data\n";
@@ -526,7 +571,7 @@ void GeneratorNoRegressor::test(){
 	// 	110,120,130,140,150,160,170,180,190,200,210,220,230,240,250,260,
 	// 	270,280,290,300,310,320,330,340,350,360,370,380,390,400};
 	vector<double> test_weights = g_params.weights_list;
-	vector<double> alphas = test_weights;
+	vector<double> test_alphas = test_weights;
 	xt::xarray<double> x = xt::ones<double>({C,R,T});
 	ofstream err_arq("err_no_reg.txt", std::ios::out);
 	ofstream week_arq(fmt::format("week_no_reg.txt"), std::ios::out);
@@ -534,7 +579,7 @@ void GeneratorNoRegressor::test(){
 	double min_w = -1;
 	for(int i = 0; i < test_weights.size(); ++i){
 		x = epsilon*xt::ones<double>({C,R,T});
-		alpha = alphas[i];
+		alpha = test_alphas[i]*xt::ones<double>({R,R});
 		// alpha = 0;
 		weights = vector<double>(groups.size(), test_weights[i]);
 		// weights = vector<double>(groups.size(), 0);
@@ -542,6 +587,7 @@ void GeneratorNoRegressor::test(){
 
 		if(g_params.generator_folder == ""){
 			double err = average_difference(x);
+			fmt::print("weight {} err {}\n", test_weights[i], err);
 			if(err < min_err){
 				min_err = err;
 				min_w = i;
@@ -553,8 +599,8 @@ void GeneratorNoRegressor::test(){
 		fmt::print("Wrote weight results at err_no_reg.txt\n");
 	}
 
-	alphas = test_weights;
-	auto result = cross_validation(0.2, alphas, test_weights);
+	test_alphas = test_weights;
+	auto result = cross_validation(0.2, test_alphas, test_weights);
 	write_cv_results(result);
 	fmt::print("Cross validation time = {}\n",result.cpu_time);
 	fmt::print("Cross validation weight = {}\n",result.weight);
@@ -582,13 +628,14 @@ void GeneratorNoRegressor::calibrate(){
 	vector<double> alphas = test_weights;
 	xt::xarray<double> x = xt::ones<double>({C,R,T});
 	fmt::print("Running projected gradient for weights {}\n", test_weights);
-	ofstream err_arq(fmt::format("err_no_reg.txt"), std::ios::out);
+	ofstream err_arq(fmt::format("err_no_diag_g{}_obs{}_alpha.txt", groups.size(), nb_weeks), std::ios::out);
 	ofstream week_arq(fmt::format("week_no_reg.txt"), std::ios::out);
 	double min_err = 10e100;
 	int min_w = -1;
 	for(int i = 0; i < test_weights.size(); ++i){
 		x = epsilon*xt::ones<double>({C,R,T});
-		alpha = alphas[i];
+		alpha = alphas[i]*xt::ones<double>({R,R});
+		// alpha = xt::zeros<double>({R,R});
 		// alpha = 0;
 		weights = vector<double>(groups.size(), test_weights[i]);
 		// weights = vector<double>(groups.size(), 0);
@@ -602,6 +649,7 @@ void GeneratorNoRegressor::calibrate(){
 				min_w = i;
 			}
 			err_arq << fmt::format("{:.7f}",err) << "\n";
+			fmt::print("w({}) = {}, err = {}\n", i, test_weights[i], err);
 		}
 	}
 	alpha = alphas[min_w];
@@ -758,9 +806,10 @@ xt::xarray<double> GeneratorNoRegressor::oracle_gradient_model(xt::xarray<double
 				// double prev_comp = grad_component;
 				// double sum_neighbors = 0;
 				for(int s: neighbors[r]){
-					if(type_region[r] == type_region[s]){
+					if(type_region[r] == type_region[s])
+					// if(true)
+					{
 						grad_component += 2*alpha(r,s)*(x(c,r,t) - x(c,s,t)) / (distance(r,s));
-						// sum_neighbors  +=  2*alpha*(x(c,r,t) - x(c,s,t)) / (distance(r,s));
 					}
 				}
 				gradient(c,r,t) = grad_component;
@@ -796,31 +845,34 @@ double GeneratorNoRegressor::oracle_objective_model(xt::xarray<double>& x){
 				f += nb_observations(c,r,t)*current_lambda*durations[t] - 
 					nb_arrivals(c,r,t)*log(current_lambda*durations[t]);
 				for(int s: neighbors[r]){
-					if(type_region[r] == type_region[s]){
+					if(type_region[r] == type_region[s])
+					// if(true)
+					{
 						f += (0.5*alpha(r,s))*pow(x(c,r,t)- x(c,s,t), 2) / distance(r,s);
 					}
+					// f += (0.5*alpha(r,s))*pow(x(c,r,t)- x(c,s,t), 2) / distance(r,s);
 				}
 			}
 		}
 	}
 	//sum_{c \in C}sum{r \in R}sum_{t \in T}\sum_{t' \neq t \in which_group[t]}
-	// for(int c = 0; c < C; ++c){
-	// 	for(int r = 0; r < R; ++r){
-	// 		for(int grindex = 0; grindex < groups.size(); ++grindex){
-	// 			auto& group = groups[grindex];
-	// 			for(int j = 0; j < group.size(); ++j){
-	// 				int t = group[j];
-	// 				for(int itp = 0; itp < group.size(); ++itp){
-	// 					int tp = group[itp];
-	// 					if(tp != t){
-	// 						f += (0.5*weights[grindex])*(pow(x(c,r,t) - 
-	// 							x(c,r,tp), 2));
-	// 					}
-	// 				}
-	// 			}
-	// 		}
-	// 	}
-	// }
+	for(int c = 0; c < C; ++c){
+		for(int r = 0; r < R; ++r){
+			for(int grindex = 0; grindex < groups.size(); ++grindex){
+				auto& group = groups[grindex];
+				for(int j = 0; j < group.size(); ++j){
+					int t = group[j];
+					for(int itp = 0; itp < group.size(); ++itp){
+						int tp = group[itp];
+						if(tp != t){
+							f += (0.5*weights[grindex])*(pow(x(c,r,t) - 
+								x(c,r,tp), 2));
+						}
+					}
+				}
+			}
+		}
+	}
 
 	return f;
 }
@@ -890,7 +942,7 @@ CrossValidationResult GeneratorNoRegressor::cross_validation(double proportion, 
 	fmt::print("Running cross validation with proportion = {} and weights = {}\n", proportion, group_weights);
 	for(int index_alpha = 0; index_alpha < alphas.size(); ++index_alpha){
 		double likelihood = 0;
-		alpha = alphas[index_alpha];
+		alpha = alphas[index_alpha]*xt::ones<double>({R,R});
 		weights = vector<double>(groups.size(), group_weights[index_alpha]);
 		fmt::print("Testing weight = {}\n", group_weights[index_alpha]);
 		for(int index_cross = 0; index_cross < floor(1/proportion); ++index_cross){
@@ -973,6 +1025,7 @@ CrossValidationResult GeneratorNoRegressor::cross_validation(double proportion, 
 	cpu_time = std::chrono::duration_cast<std::chrono::seconds>(dt - t0).count();
 	nb_observations = initial_nb_obs;
 	nb_arrivals = initial_nb_arrivals;
+	fmt::print("best_weight = {}\n", best_weight);
 	return {cpu_time, best_weight, x};
 }
 

@@ -209,6 +209,7 @@ GeneratorRegressor::GeneratorRegressor(GRBEnv& env): env(env){
 
 
 	sample = xt::zeros<vector<int>>({C,D,T,R});
+	xt::xarray<vector<int>> no_reg_sample = xt::zeros<vector<int>>({7*T,R,C});
 	nb_observations = xt::zeros<int>({C,D,T,R});
 	nb_arrivals = xt::zeros<int>({C,D,T,R});
 
@@ -232,12 +233,25 @@ GeneratorRegressor::GeneratorRegressor(GRBEnv& env): env(env){
 					// fmt::print("Sample {} {} {} {} {}: {}\n", c,day,t,r, nb_observations(c,day,t,r),
 					// 	this_nb_call);
 					sample(c,day,t,r).push_back(this_nb_arrival);
+					no_reg_sample((index % 7)*t, r, c).push_back(this_nb_arrival);
                     ++nb_observations(c,day,t,r);
 					nb_arrivals(c,day,t,r) += this_nb_arrival;
 				}
 			}
 		}
 	}
+
+	ofstream cov_no_reg_sample("cov_no_reg_sample.txt", std::ios::out);
+	for(int t = 0; t < 7*T; ++t){
+		for(int r = 0; r < R; ++r){
+			for(int c = 0; c < C; ++c){
+				for(int j = 0; j < no_reg_sample(t,r,c).size(); ++j){
+					cov_no_reg_sample << t << " " << r << " " << c << " " << j << " " << no_reg_sample(t,r,c)[j] << "\n";
+				}
+			}
+		}
+	}
+	cov_no_reg_sample.close();
 
 	// ifstream sample_arq("sample6reg.txt", std::ios::in);
 	// int sc, sd, st, si, sk, sval;
@@ -955,6 +969,32 @@ xt::xarray<double> laspated_reg(xt::xarray<int>& N, xt::xarray<int>& M, xt::xarr
 	auto lambda = x;
 	auto f_val = gen.projected_gradient_armijo_feasible(lambda);
 	return lambda;
+}
+
+double GeneratorRegressor::get_population(int r){
+	std::default_random_engine gen;
+	std::uniform_real_distribution<double> rnd(0,1);
+	int i = r / R;
+	int j = r % R;
+	double val = 0.0;
+	for(int k = 1; k <= 10; ++k){
+		double ceil_val = ceil((k/5)*(i));
+		double condition = (5/k)*ceil_val;
+		double u1 = rnd(gen);
+		double u2 = rnd(gen);
+		double coeff = 0;
+		if(condition <= i){
+			coeff = u1*(5/(M_PI*k))*pow(-1,ceil_val)*(cos(M_PI*ceil_val) - cos(M_PI*(k/5)*i)) + 
+				(10/(M_PI*k))*(floor((k/5)*i) - ceil_val) - (5/(M_PI*k))*pow(-1,floor((k/5)*(i+1)))*
+				(cos(M_PI*(k/5)*(i+1)) - cos(M_PI*floor((k/5)*(i+1))));
+		}else{
+			coeff = u2*(5 / (M_PI*k))*pow(-1,floor((k/5)*(i+1)))*(cos(M_PI*(k/5)*i) - cos(M_PI*(k/5)*(i+1))); 
+		}
+
+		val += pow(1/2,k)*(u1*coeff + u2*coeff);
+	}
+
+	return val;
 }
 
 void GeneratorRegressor::write_params(xt::xarray<double>& x_beta){
