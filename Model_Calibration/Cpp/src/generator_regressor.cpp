@@ -9,7 +9,7 @@ GeneratorRegressor::GeneratorRegressor(GRBEnv& env): env(env){
 	R = n_x*n_y;
 	C = 1;
 	T = 4;
-	D = 15;
+	D = 7;
 
 	which_group = vector<vector<int>>(D, 
 		vector<int>(T, 0));
@@ -21,12 +21,12 @@ GeneratorRegressor::GeneratorRegressor(GRBEnv& env): env(env){
 		which_group[d][3] = 1;
 	}
 
-	for(int d = 7; d < 15; ++d){
-		which_group[d][0] = 2;
-		which_group[d][1] = 3;
-		which_group[d][2] = 2;
-		which_group[d][3] = 3;
-	}
+	// for(int d = 7; d < 15; ++d){
+	// 	which_group[d][0] = 2;
+	// 	which_group[d][1] = 3;
+	// 	which_group[d][2] = 2;
+	// 	which_group[d][3] = 3;
+	// }
 
 	vector<pair<int,int>> aux_group;
 	for(int i = 0; i < 7; ++i){
@@ -51,28 +51,29 @@ GeneratorRegressor::GeneratorRegressor(GRBEnv& env): env(env){
 	groups[1].insert(groups[1].end(), aux_group.begin(), 
 		aux_group.end());
 	aux_group.clear();
-	for(int i = 7; i < 15; ++i){
-		aux_group.push_back(make_pair(i,0));
-	}
-	groups.push_back(aux_group); //groups[2]
-	aux_group.clear();
-	for(int i = 7; i < 15; ++i){
-		aux_group.push_back(make_pair(i,1));
-	}
-	groups.push_back(aux_group); //groups[3]
-	aux_group.clear();
-	for(int i = 7; i < 15; ++i){
-		aux_group.push_back(make_pair(i,2));
-	}
-	groups[2].insert(groups[2].end(), aux_group.begin(), 
-		aux_group.end());
-	aux_group.clear();
-	for(int i = 7; i < 15; ++i){
-		aux_group.push_back(make_pair(i,3));
-	}
-	groups[3].insert(groups[3].end(), aux_group.begin(), 
-		aux_group.end());
-	aux_group.clear();
+
+	// for(int i = 7; i < 15; ++i){
+	// 	aux_group.push_back(make_pair(i,0));
+	// }
+	// groups.push_back(aux_group); //groups[2]
+	// aux_group.clear();
+	// for(int i = 7; i < 15; ++i){
+	// 	aux_group.push_back(make_pair(i,1));
+	// }
+	// groups.push_back(aux_group); //groups[3]
+	// aux_group.clear();
+	// for(int i = 7; i < 15; ++i){
+	// 	aux_group.push_back(make_pair(i,2));
+	// }
+	// groups[2].insert(groups[2].end(), aux_group.begin(), 
+	// 	aux_group.end());
+	// aux_group.clear();
+	// for(int i = 7; i < 15; ++i){
+	// 	aux_group.push_back(make_pair(i,3));
+	// }
+	// groups[3].insert(groups[3].end(), aux_group.begin(), 
+	// 	aux_group.end());
+	// aux_group.clear();
 
 	// fmt::print("Groups\n");
 	// for(int i = 0; i < groups.size(); ++i){
@@ -92,7 +93,7 @@ GeneratorRegressor::GeneratorRegressor(GRBEnv& env): env(env){
 	// }
 	// cin.get();
 	
-	nb_weeks = 20;
+	nb_weeks = 1000;
 	nb_years = floor(nb_weeks/52);
 	nb_obs = nb_weeks*7;
 	durations = vector<double>(T,6);
@@ -103,21 +104,21 @@ GeneratorRegressor::GeneratorRegressor(GRBEnv& env): env(env){
 		days_h.push_back(i);
 	}
 	vector<int> index_h;
-	for(int i = 7; i < 15; ++i){
-		index_h.push_back(i);
-	}
+	// for(int i = 7; i < 15; ++i){
+	// 	index_h.push_back(i);
+	// }
 
-	for(int year = 0; year < nb_years; ++year){
-		for(int k = 0; k < days_h.size(); ++k){
-			is_holidays[year*52*7+days_h[k]] = make_pair(true,k);
-		}
-	}
+	// for(int year = 0; year < nb_years; ++year){
+	// 	for(int k = 0; k < days_h.size(); ++k){
+	// 		is_holidays[year*52*7+days_h[k]] = make_pair(true,k);
+	// 	}
+	// }
 
-	for(int k = 0; k < days_h.size(); ++k){
-		if(nb_years*52*7 + days_h[k] <= nb_weeks*7){
-			is_holidays[nb_years*52*7+days_h[k]] = make_pair(true,k);
-		}
-	}
+	// for(int k = 0; k < days_h.size(); ++k){
+	// 	if(nb_years*52*7 + days_h[k] <= nb_weeks*7){
+	// 		is_holidays[nb_years*52*7+days_h[k]] = make_pair(true,k);
+	// 	}
+	// }
 
 	nb_land_types = 2;
 	nb_regressors = 1 + nb_land_types;
@@ -140,20 +141,20 @@ GeneratorRegressor::GeneratorRegressor(GRBEnv& env): env(env){
 		theoretical_beta(0,d,3,2) = 6;
 	}
 
-	for(int d = 7; d < 15; ++d){
-		theoretical_beta(0,d,1,0) = 0.1;
-		theoretical_beta(0,d,3,0) = 0.1;
+	// for(int d = 7; d < 15; ++d){
+	// 	theoretical_beta(0,d,1,0) = 0.1;
+	// 	theoretical_beta(0,d,3,0) = 0.1;
 		
-		theoretical_beta(0,d,0,1) = 12;
-		theoretical_beta(0,d,1,1) = 36;
-		theoretical_beta(0,d,2,1) = 12;
-		theoretical_beta(0,d,3,1) = 36;
+	// 	theoretical_beta(0,d,0,1) = 12;
+	// 	theoretical_beta(0,d,1,1) = 36;
+	// 	theoretical_beta(0,d,2,1) = 12;
+	// 	theoretical_beta(0,d,3,1) = 36;
 		
-		theoretical_beta(0,d,0,2) = 6;
-		theoretical_beta(0,d,1,2) = 12;
-		theoretical_beta(0,d,2,2) = 6;
-		theoretical_beta(0,d,3,2) = 12;
-	}
+	// 	theoretical_beta(0,d,0,2) = 6;
+	// 	theoretical_beta(0,d,1,2) = 12;
+	// 	theoretical_beta(0,d,2,2) = 6;
+	// 	theoretical_beta(0,d,3,2) = 12;
+	// }
 
 	// for(int c = 0; c < C; ++c){
 	// 	for(int d = 0; d < D; ++d){
@@ -166,14 +167,43 @@ GeneratorRegressor::GeneratorRegressor(GRBEnv& env): env(env){
 	// }
 	// cin.get();
 
-    type = vector<int>(R, -1);
+	vector<bool> is_blue(100,false);
+	int ind_u = 0;
+	for(int k = 0; k < 5; ++k){
+		ind_u += 5;
+		for(int i = 0; i < 5; ++i){
+			is_blue[ind_u+i] = true;
+		}
+	}
+
+	for(int k = 0; k < 5; ++k){
+		for(int i = 0; i < 5; ++i){
+			is_blue[ind_u+i] = true;
+		}
+		ind_u += 10;
+	}
 	std::default_random_engine gen;
+	std::uniform_real_distribution<double> rnd_blue(0,1);
+	std::uniform_real_distribution<double> rnd_red(0,1);
+
+	u = vector<vector<double>>(2,vector<double>(20,0));
+
+	for(int k = 0; k < 20; ++k){
+		u[0][k] = rnd_blue(gen);
+	}
+
+	for(int k = 0; k < 20; ++k){
+		u[1][k] = rnd_red(gen);
+	}
+
+    type = vector<int>(R, -1);
 	std::uniform_real_distribution<double> rnd(0,1);
     int count = 0;
     for(int i = 0; i < n_y / 2; ++i){
         for(int j = 0; j < n_x/2; ++j){
             type[count] = 0;
-            regressors(0, count) = 50 + 50*rnd(gen);
+            // regressors(0, count) = 50 + 50*rnd(gen);
+			regressors(0,count) = get_population(count, is_blue);
 			regressors(1, count) = 0.5;
 			regressors(2, count) = 0.25;
             ++count;
@@ -181,7 +211,8 @@ GeneratorRegressor::GeneratorRegressor(GRBEnv& env): env(env){
 
         for(int j = 0; j < n_x/2; ++j){
             type[count] = 1;
-            regressors(0, count) = 50*rnd(gen);
+            // regressors(0, count) = 50*rnd(gen);
+			regressors(0,count) = get_population(count, is_blue);
 			regressors(1, count) = 0.25;
 			regressors(2, count) = 0.5;
             ++count;
@@ -191,7 +222,8 @@ GeneratorRegressor::GeneratorRegressor(GRBEnv& env): env(env){
     for(int i = n_y/2; i < n_y; ++i){
         for(int j = 0; j < n_x/2; ++j){
             type[count] = 1;
-            regressors(0, count) = 50*rnd(gen);
+            // regressors(0, count) = 50*rnd(gen);
+			regressors(0,count) = get_population(count, is_blue);
 			regressors(1, count) = 0.25;
 			regressors(2, count) = 0.5;
             ++count;
@@ -199,17 +231,16 @@ GeneratorRegressor::GeneratorRegressor(GRBEnv& env): env(env){
 
         for(int j = 0; j < n_x/2; ++j){
             type[count] = 0;
-            regressors(0, count) = 50 + 50*rnd(gen);
+            // regressors(0, count) = 50 + 50*rnd(gen);
+			regressors(0,count) = get_population(count, is_blue);
 			regressors(1, count) = 0.5;
 			regressors(2, count) = 0.25;
             ++count;
         }
     }
 
-
-
 	sample = xt::zeros<vector<int>>({C,D,T,R});
-	xt::xarray<vector<int>> no_reg_sample = xt::zeros<vector<int>>({7*T,R,C});
+	
 	nb_observations = xt::zeros<int>({C,D,T,R});
 	nb_arrivals = xt::zeros<int>({C,D,T,R});
 
@@ -233,25 +264,38 @@ GeneratorRegressor::GeneratorRegressor(GRBEnv& env): env(env){
 					// fmt::print("Sample {} {} {} {} {}: {}\n", c,day,t,r, nb_observations(c,day,t,r),
 					// 	this_nb_call);
 					sample(c,day,t,r).push_back(this_nb_arrival);
-					no_reg_sample((index % 7)*t, r, c).push_back(this_nb_arrival);
+					// no_reg_sample((index % 7)*t, r, c).push_back(this_nb_arrival);
                     ++nb_observations(c,day,t,r);
 					nb_arrivals(c,day,t,r) += this_nb_arrival;
 				}
 			}
 		}
 	}
-
-	ofstream cov_no_reg_sample("cov_no_reg_sample.txt", std::ios::out);
-	for(int t = 0; t < 7*T; ++t){
-		for(int r = 0; r < R; ++r){
-			for(int c = 0; c < C; ++c){
-				for(int j = 0; j < no_reg_sample(t,r,c).size(); ++j){
-					cov_no_reg_sample << t << " " << r << " " << c << " " << j << " " << no_reg_sample(t,r,c)[j] << "\n";
+	
+	
+	xt::xarray<double> no_reg_rates = xt::zeros<double>({D*T,R,C});
+	std::string rates_file;
+	if(D == 15){
+		rates_file = "cov_no_reg_rates_holiday.txt";
+	}else if(D == 7){
+		rates_file = "cov_no_reg_rates.txt";
+	}
+	ofstream cov_no_reg_rates(rates_file, std::ios::out);
+	for(int d = 0; d < D; ++d){
+		for(int t = 0; t < T; ++t){
+			int m_index_t = d*T + t;
+			for(int r = 0; r < R; ++r){
+				for(int c = 0; c < C; ++c){
+					double rate = 0;
+					for(int j = 0; j < nb_regressors; ++j){
+						rate += theoretical_beta(c,d,t,j)*regressors(j,r);
+					}
+					cov_no_reg_rates << m_index_t <<  " " << r << " " << c << " " << rate << "\n";
 				}
 			}
 		}
 	}
-	cov_no_reg_sample.close();
+	cov_no_reg_rates.close();
 
 	// ifstream sample_arq("sample6reg.txt", std::ios::in);
 	// int sc, sd, st, si, sk, sval;
@@ -481,7 +525,7 @@ void GeneratorRegressor::calibrate(){
 	int min_w = -1;
 
 	fmt::print("Running projected gradient\n");
-	ofstream err_arq(fmt::format("err_reg.txt"), std::ios::out);
+	ofstream err_arq(fmt::format("err_reg_obs{}_h{}.txt", nb_weeks, D == 15), std::ios::out);
 	for(int i = 0; i < test_weights.size(); ++i){
 		double w = test_weights[i];
 		weights = vector<double>(groups.size(), w); 
@@ -970,30 +1014,56 @@ xt::xarray<double> laspated_reg(xt::xarray<int>& N, xt::xarray<int>& M, xt::xarr
 	auto f_val = gen.projected_gradient_armijo_feasible(lambda);
 	return lambda;
 }
+double GeneratorRegressor::inner_integral(int i, int k){
+	double ceil_val_i = ceil((k/5.0)*(i-1));
+	double condition_i = (5.0/k)*ceil_val_i;
+	double coeff_i = 0;
+	
+	if(condition_i <= i){
+		coeff_i = ( 5 / (M_PI*k)) * pow(-1,ceil_val_i)*(cos(M_PI*ceil_val_i) - cos(M_PI*(k/5)*(i-1))) + 
+			(10/(M_PI*k))*(floor((k/5)*i) - ceil_val_i) - (5/(M_PI*k))*pow(-1,floor((k/5)*(i)))*
+			(cos(M_PI*(k/5)*i) - cos(M_PI*floor((k/5)*i)));
+	}else{
+		coeff_i = (5 / (M_PI*k))*pow(-1,floor((k/5)*(i)))*(cos(M_PI*(k/5)*i) - cos(M_PI*(k/5)*(i))); 
+	}
+	return coeff_i;
+}
 
-double GeneratorRegressor::get_population(int r){
+double GeneratorRegressor::get_population(int r, std::vector<bool>& is_blue){
 	std::default_random_engine gen;
 	std::uniform_real_distribution<double> rnd(0,1);
-	int i = r / R;
-	int j = r % R;
+	int i = (r / 10) + 1;
+	int j = (r % 10) + 1;
 	double val = 0.0;
 	for(int k = 1; k <= 10; ++k){
-		double ceil_val = ceil((k/5)*(i));
-		double condition = (5/k)*ceil_val;
-		double u1 = rnd(gen);
-		double u2 = rnd(gen);
-		double coeff = 0;
-		if(condition <= i){
-			coeff = u1*(5/(M_PI*k))*pow(-1,ceil_val)*(cos(M_PI*ceil_val) - cos(M_PI*(k/5)*i)) + 
-				(10/(M_PI*k))*(floor((k/5)*i) - ceil_val) - (5/(M_PI*k))*pow(-1,floor((k/5)*(i+1)))*
-				(cos(M_PI*(k/5)*(i+1)) - cos(M_PI*floor((k/5)*(i+1))));
+		double ceil_val_i = ceil((k/5.0)*(i-1));
+		double condition_i = (5.0/k)*ceil_val_i;
+		double coeff_i = 0;
+
+		if(condition_i <= i){
+			coeff_i = ( 5.0 / (M_PI*k)) * pow(-1,ceil_val_i)*(cos(M_PI*ceil_val_i) - cos(M_PI*(k/5.0)*(i-1))) + 
+				(10.0/(M_PI*k))*(floor((k/5.0)*i) - ceil_val_i) - 
+				(5.0/(M_PI*k))*pow(-1,floor((k/5.0)*(i)))*(cos(M_PI*(k/5.0)*i) - cos(M_PI*floor((k/5.0)*i)));
 		}else{
-			coeff = u2*(5 / (M_PI*k))*pow(-1,floor((k/5)*(i+1)))*(cos(M_PI*(k/5)*i) - cos(M_PI*(k/5)*(i+1))); 
+			coeff_i = (5.0 / (M_PI*k))*pow(-1,floor((k/5.0)*(i)))*(cos(M_PI*(k/5.0)*(i-1)) - cos(M_PI*(k/5.0)*(i))); 
 		}
 
-		val += pow(1/2,k)*(u1*coeff + u2*coeff);
+		double ceil_val_j = ceil((k/5.0)*(j-1));
+		double condition_j = (5.0/k)*ceil_val_j;
+		double coeff_j = 0;
+		if(condition_j <= j){
+			coeff_j = ( 5.0 / (M_PI*k)) * pow(-1,ceil_val_j)*(cos(M_PI*ceil_val_j) - cos(M_PI*(k/5.0)*(j-1))) + 
+				(10.0/(M_PI*k))*(floor((k/5.0)*j) - ceil_val_j) - 
+				(5.0/(M_PI*k))*pow(-1,floor((k/5.0)*(j)))*(cos(M_PI*(k/5.0)*j) - cos(M_PI*floor((k/5.0)*j)));
+		}else{
+			coeff_j = (5.0 / (M_PI*k))*pow(-1,floor((k/5.0)*(j)))*(cos(M_PI*(k/5.0)*(j-1)) - cos(M_PI*(k/5.0)*(j))); 
+		}
+		if(is_blue[r]){
+			val += pow(1/2.0,k)*(u[0][(2*k)-2]*coeff_i + u[0][2*k-1]*coeff_j);
+		}else{
+			val += pow(1/2.0,k)*((u[1][(2*k)-2] + 1)*coeff_i + (u[1][2*k-1] + 1)*coeff_j);
+		}
 	}
-
 	return val;
 }
 

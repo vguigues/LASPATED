@@ -23,6 +23,10 @@ public:
 	ulong nb_regressors;
 	std::vector<std::pair<bool, int>> is_holidays;
 	std::vector<Location> regions;
+	bool full_neighbors;
+	int neighbor_factor;
+	bool read_covariates;
+	bool use_simulation;
 
 	double sigma, beta, beta_bar, weight;
 	std::vector<double> weights;

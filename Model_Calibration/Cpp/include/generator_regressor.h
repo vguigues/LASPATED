@@ -28,6 +28,8 @@ public:
 	std::vector<std::pair<bool, int>> is_holidays;
 	std::vector<Location> regions;
 
+	std::vector<std::vector<double>> u;
+
 	double alpha, sigma, beta, beta_bar, weight;
 	int max_iter;
 	std::vector<double> weights;
@@ -74,7 +76,9 @@ public:
 
 	void write_params(xt::xarray<double>& x);
 
-	double get_population(int r);
+	double get_population(int r, std::vector<bool>& is_blue);
+
+	double inner_integral(int i, int k);
 
 	void print_vars(xt::xarray<double>& x, std::string prefix);
 };

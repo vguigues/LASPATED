@@ -30,8 +30,9 @@ SRC 		= $(wildcard $(SRC_DIR)/*.cpp)
 OBJ 		= $(SRC:$(SRC_DIR)/%.cpp=$(OBJ_DIR)/%.o)
 EXE 		= laspated
 # CONFIG		= -O1 -g
-# CONFIG		= -O0 -g
-CONFIG 		= -O3
+# CONFIG = -O0
+CONFIG		= -O0 -g
+# CONFIG 		= -O3
 
 all: $(EXE)
 
