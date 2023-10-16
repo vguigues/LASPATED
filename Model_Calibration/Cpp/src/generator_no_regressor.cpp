@@ -706,10 +706,17 @@ xt::xarray<double> laspated_no_reg(xt::xarray<int>& N, xt::xarray<int>& M, std::
 	}
 
 	auto lambda = x;
-	auto f_val = gen.projected_gradient_armijo_feasible(lambda);
+	if(g_params.method == "calibration"){
+		auto f_val = gen.projected_gradient_armijo_feasible(lambda);
+	}else if(g_params.method == "cross_validation"){
+		auto result = gen.cross_validation(g_params.cv_proportion, g_params.weights_list, g_params.weights_list);
+		lambda = result.lambda;
+		fmt::print("Cross validation best weight = {}\n", result.weight);
+	}
 	return lambda;
 
 }
+
 
 
 

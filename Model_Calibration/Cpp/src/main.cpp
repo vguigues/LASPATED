@@ -115,23 +115,23 @@ void test_laspated_reg(){
 		}
 	}
 
-	xt::xarray<double> lambda0 = xt::ones<double>({C,D,T,nb_regressors});
-	xt::xarray<double> lambda = laspated_reg(nb_observations, nb_arrivals, regressors, lambda0);
-	ofstream arq("x_reg.txt", std::ios::out);
-	for(int c = 0; c < C; ++c){
-		for(int d = 0; d < D; ++d){
-			for(int t = 0; t < T; ++t){
-				for(int r = 0; r < R; ++r){
-					double rate = 0;
-					for(int j = 0; j < nb_regressors; ++j){
-						rate += lambda(c,d,t,j)*regressors(j,r);
-					}
-					arq << c << " " << d << " " << t << " " << r << " " << rate << "\n";
-				}
-			}
-		}
-	}
-	arq.close();
+	// xt::xarray<double> lambda0 = xt::ones<double>({C,D,T,nb_regressors});
+	// xt::xarray<double> lambda = laspated_reg(nb_observations, nb_arrivals, regressors, lambda0);
+	// ofstream arq("x_reg.txt", std::ios::out);
+	// for(int c = 0; c < C; ++c){
+	// 	for(int d = 0; d < D; ++d){
+	// 		for(int t = 0; t < T; ++t){
+	// 			for(int r = 0; r < R; ++r){
+	// 				double rate = 0;
+	// 				for(int j = 0; j < nb_regressors; ++j){
+	// 					rate += lambda(c,d,t,j)*regressors(j,r);
+	// 				}
+	// 				arq << c << " " << d << " " << t << " " << r << " " << rate << "\n";
+	// 			}
+	// 		}
+	// 	}
+	// }
+	// arq.close();
 	fmt::print("Lambdas saved at x_reg.txt\n");
 }
 
@@ -330,7 +330,8 @@ void test_laspated_no_reg(){
 	xt::xarray<double> lambda = laspated_no_reg(nb_observations, nb_arrivals, durations, groups,
 		weights, alphas, distance, type_region, neighbors, lambda0);
 
-	ofstream arq("x_no_reg.txt", std::ios::out);
+	std::string output_file = (g_params.method == "calibration") ? "cv_x_no_reg.txt"  : "x_no_reg.txt";
+	ofstream arq(output_file, std::ios::out);
 	for(int c = 0; c < C; ++c){
 		for(int r = 0; r < R; ++r){
 			for(int t = 0; t < T; ++t){
@@ -339,7 +340,7 @@ void test_laspated_no_reg(){
 		}
 	}
 	arq.close();
-	fmt::print("Lambdas saved at x_no_reg.txt\n");
+	fmt::print("Lambdas saved at {}\n", output_file);
 }
 
 

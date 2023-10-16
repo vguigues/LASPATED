@@ -117,7 +117,7 @@ population = gpd.read_file(r'../Data/regressores/populacao/')
 population = population[['populacao_','geometry']].copy()
 
 # Calculate intersection
-app.add_geo_variable(population)
+app.add_geo_variable(population,type_geo_variable="feature")
 
 print(app.geo_discretization)
 
@@ -131,21 +131,18 @@ land_use = gpd.read_file(r'../Data/regressores/uso_do_solo/')
 land_use = land_use[['subgroup_0', 'subgroup_1', 'subgroup_2', 'subgroup_3','geometry']].copy()
 
 # Calculate intersection
-app.add_geo_variable(land_use)
+app.add_geo_variable(land_use,type_geo_variable="area")
 
-print(app.geo_discretization)
+print(app.geo_discretization[["id", "subgroup_0","subgroup_1","subgroup_2","subgroup_3","populacao_"]])
 
-# 9 - get events_aggregated:
+# 9.1 - get areas of intersection
+
+I = app.get_intersection()
+
+# 9.2 - get events_aggregated:
 
 A = app.get_events_aggregated()
 print(A.shape)
-
-# Show first index and value of non-empty observation:
-for index, val in np.ndenumerate(A):
-    if len(val) > 0:
-        print(index,val)
-        break
-
 
 # 10 - Write arrivals:
 
@@ -177,24 +174,14 @@ C++:
         - $ make
         - $ sudo make install
 
+# No reg projected_gradient for simulated data
 
-# No reg projected_gradient for simulated data using set of weights
-
-./laspated -f test.cfg --model=no_reg --method=calibration --weights_list=10 20 30
-
-# No reg projected_gradient for real data using set of weights
-
-./laspated -f test.cfg --model=no_reg --method=calibration --generator_folder=calibration/SAMU --weights_list=10 20 30
-
-# No reg cross_validation for simulated data using set of weights
-
-./laspated -f test.cfg --model=no_reg --method=cross_validation --cv_proportion=0.2 --weights_list=10 20 30
-
+./laspated -f test.cfg --model=no_reg
 
 # Reg simulated data
 
 ./laspated -f test.cfg --model=reg
 
-# Reg real data
+# No reg cross_validation for simulated data using set of weights
 
-./laspated -f test.cfg --model=reg --generator_folder=calibration/SAMU
+./laspated -f test.cfg --model=no_reg --method=cross_validation --cv_proportion=0.2 --weights_list=10 20 30

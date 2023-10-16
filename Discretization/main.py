@@ -223,8 +223,8 @@ def example_ny():
 
 def example_rj():
     app = spated.DataAggregator(crs="epsg:4326") # initializes data aggregator
-    max_borders = gpd.read_file(r'../Data/rj/rj.shp') # Load the geometry of region of interest
-    app.add_max_borders(max_borders) # Add the border of region 
+    # max_borders = gpd.read_file(r'../Data/rj/rj.shp') # Load the geometry of region of interest
+    # app.add_max_borders(max_borders) # Add the border of region 
     events = pd.read_csv(r'../Data/emergency_calls_rio_de_janeiro.csv', encoding = "ISO-8859-1", sep=",")
     # events = events.drop(events[events["prioridade"] > 3].index)
     # events.to_csv(r'../Data/emergency_calls_corrected.csv', sep=",", index=False)
@@ -232,7 +232,7 @@ def example_rj():
     app.add_events_data(events, datetime_col='data_hora', lat_col='lat', lon_col="long", feature_cols=['prioridade'],
                         datetime_format="%m/%d/%y %H:%M:%S") # %m/%d/%y %H:%M:%S
     # print(app.events_data.sample(20))
-    # app.add_max_borders(method="convex")
+    app.add_max_borders(method="convex")
     # app.max_borders.plot()
     # fig, ax = plt.subplots()
     # app.max_borders.plot(ax=ax)
@@ -249,15 +249,15 @@ def example_rj():
         rect_discr_param_y=10
     )
 
-
     population = gpd.read_file(r'../Data/regressores/populacao/')
-    population = population[['population','geometry']].copy()
+    population = population[['populacao_','geometry']].copy()
     app.add_geo_variable(population)
 
     land_use = gpd.read_file(r'../Data/regressores/uso_do_solo/')
     land_use = land_use[['subgroup_0', 'subgroup_1', 'subgroup_2', 'subgroup_3','geometry']].copy()
-    app.add_geo_variable(land_use)
-
+    app.add_geo_variable(land_use,type_geo_variable="area")
+    print(app.geo_discretization[["id", "subgroup_0","subgroup_1","subgroup_2","subgroup_3", "populacao_"]])
+    print(app.geo_discretization.isna().any())
 
     A = app.get_events_aggregated()
     print(A.shape)

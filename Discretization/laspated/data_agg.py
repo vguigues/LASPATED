@@ -277,6 +277,7 @@ class DataAggregator():
                 window=window,
                 frequency=frequency
             )
+        self.events_data = self.events_data.dropna()
 
     def add_geo_discretization(
         self,
@@ -454,8 +455,10 @@ class DataAggregator():
             predicate='within'
         ).drop('index_right', axis=1)\
             .rename({'id': 'gdiscr'}, axis=1)
+        
+        self.events_data = self.events_data.dropna()
 
-    def add_geo_variable(self, data: gpd.GeoDataFrame):
+    def add_geo_variable(self, data: gpd.GeoDataFrame, type_geo_variable: str = "feature"):
         '''
         Merge information from external geographical data with computed
         geographical discretization.
@@ -466,6 +469,9 @@ class DataAggregator():
             Geodataframe with desired variables.
         '''
 
+        if type_geo_variable != "feature" and type_geo_variable != "area":
+            raise ValueError('Parameter `type_geo_variable` must be \"feature\" or \"area\".')
+    
         # If no CRS set, will assume class set CRS
         if data.crs is None:
             print(f'Regressor data is not set with CRS information. Will assume "{self.crs}".')
@@ -474,7 +480,6 @@ class DataAggregator():
         # If CRS indetified, set new one if needed
         else:
             regr_data = data.to_crs(self.crs)
-
         # add features to geo_features list
         self.geo_features += list(data.drop(['geometry'], axis=1).columns)
 
@@ -490,7 +495,8 @@ class DataAggregator():
         regr_intersection = addRegressorUniformDistribution(
             geo_disc,
             regr_data,
-            discr_id_col='id'
+            discr_id_col='id',
+            type_geo_variable=type_geo_variable
         )
         # regr_intersection = addRegressorWeightedAverage(
         #     geo_disc,
@@ -504,20 +510,19 @@ class DataAggregator():
             how='left'
         )
 
-        def write_files(self, geo_discretization_path: str,
-            events_data_path: str):
-            ''' Write discretization DataFrames into files provided by geo_discretization_path and events_data_path.
-                Files are saved as csv.
-            Parameters
-            ----------
-            geo_discretization_path: str
-                path containing location where to save the geo_discretization DataFrame.
-            events_data_path: str
-                path containing location where to save the events DataFrame.
-            '''
-
-            self.geo_discretization.to_csv(geo_discretization_path, index=False)
-            self.events_data.to_csv(events_data_path, index=False)
+    def write_files(self, geo_discretization_path: str,
+        events_data_path: str):
+        ''' Write discretization DataFrames into files provided by geo_discretization_path and events_data_path.
+            Files are saved as csv.
+        Parameters
+        ----------
+        geo_discretization_path: str
+            path containing location where to save the geo_discretization DataFrame.
+        events_data_path: str
+            path containing location where to save the events DataFrame.
+        '''
+        self.geo_discretization.to_csv(geo_discretization_path, index=False)
+        self.events_data.to_csv(events_data_path, index=False)
 
         
     def get_intersection(self, df_geo1 : gpd.GeoDataFrame, df_geo2: gpd.GeoDataFrame):
@@ -528,13 +533,15 @@ class DataAggregator():
         df_geo1: gpd.GeoDataFrame
         df_geo2: gpd.GeoDataFrame
         '''
+        crs1 = df_geo1.crs
+        crs2 = df_geo2.crs
         df_geo1 = df_geo1.assign(row_number_1=range(len(df_geo1)))
         df_geo2 = df_geo2.assign(row_number_2=range(len(df_geo2)))
-
+        
         intersec = df_geo1.overlay(df_geo2,how="intersection")
 
         A = np.zeros((len(df_geo1), len(df_geo2)))
-        intersec = intersec.to_crs('epsg:32633')
+        intersec = intersec.to_crs('epsg:32723')
         for k,row in intersec.iterrows():
             i = int(row["row_number_1"])
             j = int(row["row_number_2"])
@@ -542,6 +549,7 @@ class DataAggregator():
         
         df_geo1.drop(columns=["row_number_1"])
         df_geo2.drop(columns=["row_number_2"])
+
         return A
     
     def get_events_aggregated(self):
