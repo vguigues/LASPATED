@@ -42,7 +42,6 @@ app.max_borders.plot(ax=ax)
 app.events_data.plot(markersize=10, color='red', ax=ax)
 plt.show()
 
-
 # 5.2 - Add rectangular borders from events
 
 app.add_max_borders(method="rectangle") # Need events data already in the DataAggregator

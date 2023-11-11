@@ -1,0 +1,79 @@
+import pandas as pd
+import geopandas as gpd
+
+import matplotlib.pyplot as plt
+import numpy as np
+
+from shapely.ops import unary_union
+from shapely.geometry import Polygon, MultiPolygon, Point
+
+import laspated as spated
+import contextily as ctx
+
+from geovoronoi.plotting import subplot_for_map, plot_voronoi_polys_with_points_in_area
+from geovoronoi import voronoi_regions_from_coords, points_to_coords
+
+bases = gpd.read_file("bases")
+max_borders = gpd.read_file(r'../Data/rj/rj.shp')
+app = spated.DataAggregator(crs="epsg:4326")
+app.add_max_borders(max_borders)
+
+
+fig, ax = plt.subplots()
+app.max_borders.plot(ax=ax)
+bases.plot(markersize=10, color='red', ax=ax)
+plt.show()
+
+# bases["center"] = bases["geometry"].centroid
+# bases["coords"] = bases["center"].apply(lambda x: x.representative_point().coords[:][0])
+# fig, ax = plt.subplots()
+# app.max_borders.plot(ax=ax,aspect=1)
+# for i, row in bases.iterrows():
+#    plt.annotate(
+#        text=str(i),
+#        xy=row['coords'],
+#        horizontalalignment="center",
+#        verticalalignment="center",
+#        color='black', fontsize=11
+#    )
+# plt.show()
+
+bases = bases.set_crs("epsg:4326")
+max_borders = max_borders.to_crs(epsg=3395)
+bases_proj = bases.to_crs(max_borders.crs)
+
+
+boundary_shape = unary_union(max_borders.geometry)
+coords = points_to_coords(bases_proj.geometry)
+
+poly_shapes, pts, unassigned = voronoi_regions_from_coords(coords,boundary_shape, return_unassigned_points=True,per_geom=False)
+
+
+fig, ax = subplot_for_map()
+plot_voronoi_polys_with_points_in_area(ax, boundary_shape, poly_shapes, coords, pts)
+plt.tight_layout()
+plt.show()
+
+
+items = poly_shapes.items()
+voros = pd.DataFrame()
+voros["id"] = [x[0] for x in items]
+voros["geometry"] = [x[1] for x in items]
+
+voros = gpd.GeoDataFrame(voros, geometry="geometry")
+
+bases = bases.merge(voros, left_on="FID", right_on="id")
+
+bases = gpd.GeoDataFrame(bases, geometry="geometry")
+bases = bases.set_crs(epsg=3395)
+bases = bases.to_crs("epsg:4326")
+
+lon = [x[0] for x in bases["coords"]]
+lat = [x[1] for x in bases["coords"]]
+
+bases["lon"] = lon
+bases["lat"] = lat
+
+bases = bases[["FID", "lon", "lat", "geometry"]]
+
+bases.to_file("bases", index=False)

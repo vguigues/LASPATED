@@ -226,6 +226,7 @@ def example_rj():
     # max_borders = gpd.read_file(r'../Data/rj/rj.shp') # Load the geometry of region of interest
     # app.add_max_borders(max_borders) # Add the border of region 
     events = pd.read_csv(r'../Data/emergency_calls_rio_de_janeiro.csv', encoding = "ISO-8859-1", sep=",")
+    # [46737, 102558, 41309, 85621]
     # events = events.drop(events[events["prioridade"] > 3].index)
     # events.to_csv(r'../Data/emergency_calls_corrected.csv', sep=",", index=False)
     # input("Ended correction")
