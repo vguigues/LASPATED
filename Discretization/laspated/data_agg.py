@@ -3,31 +3,19 @@ import pandas as pd
 import geopandas as gpd
 
 from typing import List
-from shapely.geometry import Polygon, MultiPolygon
+from shapely.ops import unary_union
+from shapely.geometry import Polygon, MultiPolygon, Point
+
+from geovoronoi.plotting import subplot_for_map, plot_voronoi_polys_with_points_in_area
+from geovoronoi import voronoi_regions_from_coords, points_to_coords
 
 from .time_discretization_utils import calculate_seasonality, apply_custom_time_events
+from .geo_discretization_utils import get_voronoi_regions, distance
 from .squares import rectangle_discretization
 from .h3_utils import generate_H3_discretization
 from .add_regressors import addRegressorUniformDistribution, addRegressorWeightedAverage
 
 
-def distance(p1, p2):
-    R = 6370
-    pi = np.pi
-    lat1 = p1[0]
-    long1 = p1[1]
-    lat2 = p2[0]
-    long2 = p2[1]
-    cos = np.cos
-    sin = np.sin
-    asin = np.arcsin
-    point1=(R*cos((pi/180)*lat1)*cos((pi/180)*long1), R*cos((pi/180)*lat1)*sin((pi/180)*long1), R*sin((pi/180)*lat1))
-    point2=(R*cos((pi/180)*lat2)*cos((pi/180)*long2), R*cos((pi/180)*lat2)*sin((pi/180)*long2), R*sin((pi/180)*lat2))
-    d=np.linalg.norm(np.array(point1)-np.array(point2))
-    dearth = 2*R*asin(d/(2*R))
-
-
-    return dearth
 
 class DataAggregator():
 
@@ -308,6 +296,9 @@ class DataAggregator():
                 G => Custom discretization using graph data. Geolocated nodes
                 must be informed in dataframe format `custom_data`.
 
+                V => Voronoi discretization using GeoDataFrame with points. 
+                `custom_data` must contain the points that will define the voronoi regions.
+
         hex_discr_param : int
             Granularity level for hexagonal discretization.
 
@@ -438,7 +429,24 @@ class DataAggregator():
 
             # column gdiscr is alread copmuted so function must be terminated
             return None
+        elif discr_type == "V":
+            if custom_data is None:
+                raise ValueError('Please inform `custom_data` to be used as geographical discretization.')
+            else:
+                disc = get_voronoi_regions(custom_data, self.max_borders)
+                self.geo_discretization = disc[["geometry"]].copy()
+                self.geo_discretization['id'] = list(range(len(custom_data)))
+                # self.geo_discretization = custom_data[['geometry']].copy()
+                # self.geo_discretization['id'] = list(range(len(custom_data)))
 
+                # If no CRS set, will assume class set CRS
+                if self.geo_discretization.crs is None:
+                    print(f'Custom data is not set with CRS information. Will assume "{self.crs}".')
+                    self.geo_discretization = self.geo_discretization.set_crs(self.crs)
+
+                # If CRS identified, set new one if needed
+                elif self.geo_discretization.crs != self.crs:
+                    self.geo_discretization = self.geo_discretization.to_crs(self.crs)
         else:
             raise ValueError(f'Invalid `discr_type` value {discr_type}.')
 

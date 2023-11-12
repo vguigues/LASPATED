@@ -107,6 +107,13 @@ app.add_geo_discretization('C', custom_data=custom_map)
 
 app.plot_discretization()
 
+# 7.4 - Voronoi Discretization from set of points
+
+bases = gpd.read_file("bases/bases.shp")
+app.add_geo_discretization('V', custom_data=bases)
+
+app.plot_discretization()
+
 # 8.1 - Adding population geo features:
 
 # Read file

@@ -63,6 +63,10 @@ voros["geometry"] = [x[1] for x in items]
 voros = gpd.GeoDataFrame(voros, geometry="geometry")
 
 bases = bases.merge(voros, left_on="FID", right_on="id")
+bases = bases.rename(columns={"geometry_y": "geometry"})
+bases = bases[["geometry"]]
+
+
 
 bases = gpd.GeoDataFrame(bases, geometry="geometry")
 bases = bases.set_crs(epsg=3395)
@@ -74,6 +78,6 @@ lat = [x[1] for x in bases["coords"]]
 bases["lon"] = lon
 bases["lat"] = lat
 
-bases = bases[["FID", "lon", "lat", "geometry"]]
+bases = bases[["geometry"]]
 
 bases.to_file("bases", index=False)
