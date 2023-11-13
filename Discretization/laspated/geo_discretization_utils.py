@@ -3,6 +3,7 @@ import geopandas as gpd
 import numpy as np
 
 from shapely.ops import unary_union
+# from scipy.spatial import Voronoi
 from shapely.geometry import Polygon, MultiPolygon, Point
 
 from geovoronoi import voronoi_regions_from_coords, points_to_coords
@@ -28,8 +29,11 @@ def get_voronoi_regions(voro_points: gpd.GeoDataFrame, borders: gpd.GeoDataFrame
     boundary_shape = unary_union(max_borders.geometry)
     coords = points_to_coords(bases_proj.geometry)
 
+    # gc = voronoi_polygons(bases["geometry"], extend_to=max_borders["geometry"])
     poly_shapes, pts, unassigned = voronoi_regions_from_coords(coords, boundary_shape, return_unassigned_points=True,per_geom=False)
 
+    
+    
     items = poly_shapes.items()
     voros = pd.DataFrame()
     voros["id"] = [x[0] for x in items]

@@ -447,6 +447,16 @@ class DataAggregator():
                 # If CRS identified, set new one if needed
                 elif self.geo_discretization.crs != self.crs:
                     self.geo_discretization = self.geo_discretization.to_crs(self.crs)
+            
+            # compute neighbors
+            neighbors = []
+            for _, row in self.geo_discretization.iterrows():
+                row_neighbors = list(self.geo_discretization[
+                    ~self.geo_discretization.geometry.disjoint(row.geometry)
+                ]['id'])
+                row_neighbors = [n for n in row_neighbors if n != row['id']]
+                neighbors.append(row_neighbors)
+            self.geo_discretization['neighbors'] = neighbors
         else:
             raise ValueError(f'Invalid `discr_type` value {discr_type}.')
 
@@ -545,7 +555,8 @@ class DataAggregator():
         crs2 = df_geo2.crs
         df_geo1 = df_geo1.assign(row_number_1=range(len(df_geo1)))
         df_geo2 = df_geo2.assign(row_number_2=range(len(df_geo2)))
-        
+        df_geo1 = df_geo1.to_crs('epsg:32723')
+        df_geo2 = df_geo2.to_crs('epsg:32723')
         intersec = df_geo1.overlay(df_geo2,how="intersection")
 
         A = np.zeros((len(df_geo1), len(df_geo2)))
@@ -557,7 +568,8 @@ class DataAggregator():
         
         df_geo1.drop(columns=["row_number_1"])
         df_geo2.drop(columns=["row_number_2"])
-
+        df_geo1 = df_geo1.to_crs(crs1)
+        df_geo2 = df_geo1.to_crs(crs2)
         return A
     
     def get_events_aggregated(self):

@@ -3,12 +3,12 @@ Python:
 Install modules:
 
 Linux:
-
-python3 -m pip install pandas geopandas matplotlib numpy h3
+python3 -m pip uninstall geopandas # pandas must be version 0.12.2 or lower
+python3 -m pip install pandas geopandas==0.12.2 matplotlib numpy h3 geovoronoi rtree descartes
 
 Windows:
-
-python -m pip install pandas geopandas matplotlib numpy h3
+python -m pip uninstall geopandas #  pandas must be version 0.12.2 or lower
+python -m pip install pandas geopandas==0.12.2 matplotlib numpy h3 geovoronoi rtree descartes
 
 # 1 - Import modules
 
@@ -143,7 +143,7 @@ print(app.geo_discretization[["id", "subgroup_0","subgroup_1","subgroup_2","subg
 
 # 9.1 - get areas of intersection
 
-I = app.get_intersection()
+I = app.get_intersection(app.geo_discretization, land_use)
 
 # 9.2 - get events_aggregated:
 
