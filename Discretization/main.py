@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 import laspated as spated
+from shapely.geometry import Polygon, MultiPolygon, Point
 
 # def read_emergencies():
 #     df =  pd.read_csv("../Data/emergency_calls_rio_de_janeiro_old.csv")
@@ -221,6 +222,19 @@ def example_ny():
 
     write_files_ny(app)
 
+
+def random_points_in_shp(shp, n):
+    within = False
+    samples = []
+    while len(samples) < n:
+        x = np.random.uniform(shp.bounds[0], shp.bounds[2])
+        y = np.random.uniform(shp.bounds[1], shp.bounds[3])
+        within = shp.contains(Point(x, y))
+        if within:
+            samples.append((x,y))
+    
+    return samples
+
 def example_rj():
     app = spated.DataAggregator(crs="epsg:4326") # initializes data aggregator
     max_borders = gpd.read_file(r'../Data/rj/rj.shp') # Load the geometry of region of interest
@@ -236,22 +250,36 @@ def example_rj():
     bases = gpd.read_file("bases/bases.shp")
     app.add_geo_discretization('V', custom_data=bases)
 
-    app.plot_discretization()  
+    # app.plot_discretization()
 
-    population = gpd.read_file(r'../Data/regressores/populacao/')
-    population = population[['populacao_','geometry']].copy()
-    app.add_geo_variable(population)
+    # population = gpd.read_file(r'../Data/regressores/populacao/')
+    # population = population[['populacao_','geometry']].copy()
+    # app.add_geo_variable(population)
 
-    land_use = gpd.read_file(r'../Data/regressores/uso_do_solo/')
-    land_use = land_use[['subgroup_0', 'subgroup_1', 'subgroup_2', 'subgroup_3','geometry']].copy()
-    app.add_geo_variable(land_use,type_geo_variable="area")
-    print(app.geo_discretization[["id", "subgroup_0","subgroup_1","subgroup_2","subgroup_3", "populacao_"]])
-    print(app.geo_discretization.isna().any())
+    # land_use = gpd.read_file(r'../Data/regressores/uso_do_solo/')
+    # land_use = land_use[['subgroup_0', 'subgroup_1', 'subgroup_2', 'subgroup_3','geometry']].copy()
+    # app.add_geo_variable(land_use,type_geo_variable="area")
+    # print(app.geo_discretization[["id", "subgroup_0","subgroup_1","subgroup_2","subgroup_3", "populacao_"]])
+    # print(app.geo_discretization.isna().any())
 
-    A = app.get_events_aggregated()
-    print(A.shape)
-    app.write_arrivals("test.dat")
-    app.write_regions("testr.dat")
+    # A = app.get_events_aggregated()
+    # print(A.shape)
+    # app.write_arrivals("test.dat")
+    # app.write_regions("testr.dat")
+
+    print(app.geo_discretization)
+    samples = []
+    arq_sample = open(r"../Data/Bases_voronoi/samples.dat", "w")
+    arq_csv = open(r"samples.csv", "w")
+    arq_csv.write("region_id,sample_id,lat,long\n")
+    for i,row in app.geo_discretization.iterrows():
+        sample_i = random_points_in_shp(row["geometry"], 100)
+        for j,coords in enumerate(sample_i):
+            lon,lat = coords
+            arq_sample.write(f"{i} {j} {lat} {lon}\n")
+            arq_csv.write(f"{i},{j},{lat},{lon}\n")
+    arq_sample.close()
+    arq_csv.close()
 
 def main():
     # read_calls()

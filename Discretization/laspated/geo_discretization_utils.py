@@ -10,6 +10,8 @@ from shapely.geometry import Polygon, MultiPolygon, Point
 
 from geovoronoi import voronoi_regions_from_coords, points_to_coords
 
+
+
 def get_voronoi_regions(voro_points: gpd.GeoDataFrame, borders: gpd.GeoDataFrame):
     bases = voro_points[["geometry"]].copy()
     max_borders = borders[["geometry"]].copy()
