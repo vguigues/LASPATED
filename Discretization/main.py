@@ -223,32 +223,20 @@ def example_ny():
 
 def example_rj():
     app = spated.DataAggregator(crs="epsg:4326") # initializes data aggregator
-    # max_borders = gpd.read_file(r'../Data/rj/rj.shp') # Load the geometry of region of interest
-    # app.add_max_borders(max_borders) # Add the border of region 
-    events = pd.read_csv(r'../Data/emergency_calls_rio_de_janeiro.csv', encoding = "ISO-8859-1", sep=",")
+    max_borders = gpd.read_file(r'../Data/rj/rj.shp') # Load the geometry of region of interest
+    app.add_max_borders(max_borders) # Add the border of region 
+    events = pd.read_csv(r'sorted_events.csv', encoding = "ISO-8859-1", sep=",")
     # [46737, 102558, 41309, 85621]
-    # events = events.drop(events[events["prioridade"] > 3].index)
-    # events.to_csv(r'../Data/emergency_calls_corrected.csv', sep=",", index=False)
-    # input("Ended correction")
     app.add_events_data(events, datetime_col='data_hora', lat_col='lat', lon_col="long", feature_cols=['prioridade'],
                         datetime_format="%m/%d/%y %H:%M:%S") # %m/%d/%y %H:%M:%S
-    # print(app.events_data.sample(20))
-    app.add_max_borders(method="convex")
-    # app.max_borders.plot()
-    # fig, ax = plt.subplots()
-    # app.max_borders.plot(ax=ax)
-    # app.events_data.plot(markersize=10, color='red', ax=ax)
-    # plt.show()
 
     app.add_time_discretization('D', 1, 7, column_name="dow")
     app.add_time_discretization('m', 30, 60*24, column_name="hhs")
-    
 
-    app.add_geo_discretization(
-        discr_type='R',
-        rect_discr_param_x=10,
-        rect_discr_param_y=10
-    )
+    bases = gpd.read_file("bases/bases.shp")
+    app.add_geo_discretization('V', custom_data=bases)
+
+    app.plot_discretization()  
 
     population = gpd.read_file(r'../Data/regressores/populacao/')
     population = population[['populacao_','geometry']].copy()

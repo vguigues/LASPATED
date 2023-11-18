@@ -2,6 +2,8 @@ import pandas as pd
 import geopandas as gpd
 import numpy as np
 
+import matplotlib.pyplot as plt
+
 from shapely.ops import unary_union
 # from scipy.spatial import Voronoi
 from shapely.geometry import Polygon, MultiPolygon, Point
@@ -32,20 +34,28 @@ def get_voronoi_regions(voro_points: gpd.GeoDataFrame, borders: gpd.GeoDataFrame
     # gc = voronoi_polygons(bases["geometry"], extend_to=max_borders["geometry"])
     poly_shapes, pts, unassigned = voronoi_regions_from_coords(coords, boundary_shape, return_unassigned_points=True,per_geom=False)
 
-    
-    
     items = poly_shapes.items()
+    bases_poly_map = {}
+    for key,poly in poly_shapes.items():
+        bases_poly_map[key] = []
+        for i,row in bases_proj.iterrows():
+            if poly.contains(row["geometry"]):
+                bases_poly_map[key].append(i)
+
     voros = pd.DataFrame()
     voros["id"] = [x[0] for x in items]
     voros["geometry"] = [x[1] for x in items]
+    voros["id"].replace(bases_poly_map,inplace=True)
+    voros = voros.sort_values(by="id")
+
 
     voros = gpd.GeoDataFrame(voros, geometry="geometry")
     bases = bases.merge(voros, left_on="id", right_on="id")
+
     bases = bases.rename(columns={"geometry_y": "geometry"})
     bases = gpd.GeoDataFrame(bases[["geometry"]].copy(), geometry="geometry")
     bases = bases.set_crs(epsg=3395)
     bases = bases.to_crs("epsg:4326")
-
 
     return bases
 

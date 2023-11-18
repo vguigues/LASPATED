@@ -63,6 +63,7 @@ plt.show()
 
 # 6 - Add time discretizations:
 
+
 app.add_time_discretization('D', 1, 7, column_name="week_day")
 
 app.add_time_discretization('m', 30, 60*24, column_name="half_hour_index")

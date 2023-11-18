@@ -641,7 +641,7 @@ class DataAggregator():
         self.geo_discretization["center"] = self.geo_discretization.geometry.to_crs("epsg:29193").centroid.to_crs(self.geo_discretization.crs)
         self.geo_discretization["coords"] = self.geo_discretization["center"].apply(lambda x: x.representative_point().coords[:][0])
 
-        fig, ax = plt.subplots()
+        fig, ax = plt.subplots(figsize=(24, 16))
         self.geo_discretization.boundary.plot(ax=ax,aspect=1)
         self.events_data.dropna(subset=['gdiscr']).plot(markersize=5, color='red', ax=ax)
         for _, row in self.geo_discretization.iterrows():

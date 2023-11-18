@@ -81,3 +81,13 @@ bases["lat"] = lat
 bases = bases[["geometry"]]
 
 bases.to_file("bases", index=False)
+
+
+for _, row in app.geo_discretization.iterrows():
+    plt.annotate(
+        text=row["id"],
+        xy=row['coords'],
+        horizontalalignment="center",
+        verticalalignment="center",
+        color='black', fontsize=11
+    )
