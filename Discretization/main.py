@@ -267,19 +267,20 @@ def example_rj():
     # app.write_arrivals("test.dat")
     # app.write_regions("testr.dat")
 
-    print(app.geo_discretization)
-    samples = []
-    arq_sample = open(r"../Data/Bases_voronoi/samples.dat", "w")
-    arq_csv = open(r"samples.csv", "w")
-    arq_csv.write("region_id,sample_id,lat,long\n")
-    for i,row in app.geo_discretization.iterrows():
-        sample_i = random_points_in_shp(row["geometry"], 100)
-        for j,coords in enumerate(sample_i):
-            lon,lat = coords
-            arq_sample.write(f"{i} {j} {lat} {lon}\n")
-            arq_csv.write(f"{i},{j},{lat},{lon}\n")
-    arq_sample.close()
-    arq_csv.close()
+    # print(app.geo_discretization)
+    A = app.get_events_aggregated()
+    # samples = []
+    # # arq_sample = open(r"../Data/Bases_voronoi/samples.dat", "w")
+    # # arq_csv = open(r"samples.csv", "w")
+    # # arq_csv.write("region_id,sample_id,lat,long\n")
+    # # for i,row in app.geo_discretization.iterrows():
+    # #     sample_i = random_points_in_shp(row["geometry"], 100)
+    # #     for j,coords in enumerate(sample_i):
+    # #         lon,lat = coords
+    # #         arq_sample.write(f"{i} {j} {lat} {lon}\n")
+    # #         arq_csv.write(f"{i},{j},{lat},{lon}\n")
+    # # arq_sample.close()
+    # # arq_csv.close()
 
 def main():
     # read_calls()

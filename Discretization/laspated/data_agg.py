@@ -588,14 +588,17 @@ class DataAggregator():
         self.events_data.dropna()
         while i < len(self.events_data):
             row = self.events_data.iloc[i]
-            index_i = [row[time_index] for time_index in self.time_indexes] + [int(row["gdiscr"])] + [row[feature] for feature in self.events_features]
+            times_i = [row[time_index] for time_index in self.time_indexes]
+            index_i = times_i + [int(row["gdiscr"])] + [row[feature] for feature in self.events_features]
             count = 1
             for j in range(i+1, len(self.events_data)):
                 row_j = self.events_data.iloc[j]
-                index_j = [row_j[time_index] for time_index in self.time_indexes] + [int(row_j["gdiscr"])] + [row_j[feature] for feature in self.events_features]
+                times_j = [row_j[time_index] for time_index in self.time_indexes]
+                index_j = times_j + [int(row_j["gdiscr"])] + [row_j[feature] for feature in self.events_features]
+
                 if index_i == index_j:
                     count += 1
-                else:
+                elif times_i != times_j:
                     break
             samples[tuple(index_i)].append(count)
             i += count
