@@ -13,7 +13,8 @@ addpath 'C:\Users\vince\Dropbox\Softwares\LASPATED\Model_Calibration\Matlab';
 %No regression
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-discretization_dir='C:\Users\vince\Dropbox\Softwares\LASPATED\Data\Rect10x10';
+%discretization_dir='C:\Users\vince\Dropbox\Softwares\LASPATED\Data\Rect10x10_km';
+discretization_dir='C:\Users\vince\Dropbox\Softwares\LASPATED\Data\Rect10x10_km';
 [T,G,R,P,nbLandTypes,nbObservationsG,sample_calls,nbCalls,nbObservations,estimated,type,regressors,neighbors,distance]=read_calls_reg(discretization_dir);
 
 sample_callsA=sample_calls;
@@ -61,8 +62,8 @@ params.type=type;
 params.distance=distance;
 params.alpha=0.1;
 nbGroups=length(Groups);
-
-[lambda,obj]=laspated(model,nbObservations,nbCalls,T,R,C,durations,Groups,whichgroup,weight*ones(1,nbGroups),sigma,iterMax,epsilon,lambda0,params);
+params.weight=weight*ones(1,nbGroups);
+[lambda,obj]=laspated(model,nbObservations,nbCalls,T,R,C,durations,Groups,whichgroup,sigma,iterMax,epsilon,lambda0,params);
 
 weeklambda=zeros(T,1);
 for t=1:T

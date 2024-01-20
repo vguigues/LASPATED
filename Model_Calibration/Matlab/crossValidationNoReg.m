@@ -34,7 +34,7 @@ for indexAlpha=1:length(alphas)
             end
         end
         x=epsilon*ones(P,R,T);
-        [lambda,fVal]=projectedGradientArmijoFeasible(nbObservationsCurrent,nbCallsCurrent,neighbors,type,distance,T,R,P,sigma,x,iterMax,alphas(indexAlpha),epsilon,durations,Groups,whichgroup,weights(indexAlpha)*ones(1,nbGroups));
+        [lambda,fVal]=projectedGradientArmijoFeasiblev2(nbObservationsCurrent,nbCallsCurrent,neighbors,type,distance,T,R,P,sigma,x,iterMax,alphas(indexAlpha),epsilon,durations,Groups,whichgroup,weights(indexAlpha)*ones(1,nbGroups));
 
         %Computing the likelihood on the remaining data
         nbCallsRemaining=zeros(P,R,T);
@@ -90,7 +90,7 @@ for t=1:T
             end
         end
 end
-[lambda,fVal]=projectedGradientArmijoFeasible(nbObservationsCurrent,nbCallsCurrent,neighbors,type,distance,T,R,P,sigma,x,iterMax,bestAlpha,epsilon,durations,Groups,whichgroup,bestWeight*ones(1,nbGroups));
+[lambda,fVal]=projectedGradientArmijoFeasiblev2(nbObservationsCurrent,nbCallsCurrent,neighbors,type,distance,T,R,P,sigma,x,iterMax,bestAlpha,epsilon,durations,Groups,whichgroup,bestWeight*ones(1,nbGroups));
 cputime=toc;
 
            
