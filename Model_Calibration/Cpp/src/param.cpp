@@ -14,7 +14,8 @@ Param::Param(const Param &p):
 	beta_bar(p.beta_bar),
 	cv_proportion(p.cv_proportion),
 	weights_file(p.weights_file),
-	weights_list(p.weights_list){}
+	weights_list(p.weights_list),
+	type_proj_gradient(p.type_proj_gradient){}
 
 Param::Param(boost::program_options::variables_map vm): 
 	generator_folder{vm["generator_folder"].as<std::string>()},
@@ -26,7 +27,8 @@ Param::Param(boost::program_options::variables_map vm):
 	sigma{vm["sigma"].as<double>()},
 	beta_bar{vm["beta_bar"].as<double>()},
 	cv_proportion{vm["cv_proportion"].as<double>()},
-	weights_file{vm["weights_file"].as<std::string>()}{
+	weights_file{vm["weights_file"].as<std::string>()},
+	type_proj_gradient{vm["type_proj_gradient"].as<int>()}{
 	
 	// fmt::print("Tokens: {}\n", vm["weights_list"].as< std::vector<std::string> >());
 	try{
@@ -67,6 +69,7 @@ Param& Param::operator=(const Param& p){
 	cv_proportion = p.cv_proportion;
 	weights_file = p.weights_file;
 	weights_list = p.weights_list;
+	type_proj_gradient = p.type_proj_gradient;
 	return *this;
 }
 

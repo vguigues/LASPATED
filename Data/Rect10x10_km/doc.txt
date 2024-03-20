@@ -1,0 +1,40 @@
+Rio de Janeiro emergency data with hexagonal discretization
+
+Files:
+info.dat:
+    T G R P nb_regressors nb_holidays
+    nb_obs_monday nb_obs_tuesday ... nb_obs_sunday
+
+T: Number of half hour periods per day
+G: Number of days in the week
+R: Number of subregions in the space discretization
+P: Number of calls priorities
+
+nb_obs_day: Number of observations for each week day
+
+
+calls.dat:
+    t g r p j val h
+    t: index of half hour period
+    g: index of week day
+    r: index of subregion
+    p: index of call priority
+    j: index of non null observation
+    val: number of calls in the j-th observation for the index (t,g,r,p)
+    h: holiday index (-1 if no holiday)
+
+neighbors.dat:
+    id lat long type reg1 reg2 reg3 reg4 reg5 id_neighbor1 dist_neighbor1 ... id_neighborN dist_neighborN
+
+    id: subregion id
+    lat, long: centroid of subregion
+    type: type of subregion
+    regI: value of regressor I=1,...,5. 
+        First three regressors represent areas of subregion with:
+            reg1 -> public activities
+            reg2 -> Non-developed land. Woods, rivers, etc.
+            reg3 -> Residential areas.
+        Fourth and fifth regressors represent population values.
+    id_neighborI, dist_neighborI: list of neighbors of current subregion
+
+            - 

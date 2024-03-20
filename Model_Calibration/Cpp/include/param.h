@@ -18,6 +18,7 @@ public:
 	double EPS = 0.001;
 	std::string weights_file;
 	std::vector<double> weights_list;
+	int type_proj_gradient;
 
 
 	Param& operator=(const Param& p);

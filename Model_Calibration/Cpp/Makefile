@@ -17,7 +17,7 @@ INC     	:= $(BOOST_INCLUDE) $(FMT_INCLUDE) \
 			$(XTL_INCLUDE) $(XTENSOR_INCLUDE) $(GUROBI_INCLUDE) \
 
 CPP     	= /usr/bin/g++-9
-CARGS   	= -m64 -std=c++14 -Wfatal-errors -Wno-ignored-attributes $(CXX_FLAGS)
+CARGS   	= -m64 -std=c++14 -Wfatal-errors -Wno-ignored-attributes $(CXX_FLAGS) # -ftrapv
 CPPLIB  	= -L$(GUROBI_HOME)/lib -lboost_program_options -lboost_system -pthread -lpthread -ldl \
 			-lgurobi_c++ -lgurobi100 -L/usr/local/lib -lrt -lz -fuse-ld=gold \
 			-Wl,--disable-new-dtags -Wl,--gc-sections -Wl,-O1 -Wl,--hash-style=gnu \
@@ -31,8 +31,8 @@ OBJ 		= $(SRC:$(SRC_DIR)/%.cpp=$(OBJ_DIR)/%.o)
 EXE 		= laspated
 # CONFIG		= -O1 -g
 # CONFIG = -O0
-CONFIG		= -O0 -g
-# CONFIG 		= -O3
+# CONFIG		= -O0 -g
+CONFIG 		= -O3
 
 all: $(EXE)
 

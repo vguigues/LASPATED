@@ -94,9 +94,13 @@ public:
 	}
 };
 
+void test_laspated_reg();
+void test_laspated_no_reg();
 
 
 //Parameter global object
 extern Param g_params;
+
+
 
 #endif

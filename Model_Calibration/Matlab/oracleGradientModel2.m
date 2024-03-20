@@ -10,7 +10,7 @@
 %gradient: gradient of the objective function at lambda.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function [gradient]=oracleGradientModel2(nbObservations,nbArrivals,x,C,D,T,R,regressor,nbRegressors,sizex,Groups,whichgroup,weight,durations,indexBeta)
+function [gradient]=oracleGradientModel2(nbObservations,nbArrivals,x,C,D,T,R,regressor,nbRegressors,sizex,durations,indexBeta)
 
 gradient=zeros(sizex,1);
 for c=1:C
@@ -32,23 +32,6 @@ for c=1:C
     end
 end
 
-if (length(Groups)>0)
-    for c=1:C
-        for d=1:D
-            for t=1:T
-                for m=1:length(Groups{1,whichgroup(d,t)})
-                    d1=Groups{1,whichgroup(d,t)}(m).d;
-                    t1=Groups{1,whichgroup(d,t)}(m).t;
-                    if ((d1~=d)||(t1~=t))
-                        for j=1:nbRegressors
-                            gradient(indexBeta(c,d,t,j))=gradient(indexBeta(c,d,t,j))+(2*weight(whichgroup(d,t))/durations(t))*((gradient(indexBeta(c,d,t,j))/durations(t))-(gradient(indexBeta(c,d1,t1,j))/durations(t1)));
-                        end
-                    end
-                end
-            end
-        end
-    end
-end
 
 
 

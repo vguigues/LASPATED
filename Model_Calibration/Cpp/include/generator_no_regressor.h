@@ -27,12 +27,14 @@ public:
 	int neighbor_factor;
 	bool read_covariates;
 	bool use_simulation;
+	bool constant_lambdas;
 
 	double sigma, beta, beta_bar, weight;
 	std::vector<double> weights;
 	int max_iter;
 
 	xt::xarray<int> nb_observations;
+	int nb_observations_total;
 	xt::xarray<int> nb_arrivals;
 
 	xt::xarray<double> regressors;
@@ -42,8 +44,10 @@ public:
 	std::vector<int> type_region;
 	xt::xarray<double> distance;
 	xt::xarray<int> sample;
+	xt::xarray<double> estimated;
 	xt::xarray<double> theoretical_lambda;
 	xt::xarray<double> l_bounds;
+	std::vector<bool> is_red;
 
 	GeneratorNoRegressor();
 	GeneratorNoRegressor(std::string calls_path, 
@@ -55,12 +59,19 @@ public:
 	~GeneratorNoRegressor() = default;
 
 	xt::xarray<double> oracle_gradient_model(xt::xarray<double>& x);
+	xt::xarray<double> oracle_gradient_model_new(xt::xarray<double>& x);
+	double oracle_objective_model_new(xt::xarray<double>& x);
 	double oracle_objective_model(xt::xarray<double>& x);
 	// xt::xarray<double> projection_regressors(xt::xarray<double>& x_beta);
 	// std::vector<double> projected_gradient_armijo_boundary(xt::xarray<double>& x_beta,
 	// 	xt::xarray<double>& x_delta, double alpha, double sigma, double beta_bar);
 	std::vector<double> projected_gradient_armijo_feasible(xt::xarray<double>& 
 		x);
+
+
+	double get_lower_bound(xt::xarray<double>& x_current, 
+		xt::xarray<double>& grad_current, double eps, double upper_lambda);
+	
 
 
 	CrossValidationResult cross_validation(double proportion, std::vector<double>& alphas, 
