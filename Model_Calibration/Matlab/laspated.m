@@ -1,5 +1,7 @@
         
 function [lambda,obj]=laspated(model,nbObservations,nbArrivals,T,R,C,durations,Groups,whichgroup,sigma,iterMax,epsilon,lambda0,params)
+        
+function [lambda,obj]=laspated(model,nbObservations,nbArrivals,T,R,C,durations,Groups,whichgroup,sigma,iterMax,epsilon,lambda0,params)
 
 if (strcmp(model,'noreg'))
     disp('Model without regressors chosen');
