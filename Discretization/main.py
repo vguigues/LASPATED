@@ -344,7 +344,6 @@ def heatmaps(app: spated.DataAggregator):
 
 
 def example_rj():
-
     app = spated.DataAggregator(crs="epsg:4326")  # initializes data aggregator
     max_borders = gpd.read_file(
         r"../Data/rj/rj.shp"
@@ -364,15 +363,49 @@ def example_rj():
     app.add_time_discretization("m", 30, 60 * 24, column_name="hhs")
     app.add_time_discretization("D", 1, 7, column_name="dow")
 
-    app.add_geo_discretization(discr_type="H", hex_discr_param=7)
-    print(app.geo_discretization.columns)
-    app.geo_discretization["center"] = app.geo_discretization.geometry.to_crs(
-        "epsg:29193"
-    ).centroid.to_crs(app.geo_discretization.crs)
-    app.geo_discretization["coords"] = app.geo_discretization["center"].apply(
+    # app.add_geo_discretization(
+    #     discr_type="R", rect_discr_param_x=100, rect_discr_param_y=100
+    # )
+
+    # app.add_geo_discretization(discr_type="H", hex_discr_param=8)
+
+    # custom_map = gpd.read_file(
+    #     r"../Data/rio_de_janeiro_neighborhoods/rio_neighborhoods.shp"
+    # )
+    # custom_map = custom_map.set_crs("epsg:29193")
+    # app.add_geo_discretization("C", custom_data=custom_map)
+
+    bases = gpd.read_file("bases/bases.shp")
+    print(bases)
+    app.add_geo_discretization("V", custom_data=bases)
+    bases["center"] = bases.geometry.to_crs("epsg:29193").centroid.to_crs(bases.crs)
+    bases["coords"] = bases["center"].apply(
         lambda x: x.representative_point().coords[:][0]
     )
-    print(app.geo_discretization.head(10)[["id", "coords"]])
+    num_regions = int(np.max(app.events_data["gdiscr"])) + 1
+    print(app.geo_discretization.columns)
+    app.geo_discretization.boundary.plot(color="black", figsize=(30, 30))
+    longs = []
+    lats = []
+    for _, row in bases.iterrows():
+        longs.append(row["coords"][0])
+        lats.append(row["coords"][1])
+    plt.scatter(
+        longs,
+        lats,
+        color="red",
+        s=30,
+    )
+    plt.savefig(f"disc_r{num_regions}.pdf", bbox_inches="tight")
+    print(f"saved discretization at disc_r{num_regions}.pdf")
+    input()
+    # app.geo_discretization["center"] = app.geo_discretization.geometry.to_crs(
+    #     "epsg:29193"
+    # ).centroid.to_crs(app.geo_discretization.crs)
+    # app.geo_discretization["coords"] = app.geo_discretization["center"].apply(
+    #     lambda x: x.representative_point().coords[:][0]
+    # )
+    # print(app.geo_discretization.head(10)[["id", "coords"]])
     # app.plot_discretization()
     # app.add_geo_discretization(
     #     discr_type="R", rect_discr_param_x=10, rect_discr_param_y=10

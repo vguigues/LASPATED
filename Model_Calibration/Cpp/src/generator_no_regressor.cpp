@@ -11,7 +11,7 @@ GeneratorNoRegressor::GeneratorNoRegressor() {
   T = 4 * 7;
   // T = 4 * 15;
   int nb_groups = 2;
-  nb_weeks = 1000;
+  nb_weeks = 1;
   full_neighbors = false;  // if true, allows diagonal neighbors
   neighbor_factor = 1;     // If true, apply neighborhood regularization
   read_covariates = false; // If true, read lambdas from covariates file
@@ -291,6 +291,18 @@ GeneratorNoRegressor::GeneratorNoRegressor() {
   }
   // cin.get();
 
+  for (int c = 0; c < C; ++c) {
+    for (int r = 0; r < R; ++r) {
+      for (int t = 0; t < T; ++t) {
+        cout << c << " " << r << " " << t
+             << ": obs = " << nb_observations(c, r, t)
+             << ", arr = " << nb_arrivals(c, r, t)
+             << ", est = " << estimated(c, r, t) << "\n";
+      }
+    }
+  }
+  cin.get();
+
   l_bounds = xt::zeros<double>({C, R, T});
   g_params.EPS = pow(10, -3);
   alpha = 1;
@@ -325,8 +337,10 @@ GeneratorNoRegressor::GeneratorNoRegressor(std::string calls_path,
   }
   fmt::print("daily obs: {}\n", daily_obs);
   info_arq.close();
-  nb_land_types = nb_regressors - 2;
-  nb_regressors = 1 + nb_land_types;
+  nb_land_types = nb_regressors - 1;
+  // TODO: remove comments
+  //  nb_land_types = nb_regressors - 2;
+  //  nb_regressors = 1 + nb_land_types;
   unsigned long max_obs = *max_element(daily_obs.begin(), daily_obs.end());
   unsigned long min_obs = *min_element(daily_obs.begin(), daily_obs.end());
   nb_weeks = max_obs;
@@ -346,7 +360,8 @@ GeneratorNoRegressor::GeneratorNoRegressor(std::string calls_path,
     }
     std::istringstream ss(aux_str);
     int t, d, r, c, j, h, val;
-    ss >> t >> d >> r >> c >> j >> val >> h;
+    // TODO: remove comment
+    ss >> t >> d >> r >> c >> j >> val; // >> h;
     // fmt::print("{} {} {} {} {} {} {}\n", t,d,r,c,j,val,h);
     sample_file(c, d, t, r, j) = val;
     nb_arrivals_file(c, d, t, r) += val;
@@ -376,15 +391,18 @@ GeneratorNoRegressor::GeneratorNoRegressor(std::string calls_path,
       break;
     }
     std::istringstream ss(aux_str);
-    ss >> ind >> lat >> longi >> terrain_type;
-    type_region[ind] = terrain_type;
+    // TODO: Remove comments
+    ss >> ind >> lat >> longi; // >> terrain_type;
+    type_region[ind] = 0;
     regions[ind] = make_pair(lat, longi);
-    for (int j = 0; j < nb_land_types; ++j) {
+    // TODO: nb_landtypes
+    for (int j = 0; j < nb_regressors; ++j) {
       ss >> regressors(j, ind);
     }
-    ss >> pop1 >> pop2;
-    regressors(nb_regressors - 2, ind) = pop1;
-    regressors(nb_regressors - 1, ind) = pop1 + pop2;
+    // TODO: Remove comments
+    // ss >> pop1 >> pop2;
+    // regressors(nb_regressors - 2, ind) = pop1;
+    // regressors(nb_regressors - 1, ind) = pop1 + pop2;
     while (ss >> s >> dist) {
       distance(ind, s) = dist;
       neighbors[ind].push_back(s);
@@ -395,11 +413,6 @@ GeneratorNoRegressor::GeneratorNoRegressor(std::string calls_path,
     // }
   }
   fmt::print("neighbors.dat {} lines read\n", count_line);
-  // for(int r = 0; r < R; ++r){
-  // 	fmt::print("r = {}, regressors = {:.3f} {:.3f} {:.3f}\n", r,
-  // regressors(0,r), 		regressors(1,r), regressors(2,r));
-  // }
-  // cin.get();
   neighbors_arq.close();
 
   sample = xt::zeros<int>({7 * T, R, C, min_obs});
@@ -419,44 +432,70 @@ GeneratorNoRegressor::GeneratorNoRegressor(std::string calls_path,
             sample(index, r, c, j) = sample_file(c, d, t, r, j);
           }
           estimated(c, r, index) =
-              nb_arrivals(c, r, index) /
+              static_cast<double>(nb_arrivals(c, r, index)) /
               (nb_observations(c, r, index) * durations[t]);
+          // fmt::print("c{} r{} t{}, emp = {}\n", c, r, d * T + t,
+          //            estimated(c, d, t, r));
         }
       }
     }
   }
 
-  T = 7 * T;
-  // for(int r = 0; r < R; ++r){
-  // 	double sum_r =  0;
-  // 	fmt::print("{} ", r);
-  // 	for(int c = 0; c < C; ++c){
-  // 		double sum_c = 0;
-  // 		for(int t = 0; t < T; ++t){
-  // 			sum_c += estimated(c,r,t);
-  // 		}
-  // 		fmt::print(" {:.1f}", sum_c);
-  // 		sum_r += sum_c;
-  // 	}
-  // 	fmt::print(" {:.1f}\n",sum_r);
+  // for (int c = 0; c < C; ++c) {
+  //   for (int d = 0; d < D; ++d) {
+  //     for (int t = 0; t < T; ++t) {
+  //       for (int r = 0; r < R; ++r) {
+  //         fmt::print("c{} r{} t{}, emp = {}\n", c, r, d * T + t,
+  //                    estimated(c, r, d * T + t));
+  //       }
+  //     }
+  //   }
   // }
+
+  // fmt::print("END EMP\n");
   // cin.get();
+
+  // for (int r = 0; r < R; ++r) {
+  //   fmt::print("r{} (t{}): ", r, type_region[r]);
+  //   for (auto s : neighbors[r]) {
+  //     fmt::print("({},{:.1f}) ", s, distance(r, s));
+  //   }
+  //   fmt::print("\n");
+  // }
+  // fmt::print("END Neighbors\n");
+  // cin.get();
+
+  T = 7 * T;
+  ulong DT = T;
 
   which_group = vector<int>(T, 0);
   groups = vector<vector<int>>(T, vector<int>());
   for (int t = 0; t < T; ++t) {
     groups[t].push_back(t);
     which_group[t] = t;
-    // fmt::print("which_group {} = {}\n", t+1, which_group[t]+1);
+    // fmt::print("which_group {} = {}\n", t + 1, which_group[t] + 1);
   }
+  // fmt::print("END Groups\n");
   // cin.get();
 
+  // for (int c = 0; c < C; ++c) {
+  //   for (int r = 0; r < R; ++r) {
+  //     for (int t = 0; t < T; ++t) {
+  //       fmt::print("c{}, r{} , t{}, arr = {}\n", c, r, t, nb_arrivals(c, r,
+  //       t));
+  //     }
+  //   }
+  // }
+
+  // fmt::print("End sample/arr/obs {} {} {}\n", C, R, T);
+  // cin.get();
+  for (int r = 0; r < R; ++r) {
+  }
   sigma = 0.5;
   beta_bar = 1;
   max_iter = 30;
   weight = 0.1;
   alpha = 0.1 * xt::ones<double>({R, R});
-  g_params.EPS = 0.001;
   durations = vector<double>(T, 0.5);
   std::cout << "Initialized No Regressor Real Data\n";
 }
@@ -549,29 +588,29 @@ xt::xarray<double> laspated_no_reg(
 
 void GeneratorNoRegressor::test() {
   double epsilon = g_params.EPS;
-  // vector<double> test_weights =
-  // {0,0.01,0.05,0.01,0.1,1,5,10,20,30,40,50,60,70,80,90,100,
-  // 	110,120,130,140,150,160,170,180,190,200,210,220,230,240,250,260,
-  // 	270,280,290,300,310,320,330,340,350,360,370,380,390,400};
-  // vector<double> test_weights =
-  // {0,0.01,0.05,0.1,1,5,10,20,30,40,50,60,70,80,90,100}; vector<double>
-  // test_weights; test_weights = {0, 0.01, 0.02, 0.03, 0.04 /*,1
-  // ,10,100,1000,10000,100000 */}; test_weights = {0, 0.01, 0.02, 0.03, 0.04
-  // /*,1 ,10,100,1000,10000,100000 */}; vector<double> test_weights = {0, 1, 2,
-  // 3, 4, 5, 6, 7, 8, 9, 10 /*,1 ,10,100,1000,10000,100000 */};
-
+  fmt::print("ENTERED test\n");
   if (g_params.generator_folder != "") {
-    vector<double> test_weights = {0,   0.2, 0.4, 0.6, 0.8, 1.0,
-                                   1.2, 1.4, 1.6, 1.8, 2};
+    // vector<double> test_weights = {0,   0.2, 0.4, 0.6, 0.8, 1.0,
+    //                                1.2, 1.4, 1.6, 1.8, 2};
+    vector<double> test_weights = {0,      0.0001, 0.0002, 0.0003,
+                                   0.0005, 0.0007, 0.0009, 0.001};
+    for (size_t i = 0; i < test_weights.size(); ++i) {
+      test_weights[i] *= 8;
+    }
     vector<double> test_alphas = test_weights;
     xt::xarray<double> x = epsilon * xt::ones<double>({C, R, T});
     auto result = cross_validation(0.2, test_alphas, test_weights);
     double best_w = result.weight;
     x = epsilon * xt::ones<double>({C, R, T});
     weights = vector<double>(groups.size(), best_w);
-    // alpha = best_w*neighbor_factor*xt::ones<double>({R,R});
-    fmt::print("best_w = {}\n", best_w);
-    auto f_val = projected_gradient_armijo_feasible(x);
+    alpha = best_w * 1 * xt::ones<double>({R, R});
+
+    vector<double> f_val;
+    if (g_params.type_proj_gradient == 2) {
+      f_val = projected_gradient_armijo_feasible(x);
+    } else {
+      f_val = projected_gradient_old(x);
+    }
 
     // for(int r = 0; r < R; ++r){
     // 	fmt::print("r = {}, regressors = {:.3f} {:.3f} {:.3f}\n", r,
@@ -594,6 +633,7 @@ void GeneratorNoRegressor::test() {
         // fmt::print("Sum = {}\n", sum);
         rates_no_reg_real << fmt::format("{} {} {} {}\n", c, t, sum / 0.5,
                                          sum_est);
+        fmt::print("{} {} {} {}\n", c, t, sum / 0.5, sum_est);
       }
     }
     rates_no_reg_real.close();
@@ -623,6 +663,7 @@ void GeneratorNoRegressor::test() {
     }
     arq_regions.close();
     fmt::print("Wrote region rates at {}\n", rates_no_reg_filename);
+    fmt::print("best_w = {}\n", best_w);
     exit(0);
   }
 
@@ -659,44 +700,47 @@ void GeneratorNoRegressor::test() {
   std::random_device rd;
   std::mt19937 gen(rd());
 
-  int num_trials = 100;
+  int num_trials = 1;
   vector<vector<double>> err_by_replications(
       num_trials, vector<double>(test_weights.size(), 0.0));
 
   vector<pair<double, double>> cv_by_replications(num_trials,
                                                   make_pair(GRB_INFINITY, -1));
   for (int k = 0; k < num_trials; ++k) {
-    for (int t = 0; t < T; ++t) {
-      for (int r = 0; r < R; ++r) {
-        int x = r % 10;
-        int y = r / 10;
-        double cx = x + 0.5;
-        double cy = y + 0.5;
-        for (int c = 0; c < C; ++c) {
-          if ((!is_red[r] && which_group[t] % 2 == 0) ||
-              (is_red[r] && which_group[t] % 2 != 0)) {
-            theoretical_lambda(t, r, c) = (constant_lambdas) ? 0.1 : (cx + cy);
-          } else if ((!is_red[r] && which_group[t] % 2 != 0) ||
-                     (is_red[r] && which_group[t] % 2 == 0)) {
-            theoretical_lambda(t, r, c) =
-                (constant_lambdas) ? 0.5 : 5 * (cx + cy);
-          } else {
-            fmt::print("ERROR: Unpredictable lambda case at t = {} and r = {} "
-                       "({},{})\n",
-                       t, r, cx, cy);
-            exit(1);
-          }
-          nb_arrivals(c, r, t) = 0;
-          for (int n = 0; n < nb_observations_total; ++n) {
-            poisson_distribution<int> pd(theoretical_lambda(t, r, c) *
-                                         durations[t]);
-            int this_nb_arrival = pd(gen);
-            sample(t, r, c, n) = this_nb_arrival;
-            nb_arrivals(c, r, t) += this_nb_arrival;
-          }
-        }
-      }
-    }
+    fmt::print("trial {}\n", k);
+    // for (int t = 0; t < T; ++t) {
+    //   for (int r = 0; r < R; ++r) {
+    //     int x = r % 10;
+    //     int y = r / 10;
+    //     double cx = x + 0.5;
+    //     double cy = y + 0.5;
+    //     for (int c = 0; c < C; ++c) {
+    //       if ((!is_red[r] && which_group[t] % 2 == 0) ||
+    //           (is_red[r] && which_group[t] % 2 != 0)) {
+    //         theoretical_lambda(t, r, c) = (constant_lambdas) ? 0.1 : (cx +
+    //         cy);
+    //       } else if ((!is_red[r] && which_group[t] % 2 != 0) ||
+    //                  (is_red[r] && which_group[t] % 2 == 0)) {
+    //         theoretical_lambda(t, r, c) =
+    //             (constant_lambdas) ? 0.5 : 5 * (cx + cy);
+    //       } else {
+    //         fmt::print("ERROR: Unpredictable lambda case at t = {} and r = {}
+    //         "
+    //                    "({},{})\n",
+    //                    t, r, cx, cy);
+    //         exit(1);
+    //       }
+    //       nb_arrivals(c, r, t) = 0;
+    //       for (int n = 0; n < nb_observations_total; ++n) {
+    //         poisson_distribution<int> pd(theoretical_lambda(t, r, c) *
+    //                                      durations[t]);
+    //         int this_nb_arrival = pd(gen);
+    //         sample(t, r, c, n) = this_nb_arrival;
+    //         nb_arrivals(c, r, t) += this_nb_arrival;
+    //       }
+    //     }
+    //   }
+    // }
     for (int i = 0; i < test_weights.size(); ++i) {
       double avg_err = 0;
       x = epsilon * xt::ones<double>({C, R, T});
@@ -707,7 +751,7 @@ void GeneratorNoRegressor::test() {
       auto f_val = projected_gradient_armijo_feasible(x);
       double err = average_difference(x);
       err_by_replications[k][i] = err;
-      // fmt::print("\terr = {}\n", err);
+      fmt::print("\tw = {}, err = {}\n", test_weights[i], err);
     }
 
     test_alphas = test_weights;
@@ -725,15 +769,17 @@ void GeneratorNoRegressor::test() {
     for (int k = 0; k < num_trials; ++k) {
       avg += err_by_replications[k][i];
     }
-    avg /= (num_trials - 1);
+    // avg /= (num_trials - 1);
+    avg /= (num_trials);
+    fmt::print("w = {}, avg = {}\n", test_weights[i], avg);
+    // double std_dev = 0.0;
+    // for (int k = 0; k < num_trials; ++k) {
+    //   std_dev += pow(err_by_replications[k][i] - avg, 2);
+    // }
+    // std_dev /= (num_trials - 1);
 
-    double std_dev = 0.0;
-    for (int k = 0; k < num_trials; ++k) {
-      std_dev += pow(err_by_replications[k][i] - avg, 2);
-    }
-    std_dev /= (num_trials - 1);
-    fmt::print("Weight {}: mean {:.6f} dev {:.6f} std_err {:.6f}\n",
-               test_weights[i], avg, std_dev, std_dev / sqrt(num_trials));
+    // fmt::print("Weight {}: mean {:.6f} dev {:.6f} std_err {:.6f}\n",
+    //            test_weights[i], avg, std_dev, std_dev / sqrt(num_trials));
 
     err_arq << avg << "\n";
   }
@@ -885,62 +931,143 @@ void GeneratorNoRegressor::write_cv_results(CrossValidationResult &cv_result) {
   weekly2.close();
 }
 
-std::vector<double> GeneratorNoRegressor::projected_gradient_armijo_feasible(
-    xt::xarray<double> &x) {
-  double eps = 0.001;
-  xt::xarray<double> z = xt::zeros<double>(x.shape());
-  // fmt::print("alpha = {}\n", alpha);
+std::vector<double>
+GeneratorNoRegressor::projected_gradient_old(xt::xarray<double> &x) {
   int k = 0;
   std::vector<double> f_val;
-  double b_param = 2;
+  double b_param = 2.0;
   double beta_k = b_param;
-  f_val.reserve(max_iter);
-  int j = 0;
 
   double accuracy = 0.01;
-  double upper_bound = 1.0;
+  double eps = g_params.EPS;
+  double upper_lambda = 1e3;
+  double upper_bound = GRB_INFINITY;
+  max_iter = g_params.max_iter;
+  int j = 0;
+  comp_wise_max(x, eps);
+  xt::xarray<double> z = xt::zeros<double>(x.shape());
+  xt::xarray<double> z_aux = xt::zeros<double>(x.shape());
+  xt::xarray<double> diff_aux = xt::zeros<double>(x.shape());
+  xt::xarray<double> x_aux = xt::zeros<double>(x.shape());
+  // fmt::print("MAX ITER = {}\n", max_iter);
 
+  while (k < max_iter) {
+    double fold = oracle_objective_model_new(x);
+    xt::xarray<double> gradient = oracle_gradient_model_new(x);
+    z = x - beta_k * gradient;
+    comp_wise_max(z, eps);
+    bool stop = false;
+    j = 0;
+    diff_aux = x - z;
+    double rhs = mat_prod(gradient, diff_aux);
+    double f = GRB_INFINITY;
+    fmt::print("k = {}, fold = {}, rhs = {}\n", k, fold, rhs);
+    while (!stop) {
+      z_aux = x + (1 / pow(2, j)) * (z - x); // z_aux expected to tend to x
+      f = oracle_objective_model_new(z_aux);
+      double test_cond = fold - (sigma / pow(2, j)) * rhs - f;
+      // fmt::print("\tj = {}, f = {} test_cond = {}, 1/2j = {}, my_z = {}, my_x
+      // = {}, my_zaux = {}\n",j,f, test_cond, 	(1/pow(2,j)), z(0,3,34,3),
+      // x(0,3,34,3), z_aux(0,3,34,3));
+      if (test_cond > -1e-3) {
+        stop = true;
+      } else {
+        ++j;
+      }
+    }
+    // printf("k = %d, fold = %.8f, f = %.8f, rhs = %f, j = %d\n", k, fold,
+    //        f / pow(10, 6), rhs, j);
+
+    f_val.push_back(f);
+    x = z_aux;
+    ++k;
+    beta_k = b_param / pow(2, j);
+  }
+  cin.get();
+  return f_val;
+}
+
+std::vector<double> GeneratorNoRegressor::projected_gradient_armijo_feasible(
+    xt::xarray<double> &x) {
+  int k = 0;
+  std::vector<double> f_val;
+  double b_param = 2.0;
+  double beta_k = b_param;
+  f_val.reserve(max_iter);
+
+  double accuracy = 0.01;
+  double upper_bound = GRB_INFINITY;
+  double upper_lambda = 100;
+  double lower_bound = -GRB_INFINITY;
+
+  double eps = g_params.EPS; // lower bound decision variables
+  max_iter = g_params.max_iter;
+  comp_wise_max(x, eps);
+
+  xt::xarray<double> z = xt::zeros<double>(x.shape());
+  xt::xarray<double> diff_aux = xt::zeros<double>(x.shape());
+  xt::xarray<double> z_aux = xt::zeros<double>(x.shape());
+  int j = 0;
   double fold = oracle_objective_model_new(x);
   xt::xarray<double> gradient = oracle_gradient_model_new(x);
   while (k < max_iter) {
-    xt::xarray<double> z = x - beta_k * gradient;
+    z = x - beta_k * gradient;
     comp_wise_max(z, eps);
-    xt::xarray<double> diff_aux = z - x;
+    diff_aux = x - z;
     double rhs = mat_prod(gradient, diff_aux);
     double f = oracle_objective_model_new(z);
-    if (f > fold - (sigma)*rhs) {
-      // fmt::print("fold = {:.6f} rhs = {:.6f}\n", fold, rhs);
+    // fmt::print("k = {}, fold = {}, f(z) = {}, rhs = {}\n", k, fold, f, rhs);
+    if (rhs > 0.0 && f > fold - (sigma)*rhs) {
       bool stop = false;
-      xt::xarray<double> z_aux = xt::zeros<double>(x.shape());
-      double this_pow = 2.0;
+      z_aux = xt::zeros<double>(x.shape());
+      double this_pow = 1.0;
+      int count = 0;
+      double best_pow = -1.0;
+      double best_val = f;
       while (!stop) {
-        z_aux = x + (1 / this_pow) * (z - x);
+        z_aux = x + (1.0 / this_pow) * (z - x);
         f = oracle_objective_model_new(z_aux);
-        // fmt::print("\tthis_pow = {} f = {:.6f} test = {:.6f}\n", 1 /
-        // this_pow, f, fold -(sigma/this_pow)*rhs);
+        // fmt::print("\tj = {}, f = {}\n", j, f);
+        if (f < best_val) {
+          best_val = f;
+          best_pow = this_pow;
+        }
         if (f <= fold - (sigma / this_pow) * rhs) {
           stop = true;
         } else {
           this_pow *= 2;
         }
+        ++j;
+      }
+      if (best_pow < 0.0) {
+        // x = z_aux;
+        f = fold;
+        beta_k *= 2.0;
+      } else {
+        f = best_val;
+        beta_k *= 2.0 / best_pow;
+        x = x + (1.0 / best_pow) * (z - x);
       }
       f_val.push_back(f);
-      x = z_aux;
       // print_var(x,fmt::format("final x iter {}", k));
       // fmt::print("k = {}\n", k+1);
-      beta_k = b_param / pow(2, j); // current
+      // beta_k = b_param / pow(2, j); // current
       // beta_k = beta_k*2 / this_pow; //suggestion
     } else {
-      x = z;
-      // beta_k *= 2;
-      beta_k = b_param;
+      if (rhs > 0.0) {
+        x = z;
+        beta_k *= 2.0;
+        // beta = b_param / this_pow;
+      } else {
+        f = fold;
+        beta_k *= 2.0;
+      }
     }
     fold = f;
     gradient = oracle_gradient_model_new(x);
-    upper_bound = min(f, upper_bound);
-    double upper_lambda = 1000.0;
-    double lower_bound = f;
-    lower_bound += get_lower_bound(x, gradient, eps, upper_lambda);
+    upper_bound = min(upper_bound, f);
+    lower_bound =
+        max(lower_bound, f + get_lower_bound(x, gradient, eps, upper_lambda));
     if (upper_bound - lower_bound < accuracy) {
       break;
     }
@@ -948,10 +1075,6 @@ std::vector<double> GeneratorNoRegressor::projected_gradient_armijo_feasible(
     ++k;
     // cin.get();
   }
-  // for(auto& f: f_val){
-  // 	fmt::print("{:.3f}\n", f);
-  // }
-  // fmt::print("End armijo\n");
   // cin.get();
   return f_val;
 }
@@ -997,6 +1120,7 @@ GeneratorNoRegressor::oracle_gradient_model_new(xt::xarray<double> &x) {
         double current_lambda = x(c, r, t);
         double grad_component = nb_observations(c, r, t) * durations[t] -
                                 (nb_arrivals(c, r, t) / current_lambda);
+        double pre_n = grad_component;
         for (int s : neighbors[r]) {
           if (type_region[r] == type_region[s]) {
             grad_component += 2 * alpha(r, s) * nb_observations(c, r, t) *
@@ -1004,11 +1128,11 @@ GeneratorNoRegressor::oracle_gradient_model_new(xt::xarray<double> &x) {
                               (x(c, r, t) - x(c, s, t)) / (distance(r, s));
           }
         }
+        double post_n = grad_component - pre_n;
         gradient(c, r, t) = grad_component;
       }
     }
   }
-
   for (int c = 0; c < C; ++c) {
     for (int r = 0; r < R; ++r) {
       for (int t = 0; t < T; ++t) {
@@ -1238,7 +1362,16 @@ CrossValidationResult GeneratorNoRegressor::cross_validation(
       xt::xarray<double> x = g_params.EPS * xt::ones<double>({C, R, T});
       nb_observations = nb_observations_current;
       nb_arrivals = nb_calls_current;
-      auto f_val = projected_gradient_armijo_feasible(x);
+      vector<double> f_val;
+      if (g_params.type_proj_gradient == 2) {
+        f_val = projected_gradient_armijo_feasible(x);
+      } else if (g_params.type_proj_gradient == 1) {
+        f_val = projected_gradient_old(x);
+      } else {
+        printf("Invalid type_proj_gradient = %d\n",
+               g_params.type_proj_gradient);
+        exit(1);
+      }
       xt::xarray<int> nb_calls_remaining = xt::zeros<int>({C, R, T});
       for (int index = 0; index < index_cross * nb_in_block; ++index) {
         for (int c = 0; c < C; ++c) {
@@ -1301,7 +1434,16 @@ CrossValidationResult GeneratorNoRegressor::cross_validation(
   nb_observations = nb_observations_current;
   nb_arrivals = nb_calls_current;
   xt::xarray<double> x = g_params.EPS * xt::ones<double>({C, R, T});
-  auto f_val = projected_gradient_armijo_feasible(x);
+  vector<double> f_val;
+  if (g_params.type_proj_gradient == 2) {
+    f_val = projected_gradient_armijo_feasible(x);
+  } else if (g_params.type_proj_gradient == 1) {
+    f_val = projected_gradient_old(x);
+  } else {
+    fmt::print("Invalid type_proj_gradient = {} at line {}\n",
+               g_params.type_proj_gradient, __LINE__);
+    exit(1);
+  }
   auto dt = std::chrono::high_resolution_clock::now();
   cpu_time = std::chrono::duration_cast<std::chrono::seconds>(dt - t0).count();
   nb_observations = initial_nb_obs;
@@ -1330,7 +1472,8 @@ CrossValidationResult GeneratorNoRegressor::cross_validation(
 // 				}
 // 				integrated_lambda(t,r-1)
 // = 2.5*(pow(i,2)-pow(i-1,2)) + 2.5*(pow(j,2) - pow(j-1,2));
-// }else{ 				if(use_simulation){ 					theoretical_lambda(t,r-1, 0) = i+j-1;
+// }else{ 				if(use_simulation){
+// theoretical_lambda(t,r-1, 0) = i+j-1;
 // 				}
 // 				integrated_lambda(t,r-1) =
 // 0.5*(pow(i,2)-pow(i-1,2)) + 0.5*(pow(j,2) - pow(j-1,2));
@@ -1342,7 +1485,8 @@ CrossValidationResult GeneratorNoRegressor::cross_validation(
 // 				}
 // 				integrated_lambda(t,r-1) =
 // 0.5*(pow(i,2)-pow(i-1,2)) + 0.5*(pow(j,2) - pow(j-1,2));
-// }else{ 				if(use_simulation){ 					theoretical_lambda(t,r-1, 0) = 5*(i+j-1);
+// }else{ 				if(use_simulation){
+// theoretical_lambda(t,r-1, 0) = 5*(i+j-1);
 // 				}
 // 				integrated_lambda(t,r-1)
 // = 2.5*(pow(i,2)-pow(i-1,2)) + 2.5*(pow(j,2) - pow(j-1,2));

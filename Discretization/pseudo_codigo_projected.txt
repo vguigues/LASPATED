@@ -1,0 +1,109 @@
+pseudocodigo pgaf total:
+    x = projection(x)
+    fold = f(x)
+    gradient = gradient(x)
+    beta_k = param.beta_bar
+
+    while (k < max_iter){
+        z = projection(x-beta_k*gradient)
+        rhs = gradient*(x-z)
+        f = f(z)
+
+        if rhs > 0 && f > fold - sigma*rhs{
+            stop = false
+            this_pow = 1
+            count = 0
+            best_pow = -1
+            best_val = f
+
+            while(!stop){
+                f = f(x + (1/this_pow) * (z-x))
+                if (f < best_val){
+                    best_val = f
+                    best_pow = this_pow
+                }
+
+                if (f <= fold - (sigma / this_pow) * rhs){
+                    stop = true;
+                }else{    
+                    this_pow *= 2;
+                }
+                ++count;
+            }
+
+            if(best_pow < 0){
+                f = fold;
+                beta_k *= 2.0;
+            }else {	
+                f = best_val;
+                beta_k *= 2.0 / best_pow;
+                x = x + (1.0 / best_pow) * (z - x);
+            }
+        }else{
+            if (rhs > 0.0){
+                x = z;
+                beta_k *= 2.0;
+            }else{
+                f = fold;
+                beta_k *= 2.0;
+            }
+        }
+
+        fold = f;
+        gradient = model.gradient(x)
+        upper_bound = min(f, upper_bound);
+        lb = model.get_lower_bound(x, gradient);
+        lower_bound = std::max(lower_bound, f + lb);
+        gap = abs((upper_bound - lower_bound) / upper_bound);
+        if (gap < accuracy) {
+            break;
+        }
+        ++k;
+    }
+
+
+pgaf regularized:
+    beta_k = 2;
+    
+    while(k < max_iter){
+        fold = f(x)
+        gradient = gradient(x)
+        z = projection(x-beta_k*gradient)
+        stop = false
+        rhs = gradient*(x-z)
+        while(!stop){
+            f = f(x + (1 / pow(2.0, j)) * (z - x))
+            if(f <= fold - (sigma / pow(2.0, j)) * rhs){
+                stop = true;
+            }else{
+                ++j
+            }
+        }
+        x = x + (1 / pow(2.0, j)) * (z - x);
+        beta_k = b_param / pow(2.0, j);
+        ++k;
+    }
+
+
+pgaf covariates:
+    beta_k = 2
+    x = projection(x)
+    while(k < max_iter){
+        fold = f(x)
+        gradient = gradient(x)
+        z = projection(x-beta_k*gradient)
+        rhs = gradient*(x-z)
+        stop = false
+        j = 0
+        while(!stop){
+            f = f(x + (1 / pow(2.0, j)) * (z - x))
+            if (f <= fold - (sigma / pow(2.0, j)) * rhs){
+                stop = true;
+            }else{
+                ++j;
+            }
+        }
+        x = x + (1 / pow(2.0, j)) * (z - x)
+        beta_k = b_param / pow(2.0, j);
+        ++k
+    }

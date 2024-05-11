@@ -5,10 +5,10 @@ from shapely.geometry import Polygon, Point
 
 # helper function: gets geojson like (H3 expects as input) from shapely polygon
 def polygon_to_geojson(polygon: Polygon):
-    '''
+    """
     Auxiliar function: Gets geojson like (H3 expect as input) from
     Shapely Polygon object
-    '''
+    """
     temp_coord_list = list(polygon.exterior.coords)
     # we have to manually convert from a list of list of tuples
     # to a list of list of lists (and also invert lat, long ordering)
@@ -16,13 +16,13 @@ def polygon_to_geojson(polygon: Polygon):
     # we dont want the loop around here
     coords.pop()
     # generate geojson
-    geoJson = {'type': 'Polygon', 'coordinates': [coords]}
+    geoJson = {"type": "Polygon", "coordinates": [coords]}
 
     return geoJson
 
 
 def generate_H3_discretization(gdf: GeoDataFrame, resolution: int = 7):
-    '''
+    """
     Generate a hexagonal discretization of the area using Uber's H3 library
     and returns a new GeoDataFrame with it.
 
@@ -38,10 +38,12 @@ def generate_H3_discretization(gdf: GeoDataFrame, resolution: int = 7):
     -------
     return: GeoDataFrame
         New GeoDataFrame containing the H3 hexagons that approximately cover the original region
-    '''
+    """
 
-    if(resolution < 0 or resolution > 15):
-        raise ValueError("Hex resolution must be in range [0, 15]. Got {}".format(resolution))
+    if resolution < 0 or resolution > 15:
+        raise ValueError(
+            "Hex resolution must be in range [0, 15]. Got {}".format(resolution)
+        )
 
     # following code assumes crs epsg = 4326 to interface with H3
     h3_gdf = gdf.to_crs(epsg=4326)
@@ -65,7 +67,11 @@ def generate_H3_discretization(gdf: GeoDataFrame, resolution: int = 7):
             geoJson = polygon_to_geojson(observation)
             hex_indexes.update(h3.polyfill(geoJson, resolution))
         else:
-            raise ValueError("GeoDataFrame's geometry is limited to either polygon of multi-polygon. Got {}".format(observation.geom_type))
+            raise ValueError(
+                "GeoDataFrame's geometry is limited to either polygon of multi-polygon. Got {}".format(
+                    observation.geom_type
+                )
+            )
 
     # we have the H3 indexes in hex_indexes
     # Now we just need to transform them into an geodataframe with any relevant info we may need
@@ -78,7 +84,9 @@ def generate_H3_discretization(gdf: GeoDataFrame, resolution: int = 7):
     for hex in hex_indexes:
         # send a warning if there is a pentagon in the study region!
         if h3.h3_is_pentagon(hex):
-            print('A H3 cell in the study region is a pentagon. See H3\'s documentation for further details.')
+            print(
+                "A H3 cell in the study region is a pentagon. See H3's documentation for further details."
+            )
 
         # once again: h3 uses 2-tuples for points, but shapely uses 2-lists
         hex_coords_h3 = h3.h3_set_to_multi_polygon([hex], geo_json=False)
@@ -99,7 +107,13 @@ def generate_H3_discretization(gdf: GeoDataFrame, resolution: int = 7):
         center_points.append(Point(lat_long_center[1], lat_long_center[0]))
 
         hex_ring = h3.hex_ring(hex, k=1)
-        neighbors.append([hex_indexes.index(neighbor) for neighbor in hex_ring if neighbor in hex_indexes])
+        neighbors.append(
+            [
+                hex_indexes.index(neighbor)
+                for neighbor in hex_ring
+                if neighbor in hex_indexes
+            ]
+        )
         i_n = 0
         i_filled = 0
         for neighbor in hex_ring:
@@ -107,22 +121,21 @@ def generate_H3_discretization(gdf: GeoDataFrame, resolution: int = 7):
                 c_neighbors[i_filled].append(neighbor)
                 i_filled += 1
             i_n += 1
-        assert i_n == 6, "Cell found that did not have 6 neighbors. Does the study area contain H3 pentagons? Check H3 official documentation for details"
+        assert (
+            i_n == 6
+        ), "Cell found that did not have 6 neighbors. Does the study area contain H3 pentagons? Check H3 official documentation for details"
         while i_filled < i_n:
             c_neighbors[i_filled].append(None)
             i_filled += 1
 
     # is there an other relevant info that could be calculated here?
-    temp_dict = {
-        'geometry': polygons,
-        'neighbors': neighbors
-    }
+    temp_dict = {"geometry": polygons, "neighbors": neighbors}
 
-    hex_gdf = GeoDataFrame(
-        temp_dict,
-        crs="EPSG:4326"
-    ).to_crs(gdf.crs)\
-        .reset_index()\
-        .rename({'index': 'id'}, axis=1)
+    hex_gdf = (
+        GeoDataFrame(temp_dict, crs="EPSG:4326")
+        .to_crs(gdf.crs)
+        .reset_index()
+        .rename({"index": "id"}, axis=1)
+    )
 
     return hex_gdf

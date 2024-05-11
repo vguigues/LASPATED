@@ -624,6 +624,7 @@ class DataAggregator:
         return A
 
     def get_events_aggregated(self):
+        """Returns np.array of lists with number of events given by time indexes, geodiscretization index and features indexes for each observation."""
         limits = []
         for time_index in self.time_indexes:
             limits.append(np.max(self.events_data[time_index]) + 1)
@@ -664,7 +665,13 @@ class DataAggregator:
 
         return samples
 
-    def write_info(self, path="info.dat"):
+    def write_info(self, obs_index_column, path="info.dat"):
+        """Write file with informations about given discretization.
+
+        Args:
+            obs_index_column (str): time index that defines the number of observations.
+            path (str, optional): path of the written file. Defaults to "info.dat".
+        """
         info_file = open(path, "w")
         for time_index in self.time_indexes:
             info_file.write(f"{np.max(self.events_data[time_index]) + 1} ")
@@ -672,31 +679,56 @@ class DataAggregator:
         for feature in self.events_features:
             info_file.write(f"{np.max(self.events_data[feature]) + 1} ")
         info_file.write(f"{len(self.geo_features)} ")
-        info_file.write("0\n")
-        info_file.write("105 " * 7)
+        nb_holidays = 0
+        info_file.write(f"{nb_holidays}\n")
+        events = self.events_data
+        nb_obs_column_indexes = np.max(events[obs_index_column]) + 1
+        obs_count = [0] * nb_obs_column_indexes
+        for d in range(nb_obs_column_indexes):
+            filtered_events = events.loc[events[obs_index_column] == d].copy()
+            filtered_events["date_only"] = pd.to_datetime(filtered_events["ts"]).copy()
+            date_only = filtered_events["date_only"].dt.date
+            obs_count[d] = len(date_only.unique())
+            info_file.write(f"{obs_count[d]} ")
+        # print(f"obs_count = {obs_count}")
+        # info_file.write(obs_count)
         info_file.write("\nEND")
         info_file.close()
 
     def write_arrivals(self, path="arrivals.dat"):
+        """Write events data, aggregated by time indexes, geo index and features.
+
+        Args:
+            path (str, optional): path of the written file. Defaults to "arrivals.dat".
+        """
         samples = self.get_events_aggregated()
         arrivals_file = open(path, "w")
-        arrivals_file.write("%s\n" % (" ".join([str(x) for x in samples.shape])))
-
+        # arrivals_file.write("%s\n" % (" ".join([str(x) for x in samples.shape])))
         for index, sample in np.ndenumerate(samples):
             for i, val in enumerate(sample):
-                line = "%s %d %d -1\n" % (" ".join([str(x) for x in index]), i, val)
+                line = "%s %d %d\n" % (" ".join([str(x) for x in index]), i, val)
                 arrivals_file.write(line)
         arrivals_file.write("END")
         arrivals_file.close()
 
     def write_regions(self, path="neighbors.dat"):
+        """Write file with description of discretization subregions.
+        Description contains for each subregion:
+            id,
+            centroid coordinates,
+            geo features,
+            pairs of neighbor subregion ids and distances (km).
+
+        Args:
+            path (str, optional): path of the written file. Defaults to "neighbors.dat".
+        """
         centers = self.geo_discretization.geometry.to_crs("epsg:29193").centroid.to_crs(
             self.geo_discretization.crs
         )
         coords = centers.apply(lambda x: x.representative_point().coords[:][0])
         neighbors_file = open(path, "w")
-        neighbors_file.write("%d %d\n" % (len(centers), len(self.geo_features)))
-        print(f"Writing geo_features {self.geo_features}")
+        # neighbors_file.write("%d %d\n" % (len(centers), len(self.geo_features)))
+        # print(f"Writing geo_features {self.geo_features}")
         for i, row in self.geo_discretization.iterrows():
             id_region = row["id"]
             lat = coords[id_region][1]
@@ -704,7 +736,7 @@ class DataAggregator:
             neighbors = row["neighbors"]
             features = [row[feature] for feature in self.geo_features]
             neighbors_file.write(
-                "%d %.6f %.6f 0 %s "
+                "%d %.6f %.6f %s "
                 % (id_region, lat, lon, " ".join([str(x) for x in features]))
             )
             for neighbor in neighbors:
@@ -719,7 +751,15 @@ class DataAggregator:
         neighbors_file.write("END")
         neighbors_file.close()
 
-    def plot_discretization(self):
+    def plot_discretization(self, to_file=False):
+        """Plot the current discretization. The plot contains: events as points, max_borders and subregion borders and ids.
+
+        Args:
+            to_file (bool, optional): if True, save the plot to file "disc_r{R}.pdf" instead of invoking a window. R denotes the number of subregions. Defaults to False.
+
+        Returns:
+            _type_: _description_
+        """
         import matplotlib.pyplot as plt
 
         self.geo_discretization["center"] = self.geo_discretization.geometry.to_crs(
@@ -743,4 +783,10 @@ class DataAggregator:
                 color="black",
                 fontsize=11,
             )
-        plt.show()
+        if to_file:
+            num_regions = int(np.max(self.events_data["gdiscr"]) + 1)
+            plt.savefig(f"disc_r{num_regions}.pdf", bbox_inches="tight")
+            return f"saved discretization plot at disc_r{num_regions}.pdf"
+        else:
+            plt.show()
+            return None
