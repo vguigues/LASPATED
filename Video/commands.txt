@@ -1,0 +1,192 @@
+Python:
+
+Install modules:
+
+Linux:
+python3 -m pip install pandas=2.0.0 geopandas==0.12.2 matplotlib numpy h3 geovoronoi rtree descartes
+
+Windows:
+python -m pip install pandas geopandas==0.12.2 matplotlib numpy h3 geovoronoi rtree descartes
+
+# 1 - Import modules
+
+import pandas as pd
+import geopandas as gpd
+
+import matplotlib.pyplot as plt
+import numpy as np
+
+import laspated as spated
+
+# 2 - Create DataAggregator:
+
+app = spated.DataAggregator(crs="epsg:4326")
+
+# 3 - Read events data:
+
+events = pd.read_csv(r'../Data/emergency_calls_rio_de_janeiro.csv')
+
+# 4 - Add events data to aggregator:
+
+app.add_events_data(events, datetime_col='data_hora', lat_col='lat', lon_col="long", feature_cols=['prioridade'], datetime_format="%m/%d/%y %H:%M:%S")
+
+# 5.1 - Add borders from map:
+
+max_borders = gpd.read_file(r'../Data/rj/rj.shp')
+app.add_max_borders(max_borders)
+
+fig, ax = plt.subplots()
+app.max_borders.plot(ax=ax)
+app.events_data.plot(markersize=10, color='red', ax=ax)
+plt.show()
+
+# 5.2 - Add rectangular borders from events
+
+app.add_max_borders(method="rectangle") # Need events data already in the DataAggregator
+
+fig, ax = plt.subplots()
+app.max_borders.plot(ax=ax)
+app.events_data.plot(markersize=10, color='red', ax=ax)
+plt.show()
+
+# 5.3 - Add convex borders from events
+
+app.add_max_borders(method="convex") # Need events data already in the DataAggregator. Slow when many events are added.
+
+fig, ax = plt.subplots()
+app.max_borders.plot(ax=ax)
+app.events_data.plot(markersize=10, color='red', ax=ax)
+plt.show()
+
+
+# 6 - Add time discretizations:
+
+
+app.add_time_discretization('D', 1, 7, column_name="week_day")
+
+app.add_time_discretization('m', 30, 60*24, column_name="half_hour_index")
+
+app.add_time_discretization('M', [3,4,2,1,2], 12, column_name="variable_time_index")
+
+time_disc_df = pd.DataFrame([
+    ["2016-01-01", "2016-01-01", 1, "yearly"],
+    ["2016-02-06", "2016-02-11", 2, None],
+    ["2017-02-24", "2017-03-06", 2, None],
+], columns=["start", "end", "t", "repetition"])
+
+app.add_time_discretization(time_disc_df)
+
+print(app.events_data.sample(10)[["ts", "week_day", "half_hour_index", "variable_time_index", "tdiscr_1"]])
+
+# 7.1 - Add rectangular geo discretization:
+
+app.add_geo_discretization(
+    discr_type='R',
+    rect_discr_param_x=10,
+    rect_discr_param_y=10
+)
+
+app.plot_discretization()
+
+
+# 7.2 - Add hexagonal geo discretization:
+
+app.add_geo_discretization(
+    discr_type='H',
+    hex_discr_param=7
+)
+
+app.plot_discretization()
+
+# 7.3 - Custom Discretization from map
+
+custom_map = gpd.read_file(r'../Data/rio_de_janeiro_neighborhoods/rio_neighborhoods.shp')
+custom_map = custom_map.set_crs('epsg:29193')
+app.add_geo_discretization('C', custom_data=custom_map)
+
+app.plot_discretization()
+
+# 7.4 - Voronoi Discretization from set of points
+
+bases = gpd.read_file("bases/bases.shp")
+app.add_geo_discretization('V', custom_data=bases)
+
+app.plot_discretization()
+
+# 8.1 - Adding population geo features:
+
+# Read file
+population = gpd.read_file(r'../Data/regressores/populacao/')
+
+# Filter  columns of  interest
+population = population[['populacao_','geometry']].copy()
+
+# Calculate intersection
+app.add_geo_variable(population,type_geo_variable="feature")
+
+print(app.geo_discretization)
+
+
+# 8.2 - Adding Land Use geo features:
+
+# Read file
+land_use = gpd.read_file(r'../Data/regressores/uso_do_solo/')
+
+# Filter  columns of  interest
+land_use = land_use[['subgroup_0', 'subgroup_1', 'subgroup_2', 'subgroup_3','geometry']].copy()
+
+# Calculate intersection
+app.add_geo_variable(land_use,type_geo_variable="area")
+
+print(app.geo_discretization[["id", "subgroup_0","subgroup_1","subgroup_2","subgroup_3","populacao_"]])
+
+# 9.1 - get areas of intersection
+
+I = app.get_intersection(app.geo_discretization, land_use)
+
+# 9.2 - get events_aggregated:
+
+A = app.get_events_aggregated()
+print(A.shape)
+
+# 10 - Write arrivals:
+
+app.write_arrivals("arrivals.dat")
+
+## 11 - Write Regions:
+
+app.write_regions("neighbors.dat")
+
+
+C++:
+    Boost installation:
+        $ sudo apt-get install libboost-all-dev
+
+    Gurobi:
+        No install needed.
+        Set GUROBI_HOME environment variable  to path of gurobi directory
+
+    xtl, xtensor, fmt:
+        - Download source code at github
+            https://github.com/fmtlib/fmt
+            https://github.com/xtensor-stack/xtensor
+            https://github.com/xtensor-stack/xtl
+
+        - enter the downloaded directory of each library
+        - $ mkdir build
+        - $ cd build
+        - $ cmake ..
+        - $ make
+        - $ sudo make install
+
+# No reg projected_gradient for simulated data
+
+./laspated -f test.cfg --model=no_reg
+
+# Reg simulated data
+
+./laspated -f test.cfg --model=reg
+
+# No reg cross_validation for simulated data using set of weights
+
+./laspated -f test.cfg --model=no_reg --method=cross_validation --cv_proportion=0.2 --weights_list=10 20 30

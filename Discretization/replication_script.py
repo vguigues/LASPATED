@@ -16,7 +16,7 @@ import time
 
 
 def process_land_use():
-    land_use = gpd.read_file(r"../Data/regressores/uso_do_solo/")
+    land_use = gpd.read_file(r"regressores/uso_do_solo/")
     land_types = [
         "Afloramentos rochosos e depósitos sedimentares",
         "Áreas agrícolas",
@@ -99,7 +99,7 @@ def generate_disc(disc_type):
         app.add_geo_discretization(discr_type="H", hex_discr_param=7)
     elif disc_type == "district":
         custom_map = gpd.read_file(
-            r"../Data/rio_de_janeiro_neighborhoods/rio_neighborhoods.shp"
+            r"rio_de_janeiro_neighborhoods/rio_neighborhoods.shp"
         )
         custom_map = custom_map.set_crs("epsg:29193")
         app.add_geo_discretization("C", custom_data=custom_map)
@@ -107,7 +107,7 @@ def generate_disc(disc_type):
     land_use = process_land_use()
     app.add_geo_variable(land_use, type_geo_variable="area")
 
-    population = gpd.read_file(r"../Data/regressores/populacao/")
+    population = gpd.read_file(r"regressores/populacao/")
     population = population[["population", "geometry"]].copy()
     app.add_geo_variable(population)
 
