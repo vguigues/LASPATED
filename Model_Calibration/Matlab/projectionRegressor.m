@@ -34,16 +34,5 @@ model.ub=ubounds;
 model.sense = '>';
 params.outputflag = 0;
 results = gurobi(model,params);
-%results = gurobi(model);
 x=results.x;
-% for c=1:C
-%     for d=1:D
-%         for t=1:T
-%             for j=1:nbRegressors
-%                 fprintf("c%i d%i t%i j%i = %.8f\n",c-1,d-1,t-1,j-1, x(indexBeta(c,d,t,j)));
-%             end
-%         end
-%     end
-% end
-% input("");
 

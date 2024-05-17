@@ -2,12 +2,9 @@
 
 function [T,G,R,P,nbLandTypes,nbObservationsG,sample_calls,nbCalls,nbObservations,estimated,type,regressors,neighbors,distance]=read_calls_reg(discretization_dir)
 
-% info_file_path=[discretization_dir '\info.dat'];
-% calls_file_path=[discretization_dir '\calls.dat'];
-% neighbors_file_path=[discretization_dir '\neighbors.dat'];
-info_file_path=[discretization_dir '/info.dat'];
-calls_file_path=[discretization_dir '/calls.dat'];
-neighbors_file_path=[discretization_dir '/neighbors.dat'];
+info_file_path=[discretization_dir '\info.dat'];
+calls_file_path=[discretization_dir '\calls.dat'];
+neighbors_file_path=[discretization_dir '\neighbors.dat'];
 %sample_location_file_path=[discretization_dir '\samples.dat'];
 %missing_calls_file_path=[discretization_dir '\missing_calls.dat'];
 
@@ -91,6 +88,7 @@ continueBool=1;
 
 while continueBool
     str=fgetl(neighbors_file);
+    str=strtrim(str);
     [line]=strsplit (str);
     if (length(str) == 3 & str=='END')
         continueBool=0;
