@@ -1,2 +1,0 @@
-Nb_weeks	Reg 1	Reg 2	Reg 3	Reg 4	 CV	Emp
-1	

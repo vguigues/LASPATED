@@ -3,11 +3,9 @@ Python:
 Install modules:
 
 Linux:
-python3 -m pip uninstall geopandas # pandas must be version 0.12.2 or lower
-python3 -m pip install pandas geopandas==0.12.2 matplotlib numpy h3 geovoronoi rtree descartes
+python3 -m pip install pandas=2.0.0 geopandas==0.12.2 matplotlib numpy h3 geovoronoi rtree descartes
 
 Windows:
-python -m pip uninstall geopandas #  pandas must be version 0.12.2 or lower
 python -m pip install pandas geopandas==0.12.2 matplotlib numpy h3 geovoronoi rtree descartes
 
 # 1 - Import modules

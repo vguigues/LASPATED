@@ -1,6 +1,7 @@
-#include "laspated.h"
 #include <fstream>
 #include <sstream>
+
+#include "laspated.h"
 
 typedef struct {
   double mean_emp;
@@ -37,8 +38,10 @@ Result1 test1(int nb_weeks, int nb_groups, int neighbor_factor,
     which_group[t] = t % nb_groups;
   }
 
-  std::random_device rd;
-  std::mt19937 gen(rd());
+  // std::random_device rd;
+  // std::mt19937 gen(rd());
+
+  std::default_random_engine gen;
 
   vector<bool> is_red(n_x * n_y, false);
   vector<int> type_region = vector<int>(R, -1);
@@ -66,7 +69,7 @@ Result1 test1(int nb_weeks, int nb_groups, int neighbor_factor,
   xt::xarray<int> sample =
       xt::zeros<int>({T, R, C, static_cast<ulong>(nb_observations_total)});
 
-  vector<double> durations(T, 6);
+  vector<double> durations(T, 1);
   xt::xarray<int> nb_observations =
       nb_observations_total * xt::ones<int>({C, R, T});
   xt::xarray<int> nb_arrivals = xt::zeros<int>({C, R, T});
@@ -89,6 +92,7 @@ Result1 test1(int nb_weeks, int nb_groups, int neighbor_factor,
           std::cout << t << " and r = " << r << "(" << cx << "," << cy << ")\n";
           exit(1);
         }
+        // printf("rate r%d t%d: %f\n", r, t, theoretical_lambda(c, r, t));
         for (int n = 0; n < nb_observations_total; ++n) {
           poisson_distribution<int> pd(theoretical_lambda(c, r, t) *
                                        durations[t]);
@@ -101,7 +105,22 @@ Result1 test1(int nb_weeks, int nb_groups, int neighbor_factor,
             static_cast<double>(nb_observations(c, r, t) * durations[t]);
       }
     }
+    // cin.get();
   }
+
+  // for (int r = 0; r < R; ++r) {
+  //   int total_arrivals = 0;
+  //   for (int t = 0; t < T; ++t) {
+  //     printf(
+  //         "Theoretical Lambda(%d, %d) = %f, durations = %f, nb_arrivals =
+  //         %d\n", r, t, theoretical_lambda(0, r, t), durations[t],
+  //         nb_arrivals(0, r, t));
+  //     total_arrivals += nb_arrivals(0, r, t);
+  //   }
+  //   printf("total_arrivals = %d", total_arrivals);
+  //   cin.get();
+  // }
+  // cin.get();
 
   vector<vector<int>> neighbors = vector<vector<int>>(R, vector<int>());
   xt::xarray<double> distance = GRB_INFINITY * xt::ones<double>({R, R});
@@ -133,21 +152,21 @@ Result1 test1(int nb_weeks, int nb_groups, int neighbor_factor,
       neighbors[r].push_back((Yi - 1) * n_x + Xi + 1 - 1);
     }
 
-    if ((Yi + 1 <= n_y) && (Xi - 1 >= 1)) {
-      neighbors[r].push_back(Yi * n_x + Xi - 1 - 1);
-    }
+    //   if ((Yi + 1 <= n_y) && (Xi - 1 >= 1)) {
+    //     neighbors[r].push_back(Yi * n_x + Xi - 1 - 1);
+    //   }
 
-    if ((Yi - 1 >= 1) && (Xi - 1) >= 1) {
-      neighbors[r].push_back((Yi - 2) * n_x + Xi - 1 - 1);
-    }
+    //   if ((Yi - 1 >= 1) && (Xi - 1) >= 1) {
+    //     neighbors[r].push_back((Yi - 2) * n_x + Xi - 1 - 1);
+    //   }
 
-    if ((Yi + 1 <= n_y) && (Xi + 1) <= n_x) {
-      neighbors[r].push_back(Yi * n_x + Xi + 1 - 1);
-    }
+    //   if ((Yi + 1 <= n_y) && (Xi + 1) <= n_x) {
+    //     neighbors[r].push_back(Yi * n_x + Xi + 1 - 1);
+    //   }
 
-    if ((Yi - 1 >= 1) && (Xi + 1) <= n_x) {
-      neighbors[r].push_back((Yi - 2) * n_x + Xi + 1 - 1);
-    }
+    //   if ((Yi - 1 >= 1) && (Xi + 1) <= n_x) {
+    //     neighbors[r].push_back((Yi - 2) * n_x + Xi + 1 - 1);
+    //   }
   }
 
   for (int r = 0; r < R; ++r) {
@@ -155,6 +174,23 @@ Result1 test1(int nb_weeks, int nb_groups, int neighbor_factor,
       distance(r, s) = 1;
     }
   }
+
+  // for (int r = 0; r < R; ++r) {
+  //   for (int t = 0; t < T; ++t) {
+  //     printf("r%d t%d: arr = %d, obs = %d, which_group[t] = %d\n", r, t,
+  //            nb_arrivals(0, r, t), nb_observations(0, r, t), which_group[t]);
+  //   }
+  //   cin.get();
+  // }
+
+  // for (int r = 0; r < R; ++r) {
+  //   printf("r%d: ", r);
+  //   for (auto s : neighbors[r]) {
+  //     printf("%d ", s);
+  //   }
+  //   printf("\n");
+  // }
+  // cin.get();
 
   // for (int r = 0; r < R; ++r) {
   //   int x = r % 10;
@@ -184,16 +220,24 @@ Result1 test1(int nb_weeks, int nb_groups, int neighbor_factor,
   vector<double> err_by_weight;
   xt::xarray<double> min_lambda;
 
-  xt::xarray<double> x0 = 2 * 0.001 * xt::ones<double>({C, R, T});
-  param.max_iter = 30;
-  // if (!constant_lambdas) {
-  //   param.max_iter *= 4;
-  // }
+  param.EPS = 0.001;
+  param.sigma = 0.5;
+  param.beta_bar = 2;
+  param.max_iter = 100;
+  param.upper_lambda = 1e3;
+  param.lower_lambda = param.EPS;
+  xt::xarray<double> x0 = param.EPS * xt::ones<double>({C, R, T});
 
   for (size_t i = 0; i < test_weights.size(); ++i) {
     double w = test_weights[i];
     type_region = vector<int>(R, 0);
+    if (constant_lambdas) {
+      param.max_iter = 30;
+      x0 = param.EPS * xt::ones<double>({C, R, T});
+    }
+
     xt::xarray<double> alphas = w * neighbor_factor * xt::ones<double>({R, R});
+
     vector<double> weights = vector<double>(groups.size(), w);
     RegularizedModel model(nb_observations, nb_arrivals, durations, groups,
                            weights, alphas, distance, type_region, neighbors,
@@ -283,8 +327,8 @@ double get_population(int r, std::vector<bool> &is_blue,
   }
   double val = 0.0;
   for (int k = 1; k <= 10; ++k) {
-    double ceil_val_i = ceil((k / 5.0) * (i - 1)); // ceil_val_i == int3
-    double floor_val_i = floor((k / 5.0) * i);     // floor_val_i == int4
+    double ceil_val_i = ceil((k / 5.0) * (i - 1));  // ceil_val_i == int3
+    double floor_val_i = floor((k / 5.0) * i);      // floor_val_i == int4
     double condition_i = (5.0 / k) * ceil_val_i;
     double coeff_i = 0;
     if (condition_i <= i) {
@@ -341,7 +385,7 @@ Result2 test2(int nb_years, bool use_holidays) {
   ulong T = 4;
   ulong D = 7 + nb_holidays_years * (use_holidays);
 
-  int nb_weeks = 52; // fixed number of weeks.
+  int nb_weeks = 52;  // fixed number of weeks.
   ulong nb_obs = nb_weeks * 7;
   vector<double> durations(T, 1);
   vector<pair<bool, int>> is_holidays(nb_years * nb_weeks * 7,
@@ -849,6 +893,7 @@ Result3 test3(std::string &base_path) {
     if (aux_str == "END") {
       break;
     }
+    // std::cout << aux_str << "\n";
     std::istringstream ss(aux_str);
     ss >> ind >> lat >> longi;
     type_region[ind] = 0;
@@ -937,8 +982,8 @@ Result3 test3(std::string &base_path) {
   auto cv_result = cross_validation(param, m1, sample_no_cov, test_weights);
   // laspated::CrossValidationResult cv_result; // TODO: remove
   xt::xarray<double> regularized_rates = cv_result.lambda;
-  cout << "CV best Weight = " << cv_result.weight << "\n";
-  cout << "OBJ CV = " << m1.f(regularized_rates) << "\n";
+  // cout << "CV best Weight = " << cv_result.weight << "\n";
+  // cout << "OBJ CV = " << m1.f(regularized_rates) << "\n";
   // Covariates test
   using laspated::CovariatesModel;
 
@@ -1036,10 +1081,14 @@ Result1 test1_deterministic(std::string &filename, int nb_weeks, int nb_groups,
     int t, c, r, j, val;
     sample1_1 >> t >> c >> r >> j >> val;
     sample(t - 1, r - 1, c - 1, j - 1) = val;
+    if (sample(t - 1, r - 1, c - 1, j - 1) > 0) {
+      printf("sample c%d r%d t%d j%d = %d\n", c, r, t, j,
+             sample(t - 1, r - 1, c - 1, j - 1));
+    }
     nb_arrivals(c - 1, r - 1, t - 1) += val;
   }
   sample1_1.close();
-
+  cin.get();
   for (int c = 0; c < C; ++c) {
     for (int r = 0; r < R; ++r) {
       for (int t = 0; t < T; ++t) {
@@ -1101,21 +1150,21 @@ Result1 test1_deterministic(std::string &filename, int nb_weeks, int nb_groups,
       neighbors[r].push_back((Yi - 1) * n_x + Xi + 1 - 1);
     }
 
-    if ((Yi + 1 <= n_y) && (Xi - 1 >= 1)) {
-      neighbors[r].push_back(Yi * n_x + Xi - 1 - 1);
-    }
+    // if ((Yi + 1 <= n_y) && (Xi - 1 >= 1)) {
+    //   neighbors[r].push_back(Yi * n_x + Xi - 1 - 1);
+    // }
 
-    if ((Yi - 1 >= 1) && (Xi - 1) >= 1) {
-      neighbors[r].push_back((Yi - 2) * n_x + Xi - 1 - 1);
-    }
+    // if ((Yi - 1 >= 1) && (Xi - 1) >= 1) {
+    //   neighbors[r].push_back((Yi - 2) * n_x + Xi - 1 - 1);
+    // }
 
-    if ((Yi + 1 <= n_y) && (Xi + 1) <= n_x) {
-      neighbors[r].push_back(Yi * n_x + Xi + 1 - 1);
-    }
+    // if ((Yi + 1 <= n_y) && (Xi + 1) <= n_x) {
+    //   neighbors[r].push_back(Yi * n_x + Xi + 1 - 1);
+    // }
 
-    if ((Yi - 1 >= 1) && (Xi + 1) <= n_x) {
-      neighbors[r].push_back((Yi - 2) * n_x + Xi + 1 - 1);
-    }
+    // if ((Yi - 1 >= 1) && (Xi + 1) <= n_x) {
+    //   neighbors[r].push_back((Yi - 2) * n_x + Xi + 1 - 1);
+    // }
   }
 
   for (int r = 0; r < R; ++r) {
@@ -1134,13 +1183,17 @@ Result1 test1_deterministic(std::string &filename, int nb_weeks, int nb_groups,
   double mean_emp = 0;
   vector<double> err_by_weight;
   xt::xarray<double> min_lambda;
+  param.EPS = 0.001;
   param.max_iter = 30;
-  xt::xarray<double> x0 = 2 * 0.001 * xt::ones<double>({C, R, T});
-  // if (!constant_lambdas) {
-  //   param.max_iter *= 4;
-  // }
+  param.upper_lambda = 1e3;
+  param.lower_lambda = param.EPS;
+  xt::xarray<double> x0 = param.EPS * xt::ones<double>({C, R, T});
+
   for (size_t i = 0; i < test_weights.size(); ++i) {
+    // type_region = vector<int>(R, 0);
+    x0 = param.EPS * xt::ones<double>({C, R, T});
     double w = test_weights[i];
+
     xt::xarray<double> alphas = w * neighbor_factor * xt::ones<double>({R, R});
     vector<double> weights = vector<double>(groups.size(), w);
     RegularizedModel model(nb_observations, nb_arrivals, durations, groups,
@@ -1160,7 +1213,6 @@ Result1 test1_deterministic(std::string &filename, int nb_weeks, int nb_groups,
       min_w = i;
       min_lambda = x;
     }
-    // x0 = x;
   }
 
   double mean_cv = -1;

@@ -1,0 +1,35 @@
+[build-system]
+requires = ["setuptools", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "laspated"
+version = "0.1.0"
+description = "Spatio-temporal discrete data analysis"
+readme = "README.md"
+keywords = ["data", "analysis", "temporal", "discrete", "geographical"]
+authors = [
+    { name = "Vincent Guigues" },
+    { name = "Giovanni Amorim"},
+    { name = "André Mazal"},
+    { name = "Victor Nascimento"}
+]
+dependencies = [
+    "numpy>=1.20",
+    "pandas==2.0.0",
+    "geopandas==0.12.2",
+    "matplotlib",
+    "h3" ,
+    "geovoronoi" ,
+    "rtree" ,
+    "descartes"
+]
+requires-python = ">=3.6"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent"
+]
+
+[tool.setuptools.packages.find]
+where = ["laspated"]

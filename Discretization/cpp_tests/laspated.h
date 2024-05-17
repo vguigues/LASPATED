@@ -113,7 +113,7 @@
 
 namespace laspated {
 class Param {
-public:
+ public:
   // Projected gradient params
   double EPS = 1e-5;
   double sigma = 0.5;
@@ -129,13 +129,17 @@ public:
   // Constructor methods
   Param() {}
   Param(const Param &p)
-      : EPS(p.EPS), sigma(p.sigma), accuracy(p.accuracy), max_iter(p.max_iter),
-        lower_lambda(p.lower_lambda), upper_lambda(p.upper_lambda),
-        beta_bar(p.beta_bar), cv_proportion(p.cv_proportion) {}
+      : EPS(p.EPS),
+        sigma(p.sigma),
+        accuracy(p.accuracy),
+        max_iter(p.max_iter),
+        lower_lambda(p.lower_lambda),
+        upper_lambda(p.upper_lambda),
+        beta_bar(p.beta_bar),
+        cv_proportion(p.cv_proportion) {}
 
   Param &operator=(const Param &p) {
-    if (this == &p)
-      return *this;
+    if (this == &p) return *this;
 
     // Projected gradient params
     EPS = p.EPS;
@@ -163,7 +167,7 @@ public:
 };
 
 class RegularizedModel {
-public:
+ public:
   Param &param;
   std::string name = "Regularized";
   xt::xarray<int> nb_observations;
@@ -186,7 +190,7 @@ public:
                    xt::xarray<double> &a_distance, std::vector<int> &a_type,
                    std::vector<std::vector<int>> &a_neighbors, Param &a_param)
       : param(a_param) {
-    if (N.dimension() != 3) { // N should be C,R,T
+    if (N.dimension() != 3) {  // N should be C,R,T
       std::cout << "Error: N has " << N.dimension()
                 << " dimensions but should be 3\n";
       // fmt::print("Error: N has {} dimensions but should be 3. "
@@ -194,7 +198,7 @@ public:
       //            N.dimension());
       exit(1);
     }
-    if (M.dimension() != 3) { // M also should be C,R,T
+    if (M.dimension() != 3) {  // M also should be C,R,T
       std::cout << "Error: M has " << N.dimension()
                 << " dimensions but should be 3\n";
       // fmt::print(
@@ -233,10 +237,8 @@ public:
       for (int r = 0; r < R; ++r) {
         for (int t = 0; t < T; ++t) {
           double current_lambda = x(c, r, t);
-          double general_term =
-              nb_observations(c, r, t) * current_lambda * durations[t] -
-              nb_arrivals(c, r, t) * log(current_lambda * durations[t]);
-          obj += general_term;
+          obj += nb_observations(c, r, t) * current_lambda * durations[t] -
+                 nb_arrivals(c, r, t) * log(current_lambda * durations[t]);
 
           for (int s : neighbors[r]) {
             if (type_region[r] == type_region[s]) {
@@ -272,7 +274,6 @@ public:
   }
 
   xt::xarray<double> gradient(xt::xarray<double> &x) {
-
     xt::xarray<double> gradient = xt::zeros<double>(x.shape());
 
     for (int c = 0; c < C; ++c) {
@@ -390,7 +391,7 @@ public:
 
 #ifdef USE_GUROBI
 class CovariatesModel {
-public:
+ public:
   GRBEnv env;
   Param &param;
   std::string name = "Covariates";
@@ -402,7 +403,7 @@ public:
   CovariatesModel(xt::xarray<int> &N, xt::xarray<int> &M,
                   xt::xarray<double> &reg, Param &param)
       : param(param) {
-    if (N.dimension() != 4) { // N should be C,D,T,R
+    if (N.dimension() != 4) {  // N should be C,D,T,R
       std::cout << "Error: N has " << N.dimension()
                 << " dimensions but should be 4\n";
       // fmt::print(
@@ -410,7 +411,7 @@ public:
       //     set.\n", N.dimension());
       exit(1);
     }
-    if (M.dimension() != 4) { // M also should be C,D,T,R
+    if (M.dimension() != 4) {  // M also should be C,D,T,R
       std::cout << "Error: M has " << N.dimension()
                 << " dimensions but should be 4\n";
       // fmt::print(
@@ -419,7 +420,7 @@ public:
       exit(1);
     }
 
-    if (reg.dimension() != 2) { // R should be nb_regressors,R
+    if (reg.dimension() != 2) {  // R should be nb_regressors,R
       std::cout << "Error: regressors has " << reg.dimension()
                 << "dimensions but should be 2.\n";
       // fmt::print("Error: regressor array has {} dimensons but should be 2. "
@@ -797,7 +798,6 @@ template <typename Model>
 xt::xarray<double> projected_gradient_armijo_feasible(Model &model,
                                                       Param &param,
                                                       xt::xarray<double> &x) {
-
   if (model.name == "Regularized") {
     return regularized(model, param, x);
   } else if ((model.name == "Covariates")) {
@@ -905,14 +905,22 @@ xt::xarray<double> projected_gradient_armijo_feasible(Model &model,
     gap = fabs((upper_bound / 10000) - (lower_bound / 10000)) /
           fabs(upper_bound / 10000);
     // printf("\tgap = %.3f\n", gap);
-    // std::cin.get();
+    if (gap < 0.0) {
+      printf("Negative gap = %f", gap);
+      std::cout << "\tfold = " << fold << ", lower_bound = " << lower_bound
+                << ", upper = " << upper_bound
+                << " | upper - lower = " << abs(upper_bound - lower_bound)
+                << " abs(ub) = " << abs(upper_bound) << " gap = " << gap
+                << "\n";
+      std::cin.get();
+    }
     if (gap < accuracy) {
       // printf("Gap closed!\n");
       break;
     }
     ++k;
   }
-  printf("k = %d, gap = %f\n", k, gap);
+  // printf("k = %d, gap = %f\n", k, gap);
   return x;
 }
 
@@ -937,31 +945,49 @@ xt::xarray<double> regularized(Model &model, Param &param,
   xt::xarray<double> x_aux = xt::zeros<double>(x.shape());
   xt::xarray<double> gradient = xt::zeros<double>(x.shape());
 
+  // for (int c = 0; c < model.C; ++c) {
+  //   for (int r = 0; r < model.R; ++r) {
+  //     for (int t = 0; t < model.T; ++t) {
+  //       printf("initial x(%d,%d,%d) = %f\n", c, r, t, x(c, r, t));
+  //     }
+  //   }
+  // }
+  // cin.get();
+
+  double fold = model.f(x);
+  gradient = model.gradient(x);
   while (k < max_iter) {
-    double fold = model.f(x);
-    gradient = model.gradient(x);
     x_aux = x - beta_k * gradient;
     z = model.projection(x_aux);
 
-    bool stop = false;
-    int j = 0;
+    int j = 1;
     diff_aux = x - z;
-    double f = 1e100;
+    double f = model.f(z);
     double rhs = model.get_rhs(gradient, diff_aux);
-    while (!stop) {
-      z_aux = x + (1 / pow(2.0, j)) * (z - x);
-      f = model.f(z_aux);
-      if (f <= fold - (sigma / pow(2.0, j)) * rhs) {
-        stop = true;
-      } else {
-        ++j;
+    // printf("k = %d, fold = %f, f = %f, rhs = %f\n", k, fold, f, rhs);
+    if (f > fold - sigma * rhs) {
+      bool stop = false;
+      while (!stop) {
+        z_aux = x + (1 / pow(2.0, j)) * (z - x);
+        f = model.f(z_aux);
+        if (f <= fold - (sigma / pow(2.0, j)) * rhs) {
+          stop = true;
+        } else {
+          ++j;
+        }
       }
+      f_val.push_back(f);
+      x = z_aux;
+      beta_k = b_param / pow(2.0, j - 1);
+    } else {
+      x = z;
+      beta_k *= 2;
     }
-    f_val.push_back(f);
-    x = z_aux;
-    beta_k = b_param / pow(2.0, j);
+    fold = f;
+    gradient = model.gradient(x);
     ++k;
   }
+  // cin.get();
   return x;
 }
 
@@ -1233,6 +1259,6 @@ CrossValidationResult cross_validation(Param &param, RegularizedModel &model,
 //   }
 // }
 
-} // namespace laspated
+}  // namespace laspated
 
 #endif

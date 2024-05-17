@@ -1,7 +1,7 @@
 ifdef GUROBI_HOME
 	USE_GUROBI=1
 	INCLUDE_GUROBI = -I$(GUROBI_HOME)/include
-	LIB_GUROBI = -L$(GUROBI_HOME)/lib -lgurobi_c++ -lgurobi100
+	LIB_GUROBI = -L$(GUROBI_HOME)/lib -lgurobi_c++ -lgurobi110
 else
 	ifdef GUROBI_INCLUDE
 		ifdef GUROBI_LIB

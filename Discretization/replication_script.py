@@ -75,7 +75,7 @@ DISCS = {}
 
 def generate_disc(disc_type):
     app = spated.DataAggregator(crs="epsg:4326")  # initializes data aggregator
-    max_borders = gpd.read_file(r"../Data/rj/rj.shp")
+    max_borders = gpd.read_file(r"rj/rj.shp")
 
     events = pd.read_csv(r"sorted_events.csv", encoding="ISO-8859-1", sep=",")
     app.add_events_data(
@@ -127,7 +127,6 @@ def generate_disc(disc_type):
 
 def generate_discretizations():
     disc_types = ["rect", "hex", "district"]
-    # disc_types = ["rect"]
     for disc_type in disc_types:
         generate_disc(disc_type)
 
@@ -200,43 +199,17 @@ TABLES_BASE_DIR = "replication_results/"
 
 
 def experiment_1():
-    num_weights = 26
+    num_weights = 13
     initial_weights = [[0] * num_weights, [0] * num_weights]
-    initial_weights[0] = [
-        0,
-        0.2,
-        0.4,
-        0.6,
-        0.8,
-        1.0,
-        1.2,
-        1.4,
-        1.6,
-        1.8,
-        2.0,
-        2.5,
-        3.0,
-        3.5,
-        4.0,
-        4.5,
-        5.0,
-        5.5,
-        6.0,
-        6.5,
-        7.0,
-        8.0,
-        9.0,
-        10.0,
-        30.0,
-        50.0,
+    initial_weights = [
+        [0, 0.2, 0.4, 0.6, 0.8, 1, 1.2,1.4,1.6,1.8,2,50,100],
+        [0, 0.2, 0.4, 0.6, 0.8, 1, 1.2,1.4,1.6,1.8,2,50,100]
     ]
-    for i in range(len(initial_weights[0])):
-        initial_weights[1][i] = initial_weights[0][i]
-        initial_weights[0][i] /= 10000
+
     test_nb_weeks = [1, 10, 50, 500]
     test_nb_groups = [2, 4]
     test_neighbor_factors = [0, 1]
-    test_constant_lambdas = [1]
+    test_constant_lambdas = [0,1]
 
     table_results = {}
     for nb_weeks in test_nb_weeks:
@@ -292,34 +265,34 @@ def experiment_1():
             print(
                 f"Plot of err by weights for model {model} with {nb_weeks} weeks saved at {plot_filename}"
             )
-    # table_filename = "replication_results/tables/table_no_covariates_results.txt"
-    # table_file = open(table_filename, "w")
-    # table_file.write("Nb_weeks\tReg 1\tReg 2\tReg 3\tReg 4\t CV\tEmp\n")
-    # for nb_week in test_nb_weeks:
-    #     table_file.write(f"{nb_week}\t")
-    #     index_w = table_results[nb_week, 4, 1][1]
-    #     val = initial_weights[1][index_w] / nb_week
-    #     table_file.write(f"{table_results[nb_week,4,1][0]:.2f}/{val:.2f}\t")
-    #     index_w = table_results[nb_week, 4, 0][1]
-    #     val = initial_weights[1][index_w] / nb_week
-    #     table_file.write(f"{table_results[nb_week,4,0][0]:.2f}/{val:.2f}\t")
-    #     index_w = table_results[nb_week, 2, 1][1]
-    #     val = initial_weights[1][index_w] / nb_week
-    #     table_file.write(f"{table_results[nb_week,2,1][0]:.2f}/{val:.2f}\t")
-    #     index_w = table_results[nb_week, 2, 0][1]
-    #     val = initial_weights[1][index_w] / nb_week
-    #     table_file.write(f"{table_results[nb_week,2,0][0]:.2f}/{val:.2f}\t")
-    #     if nb_week > 1:
-    #         table_file.write(
-    #             f"{table_results[nb_week,2,1][3]:.2f}/{table_results[nb_week,2,1][4]:.2f}\t"
-    #         )
-    #     else:
-    #         table_file.write("-\t")
-    #     table_file.write(f"{table_results[nb_week,2,1][2]:.2f}/0\t")
+    table_filename = "replication_results/tables/table_no_covariates_results.txt"
+    table_file = open(table_filename, "w")
+    table_file.write("Nb_weeks\tReg 1\tReg 2\tReg 3\tReg 4\t CV\tEmp\n")
+    for nb_week in test_nb_weeks:
+        table_file.write(f"{nb_week}\t")
+        index_w = table_results[nb_week, 4, 1][1]
+        val = initial_weights[1][index_w] / nb_week
+        table_file.write(f"{table_results[nb_week,4,1][0]:.2f}/{val:.2f}\t")
+        index_w = table_results[nb_week, 4, 0][1]
+        val = initial_weights[1][index_w] / nb_week
+        table_file.write(f"{table_results[nb_week,4,0][0]:.2f}/{val:.2f}\t")
+        index_w = table_results[nb_week, 2, 1][1]
+        val = initial_weights[1][index_w] / nb_week
+        table_file.write(f"{table_results[nb_week,2,1][0]:.2f}/{val:.2f}\t")
+        index_w = table_results[nb_week, 2, 0][1]
+        val = initial_weights[1][index_w] / nb_week
+        table_file.write(f"{table_results[nb_week,2,0][0]:.2f}/{val:.2f}\t")
+        if nb_week > 1:
+            table_file.write(
+                f"{table_results[nb_week,2,1][3]:.2f}/{table_results[nb_week,2,1][4]:.2f} & "
+            )
+        else:
+            table_file.write("- & ")
+        table_file.write(f"{table_results[nb_week,2,1][2]:.2f}/0 \\ \hline\n")
 
-    #     table_file.write("\n")
-    # table_file.close()
-    # print(f"No covariates experiments table saved at {table_filename}")
+        table_file.write("\n")
+    table_file.close()
+    print(f"No covariates experiments table saved at {table_filename}")
 
 
 def experiment_2():
@@ -358,16 +331,16 @@ def experiment_2():
             ax.set_xlabel("Time periods", fontsize=18)
             ax.set_ylabel("Intensities", fontsize=18)
             ax.legend(fontsize=18)
-            plt.savefig(f"art_rates_by_t_w{nb_weeks}_r{r}.pdf", bbox_inches="tight")
+            plt.savefig(f"replication_results/plots/art_rates_by_t_w{nb_weeks}_r{r}.pdf", bbox_inches="tight")
 
 
 def experiment_3():
     copyfile(
-        "cpp_tests/results/ex2reg/table_ex2reg.txt",
+        "cpp_tests/results/ex3/table_ex3.txt",
         "replication_results/tables/table_covariates_results.txt",
     )
 
-    table_file_in = open("cpp_tests/results/ex2reg/table_ex2reg.txt", "r")
+    table_file_in = open("cpp_tests/results/ex3/table_ex3.txt", "r")
     contents = []
     for line in table_file_in.readlines():
         contents.append(line.split())
@@ -648,16 +621,16 @@ def experiment_4():
 
 def plot_results():
     experiment_1()
-    # experiment_2()
-    # experiment_3()
-    # experiment_4()
+    experiment_2()
+    experiment_3()
+    experiment_4()
 
 
 def main():
     tic = time.perf_counter()
-    # print("Generating discretizations")
-    # generate_discretizations()
-    print(DISCS.keys())
+    print("Generating discretizations")
+    generate_discretizations()
+    # print(DISCS.keys())
     print("Running experiments")
     run_cpp_experiments()
 

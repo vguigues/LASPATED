@@ -1,38 +1,32 @@
-#include "tests.h"
 #include <sstream>
 #include <string>
 #include <vector>
 
+#include "tests.h"
+
 void print_usage() {
   using std::cout;
   cout << "Usage: $./ laspated -e [example] | where example in :\n ";
-  cout << "\tex_no_reg\n"; // figures 10 and 11 figure 13 , table 1
-  cout << "\tex2_reg\n";   // table 2
-  cout << "\treal_data\n"; // figures 15 to 21
+  cout << "\tex_no_reg\n";  // figures 10 and 11 figure 13 , table 1
+  cout << "\tex2_reg\n";    // table 2
+  cout << "\treal_data\n";  // figures 15 to 21
   cout << "all\n";
 }
 
 void ex_no_reg() {
   using namespace std;
   vector<vector<double>> initial_weights{
-      {0,   0.2, 0.4, 0.6, 0.8, 1.0, 1.2, 1.4, 1.6, 1.8, 2.0,  2.5,  3.0,
-       3.5, 4.0, 4.5, 5.0, 5.5, 6.0, 6.5, 7.0, 8.0, 9.0, 10.0, 30.0, 50.0},
-      {0,   0.2, 0.4, 0.6, 0.8, 1.0, 1.2, 1.4, 1.6, 1.8, 2.0,  2.5,  3.0,
-       3.5, 4.0, 4.5, 5.0, 5.5, 6.0, 6.5, 7.0, 8.0, 9.0, 10.0, 30.0, 50.0}};
-
-  for (size_t i = 0; i < initial_weights[0].size(); ++i) {
-    initial_weights[0][i] /= 10000;
-  }
+      {0, 0.2, 0.4, 0.6, 0.8, 1, 1.2, 1.4, 1.6, 1.8, 2, 50, 100},
+      {0, 0.2, 0.4, 0.6, 0.8, 1, 1.2, 1.4, 1.6, 1.8, 2, 50, 100}};
 
   vector<int> test_nb_groups{2, 4};
   vector<int> test_nb_weeks{1, 10, 50, 500};
   vector<int> test_neighbor_factors{0, 1};
-  // vector<int> test_constant_lambdas{0, 1};
-  vector<int> test_constant_lambdas{1};
+  vector<int> test_constant_lambdas{0, 1};
 
   // vector<int> test_nb_groups{4};
-  // vector<int> test_nb_weeks{1};
-  // vector<int> test_neighbor_factors{1};
+  // vector<int> test_nb_weeks{10};
+  // vector<int> test_neighbor_factors{0};
   // vector<int> test_constant_lambdas{1};
 
   for (auto constant_lambdas : test_constant_lambdas) {
@@ -123,7 +117,7 @@ void ex2_reg() {
   vector<int> test_nb_years{1, 10, 15};
   // vector<int> test_use_holidays{1};
 
-  ofstream result_file("cpp_tests/results/ex2reg/table_ex2reg.txt", ios::out);
+  ofstream result_file("cpp_tests/results/ex3/table_ex3.txt", ios::out);
   result_file
       << "nb_weeks\tholidays\tCovariates\tReg 1\tReg 2\tReg 3\tEmpirical\n";
   cout << "nb_weeks\tholidays\tCovariates\tReg 1\tReg 2\tReg 3\tEmpirical\n";
@@ -133,9 +127,10 @@ void ex2_reg() {
       cout << "weeks = " << nb_years << ", ";
       cout << "use_holidays = " << use_holidays << "\n";
       Result2 result = test2(nb_years, use_holidays);
-      result_file << nb_years << " " << use_holidays << " " << result.err_cov
-                  << " " << result.min_err1 << " " << result.min_err2 << " "
-                  << result.min_err3 << " " << result.err_emp << "\n";
+      result_file << nb_years * 52 << " & " << use_holidays << " & "
+                  << result.err_cov << " & " << result.min_err1 << " & "
+                  << result.min_err2 << " & " << result.min_err3 << " & "
+                  << result.err_emp << "\n";
       cout << nb_years << " " << use_holidays << " " << result.err_cov << " "
            << result.min_err1 << " " << result.min_err2 << " "
            << result.min_err3 << " " << result.err_emp << "\n";
@@ -147,8 +142,9 @@ void ex2_reg() {
 
 void real_data() {
   using namespace std;
-  vector<string> test_base_paths{"discretizations/rect", "discretizations/hex",
-                                 "discretizations/district"};
+  vector<string> test_base_paths{
+      /*"discretizations/rect",*/ "discretizations/hex",
+      "discretizations/district"};
 
   for (auto &base_path : test_base_paths) {
     auto result = test3(base_path);
@@ -203,14 +199,14 @@ void real_data() {
 void test_det() {
   using namespace std;
   vector<vector<double>> initial_weights{
-      {0, 0.2, 0.4, 0.6, 0.8, 1.0, 1.2, 1.4, 1.6, 1.8, 2.0, 1000, 10000, 1e6},
-      {0, 0.2, 0.4, 0.6, 0.8, 1.0, 1.2, 1.4, 1.6, 1.8, 2.0, 1000, 10000, 1e6}};
+      {0, 0.2, 0.4, 0.6, 0.8, 1, 1.2, 1.4, 1.6, 1.8, 2, 50, 100},
+      {0, 0.2, 0.4, 0.6, 0.8, 1, 1.2, 1.4, 1.6, 1.8, 2, 50, 100}};
 
-  vector<int> test_nb_groups{2, 4};
+  vector<int> test_nb_groups{4};
   // vector<int> test_nb_weeks{1, 10, 50, 500};
   vector<int> test_nb_weeks{1};
   vector<string> test_samples{"sample1_1.txt"};
-  vector<int> test_neighbor_factors{0, 1};
+  vector<int> test_neighbor_factors{1};
   // vector<int> test_constant_lambdas{0, 1};
   vector<int> test_constant_lambdas{1};
 
@@ -321,8 +317,8 @@ int main(int argc, char *argv[]) {
     // test_det();
     ex_no_reg();
 #ifdef USE_GUROBI
-    // ex2_reg();
-    // real_data();
+    ex2_reg();
+    real_data();
 #endif
   } else {
     std::cout << "Unknown example " << example << "\n";
