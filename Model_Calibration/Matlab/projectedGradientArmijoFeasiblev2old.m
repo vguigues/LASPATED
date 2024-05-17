@@ -7,7 +7,6 @@ betak=bparam;
 upper=10^(10);
 lower=-10^(10);
 
-
 while ((k<=iterMax)&&((upper-lower)>delta))
       [fold]=oracleObjectiveModel1v2(nbObservations,nbArrivals,neighbors,type,distance,x,T,R,C,alpha,durations,Groups,whichgroup,weights);
       %fold

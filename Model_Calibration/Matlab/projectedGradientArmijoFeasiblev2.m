@@ -1,6 +1,6 @@
 
-
-function [x,fVal]=projectedGradientArmijoFeasiblev2(nbObservations,nbArrivals,neighbors,type,distance,T,R,C,sigma,x,iterMax,alpha,epsilon,durations,Groups,whichgroup,weights,delta,uppx,lowx)
+       
+function [x,fVal]=projectedGradientArmijoFeasiblev2(nbObservations,nbArrivals,neighbors,type,distance,T,R,C,sigma,x,iterMax,alpha,epsilon,durations,Groups,whichgroup,weights)
 
 k=1;
 fVal=[];
@@ -11,9 +11,9 @@ lower=-10^(10);
 [fold]=oracleObjectiveModel1v2(nbObservations,nbArrivals,neighbors,type,distance,x,T,R,C,alpha,durations,Groups,whichgroup,weights);
 [gradient]=oracleGradientModel1v2(nbObservations,nbArrivals,neighbors,type,distance,x,T,R,C,alpha,durations,Groups,whichgroup,weights);
 
-
-while ((k<=iterMax)&&((upper-lower)>delta))
-    %fold
+%while ((k<=iterMax)&&((upper-lower)>delta))
+while (k<=iterMax)
+%fold
     z=max(x-betak*gradient,epsilon);
     rhs=sum(sum(sum(gradient.*(x-z))));
     [f]=oracleObjectiveModel1v2(nbObservations,nbArrivals,neighbors,type,distance,z,T,R,C,alpha,durations,Groups,whichgroup,weights);
@@ -42,19 +42,19 @@ while ((k<=iterMax)&&((upper-lower)>delta))
     [gradient]=oracleGradientModel1v2(nbObservations,nbArrivals,neighbors,type,distance,x,T,R,C,alpha,durations,Groups,whichgroup,weights);
     upper=min(upper,f);
     lower=f;
-    change=0;
-    for t=1:T
-        for i=1:R
-            for p=1:C
-                lower=lower-gradient(p,i,t)*x(p,i,t);
-                if (gradient(p,i,t)>0)
-                    change=change+gradient(p,i,t)*lowx(p,i,t);
-                else
-                    change=change+gradient(p,i,t)*uppx(p,i,t);
-                end
-            end
-        end
-    end
-    lower=lower+change;
+%     change=0;
+%     for t=1:T
+%         for i=1:R
+%             for p=1:C
+%                 lower=lower-gradient(p,i,t)*x(p,i,t);
+%                 if (gradient(p,i,t)>0)
+%                     change=change+gradient(p,i,t)*lowx(p,i,t);
+%                 else
+%                     change=change+gradient(p,i,t)*uppx(p,i,t);
+%                 end
+%             end
+%         end
+%     end
+%     lower=lower+change;
     k=k+1;
 end
