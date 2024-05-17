@@ -267,21 +267,21 @@ def experiment_1():
             )
     table_filename = "replication_results/tables/table_no_covariates_results.txt"
     table_file = open(table_filename, "w")
-    table_file.write("Nb_weeks\tReg 1\tReg 2\tReg 3\tReg 4\t CV\tEmp\n")
+    table_file.write("Nb_weeks & Reg 1 & Reg 2 & Reg 3 & Reg 4 & CV & Emp\n")
     for nb_week in test_nb_weeks:
-        table_file.write(f"{nb_week}\t")
+        table_file.write(f"{nb_week} & ")
         index_w = table_results[nb_week, 4, 1][1]
         val = initial_weights[1][index_w] / nb_week
-        table_file.write(f"{table_results[nb_week,4,1][0]:.2f}/{val:.2f}\t")
+        table_file.write(f"{table_results[nb_week,4,1][0]:.2f}/{val:.2f} & ")
         index_w = table_results[nb_week, 4, 0][1]
         val = initial_weights[1][index_w] / nb_week
-        table_file.write(f"{table_results[nb_week,4,0][0]:.2f}/{val:.2f}\t")
+        table_file.write(f"{table_results[nb_week,4,0][0]:.2f}/{val:.2f} & ")
         index_w = table_results[nb_week, 2, 1][1]
         val = initial_weights[1][index_w] / nb_week
-        table_file.write(f"{table_results[nb_week,2,1][0]:.2f}/{val:.2f}\t")
+        table_file.write(f"{table_results[nb_week,2,1][0]:.2f}/{val:.2f} & ")
         index_w = table_results[nb_week, 2, 0][1]
         val = initial_weights[1][index_w] / nb_week
-        table_file.write(f"{table_results[nb_week,2,0][0]:.2f}/{val:.2f}\t")
+        table_file.write(f"{table_results[nb_week,2,0][0]:.2f}/{val:.2f} & ")
         if nb_week > 1:
             table_file.write(
                 f"{table_results[nb_week,2,1][3]:.2f}/{table_results[nb_week,2,1][4]:.2f} & "

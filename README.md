@@ -1,11 +1,11 @@
 -- How to run the replication script
 
-The first step is to compile the C++ code. This can be done by running the command:
+The first step is to compile the C++ code. If you have a GCC compiler, this can be done by running the command:
 
 $ cd Discretization
 $ make -C cpp_tests
 
-The cpp_tests directory contains a Makefile that can be edited by the user that compiles the C++ script.  The Makefile inside directory cpp_tests access the environment variable $GUROBI_HOME. If it is set, then the code for the model with Covariates inside laspated.h is accessible. Otherwise, the script will not run the experiments that uses covariates.
+The cpp_tests directory contains a Makefile that compiles the C++ script.  The Makefile inside directory cpp_tests access the environment variable $GUROBI_HOME. If it is set, then the code for the model with Covariates inside laspated.h is accessible. Otherwise, the script will not run the experiments that uses covariates.
 
 After the C++ code is successfully compiled, you can run the replication script by simply running:
 
