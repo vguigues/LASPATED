@@ -2,7 +2,7 @@
 
 The first step is to compile the C++ code. If you have a GCC compiler, this can be done by running the command:
 
-$ cd Discretization
+$ cd Replication
 $ make -C cpp_tests
 
 The cpp_tests directory contains a Makefile that compiles the C++ script.  The Makefile inside directory cpp_tests access the environment variable $GUROBI_HOME. If it is set, then the code for the model with Covariates inside laspated.h is accessible. Otherwise, the script will not run the experiments that uses covariates.

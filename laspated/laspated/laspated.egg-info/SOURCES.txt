@@ -1,8 +1,0 @@
-LICENSE.txt
-README.md
-pyproject.toml
-laspated/laspated.egg-info/PKG-INFO
-laspated/laspated.egg-info/SOURCES.txt
-laspated/laspated.egg-info/dependency_links.txt
-laspated/laspated.egg-info/requires.txt
-laspated/laspated.egg-info/top_level.txt

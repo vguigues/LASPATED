@@ -1,0 +1,5 @@
+Scenarios are given from top to bottom of the file.
+For each scenario, if the scenario has N calls the first line is the
+number N of calls and then each of the following N lines corresponds to a call with
+the following 12 columns:
+Time - Region index - Priority - Day - Time on scene - Lat - Long - Time at hospital - TimeCleaningBase - Cleaning needed - Hospital needed - index hospital
