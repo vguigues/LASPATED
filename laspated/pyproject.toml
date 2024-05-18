@@ -31,5 +31,4 @@ classifiers = [
     "Operating System :: OS Independent"
 ]
 
-[tool.setuptools.packages.find]
-where = ["laspated"]
+[tool.setuptools.packages]

@@ -90,13 +90,17 @@
     Free functions:
 
     projected_gradient_armijo_feasible<Model>(model, param, x0): runs projected
-        gradient with initial solution x0 using model (<Model> can be
-        <RegularizedModel> or <CovariatesModel>) and param objects.
+        gradient along the feasible region with initial solution x0 using model
+   (<Model> can be <RegularizedModel> or <CovariatesModel>) and param objects.
 
     cross_validation(param, regularized_model, sample, alphas, group_weights):
         runs cross validation given parameters, sample array, weights alphas and
         corresponding time group weights. alphas and group_weights must be the
         same size.
+
+    projected_gradient_armijo_feasible<Model>(model, param, x0): runs projected
+        gradient along the boundary with initial solution x0 using model
+   (<Model> can be <RegularizedModel> or <CovariatesModel>) and param objects.
 */
 #ifdef USE_GUROBI
 #include "gurobi_c++.h"
@@ -1181,6 +1185,37 @@ CrossValidationResult cross_validation(Param &param, RegularizedModel &model,
   model.nb_arrivals = initial_nb_arrivals;
   // fmt::print("best_weight = {}\n", best_weight);
   return {cpu_time, best_weight, x};
+}
+
+template <typename Model>
+xt::xarray<double> projected_gradient_armijo_boundary(Model &model,
+                                                      Param &param,
+                                                      xt::xarray<double> &x) {
+  int k = 0;
+  x = model.projection(x);
+  while (k < param.max_iter) {
+    double fold = model.f(x);
+    xt::xarray<double> gradient = model.gradient(x);
+    bool stop = false;
+    int j = 0;
+    xt::xarray<double> z = xt::zeros<double>(x.shape());
+    while (!stop) {
+      xt::xarray<double> x_aux = x - (param.beta_bar / pow(2.0, j)) * gradient;
+      xt::xarray<double> z = model.projection(x_aux);
+      double f = model.f(z);
+      xt::xarray<double> diff_aux = x - z;
+      double rhs = model.get_rhs(gradient, diff_aux);
+      if (f <= fold - param.sigma * rhs) {
+        stop = true;
+      } else {
+        ++j;
+      }
+    }
+    x = z;
+    ++k;
+  }
+
+  return x;
 }
 
 // CrossValidationResult cross_validation2(Param &param, RegularizedModel

@@ -142,9 +142,8 @@ void ex2_reg() {
 
 void real_data() {
   using namespace std;
-  vector<string> test_base_paths{
-      /*"discretizations/rect",*/ "discretizations/hex",
-      "discretizations/district"};
+  vector<string> test_base_paths{"discretizations/rect", "discretizations/hex",
+                                 "discretizations/district"};
 
   for (auto &base_path : test_base_paths) {
     auto result = test3(base_path);

@@ -108,20 +108,6 @@ Result1 test1(int nb_weeks, int nb_groups, int neighbor_factor,
     // cin.get();
   }
 
-  // for (int r = 0; r < R; ++r) {
-  //   int total_arrivals = 0;
-  //   for (int t = 0; t < T; ++t) {
-  //     printf(
-  //         "Theoretical Lambda(%d, %d) = %f, durations = %f, nb_arrivals =
-  //         %d\n", r, t, theoretical_lambda(0, r, t), durations[t],
-  //         nb_arrivals(0, r, t));
-  //     total_arrivals += nb_arrivals(0, r, t);
-  //   }
-  //   printf("total_arrivals = %d", total_arrivals);
-  //   cin.get();
-  // }
-  // cin.get();
-
   vector<vector<int>> neighbors = vector<vector<int>>(R, vector<int>());
   xt::xarray<double> distance = GRB_INFINITY * xt::ones<double>({R, R});
   for (int r = 0; r < R; ++r) {
@@ -175,40 +161,6 @@ Result1 test1(int nb_weeks, int nb_groups, int neighbor_factor,
     }
   }
 
-  // for (int r = 0; r < R; ++r) {
-  //   for (int t = 0; t < T; ++t) {
-  //     printf("r%d t%d: arr = %d, obs = %d, which_group[t] = %d\n", r, t,
-  //            nb_arrivals(0, r, t), nb_observations(0, r, t), which_group[t]);
-  //   }
-  //   cin.get();
-  // }
-
-  // for (int r = 0; r < R; ++r) {
-  //   printf("r%d: ", r);
-  //   for (auto s : neighbors[r]) {
-  //     printf("%d ", s);
-  //   }
-  //   printf("\n");
-  // }
-  // cin.get();
-
-  // for (int r = 0; r < R; ++r) {
-  //   int x = r % 10;
-  //   int y = r / 10;
-  //   double cx = x + 0.5;
-  //   double cy = y + 0.5;
-  //   for (int t = 0; t < T; ++t) {
-  //     cout << "r" << r << " t" << t << "(" << cx << "," << cy << ")"
-  //          << ": blue =" << !is_red[r] << ", type = " << type_region[r]
-  //          << ", theo = " << theoretical_lambda(0, r, t)
-  //          << ", est = " << empirical_lambda(0, r, t) << "\n";
-  //   }
-
-  //   if ((r + 1) % 10 == 0) {
-  //     cin.get();
-  //   }
-  // }
-
   using laspated::Param;
   using laspated::projected_gradient_armijo_feasible;
   using laspated::RegularizedModel;
@@ -247,30 +199,6 @@ Result1 test1(int nb_weeks, int nb_groups, int neighbor_factor,
         projected_gradient_armijo_feasible<RegularizedModel>(model, param, x0);
     double err = model.average_rate_difference(theoretical_lambda, x);
 
-    if (nb_groups == 4 && neighbor_factor == 1 && constant_lambdas &&
-        nb_weeks == 1 && i == test_weights.size() - 1) {
-      ofstream x_file("est_x.txt", std::ios::out);
-      double sum_err = 0.0;
-      for (int c = 0; c < C; ++c) {
-        for (int r = 0; r < R; ++r) {
-          for (int t = 0; t < T; ++t) {
-            x_file << c + 1 << " " << r + 1 << " " << t + 1 << " " << x(c, r, t)
-                   << "\n";
-            // printf("c = %d, r = %d, t = %d: x = %f, theo = %f abs_rel_diff =
-            // "
-            //        "%f, sum = %f\n",
-            //        c, r, t, x(c, r, t), theoretical_lambda(c, r, t),
-            //        fabs(theoretical_lambda(c, r, t) - x(c, r, t)) /
-            //            theoretical_lambda(c, r, t),
-            //        sum_err);
-            sum_err += fabs(theoretical_lambda(c, r, t) - x(c, r, t)) /
-                       theoretical_lambda(c, r, t);
-          }
-        }
-      }
-      x_file.close();
-    }
-
     cout << "\tw = " << w << ", err = " << err << "\n";
     // cin.get();
     err_by_weight.push_back(err);
@@ -298,6 +226,17 @@ Result1 test1(int nb_weeks, int nb_groups, int neighbor_factor,
     auto result = cross_validation(param, model, sample, test_weights);
     mean_cv = model.average_rate_difference(theoretical_lambda, result.lambda);
     w_cv = result.weight;
+  }
+  if (constant_lambdas && (nb_weeks == 1 || nb_weeks == 10) &&
+      neighbor_factor == 1 && nb_groups == 2) {
+    param.max_iter = 100;
+    xt::xarray<double> alphas = test_weights[min_w] * xt::ones<double>({R, R});
+    vector<double> weights = vector<double>(groups.size(), test_weights[min_w]);
+    RegularizedModel model(nb_observations, nb_arrivals, durations, groups,
+                           weights, alphas, distance, type_region, neighbors,
+                           param);
+    min_lambda = projected_gradient_armijo_feasible<RegularizedModel>(
+        model, param, min_lambda);
   }
 
   return Result1{
