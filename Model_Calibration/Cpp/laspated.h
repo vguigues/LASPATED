@@ -245,7 +245,7 @@ class RegularizedModel {
                  nb_arrivals(c, r, t) * log(current_lambda * durations[t]);
 
           for (int s : neighbors[r]) {
-            if (type_region[r] == type_region[s]) {
+            if (true /*type_region[r] == type_region[s]*/) {
               obj += (0.5 * alpha(r, s)) * nb_observations(c, r, t) *
                      nb_observations(c, s, t) *
                      pow(x(c, r, t) - x(c, s, t), 2) / distance(r, s);
@@ -289,7 +289,7 @@ class RegularizedModel {
           // double prev_comp = grad_component;
           // double sum_neighbors = 0;
           for (int s : neighbors[r]) {
-            if (type_region[r] == type_region[s]) {
+            if (true /*type_region[r] == type_region[s] */) {
               grad_component += 2 * alpha(r, s) * nb_observations(c, r, t) *
                                 nb_observations(c, s, t) *
                                 (x(c, r, t) - x(c, s, t)) / (distance(r, s));
