@@ -388,13 +388,13 @@ Result2 test2(int nb_years, bool use_holidays) {
 
   vector<vector<double>> u(2, vector<double>(20, 0));
   for (int k = 0; k < 20; ++k) {
-    // u[0][k] = rnd_blue(gen);
-    u[0][k] = 1;
+    u[0][k] = rnd_blue(gen);
+    // u[0][k] = 1;
   }
 
   for (int k = 0; k < 20; ++k) {
-    // u[1][k] = rnd_red(gen);
-    u[1][k] = 1;
+    u[1][k] = rnd_red(gen);
+    // u[1][k] = 1;
   }
 
   // u = {{0.3734, 0.6277, 0.2767, 0.9151, 0.0255, 0.8281, 0.2148,

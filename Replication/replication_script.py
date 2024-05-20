@@ -542,7 +542,7 @@ def experiment_4():
         plt.clf()
         plt.cla()
 
-        if R != 76:
+        if R != min(regions):
             continue
 
         fig_total, ax_total = plt.subplots(figsize=(12, 10))
