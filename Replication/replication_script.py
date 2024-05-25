@@ -272,23 +272,23 @@ def experiment_1():
         table_file.write(f"{nb_week} & ")
         index_w = table_results[nb_week, 4, 1][1]
         val = initial_weights[1][index_w] / nb_week
-        table_file.write(f"{table_results[nb_week,4,1][0]:.2f}/{val:.2f} & ")
+        table_file.write(f"{table_results[nb_week,4,1][0]:.2f}/{val} & ")
         index_w = table_results[nb_week, 4, 0][1]
         val = initial_weights[1][index_w] / nb_week
-        table_file.write(f"{table_results[nb_week,4,0][0]:.2f}/{val:.2f} & ")
+        table_file.write(f"{table_results[nb_week,4,0][0]:.2f}/{val} & ")
         index_w = table_results[nb_week, 2, 1][1]
         val = initial_weights[1][index_w] / nb_week
-        table_file.write(f"{table_results[nb_week,2,1][0]:.2f}/{val:.2f} & ")
+        table_file.write(f"{table_results[nb_week,2,1][0]:.2f}/{val} & ")
         index_w = table_results[nb_week, 2, 0][1]
         val = initial_weights[1][index_w] / nb_week
-        table_file.write(f"{table_results[nb_week,2,0][0]:.2f}/{val:.2f} & ")
+        table_file.write(f"{table_results[nb_week,2,0][0]:.2f}/{val} & ")
         if nb_week > 1:
             table_file.write(
-                f"{table_results[nb_week,2,1][3]:.2f}/{table_results[nb_week,2,1][4]:.2f} & "
+                f"{table_results[nb_week,2,1][3]:.2f}/{table_results[nb_week,2,1][4]} & "
             )
         else:
             table_file.write("- & ")
-        table_file.write(f"{table_results[nb_week,2,1][2]:.2f}/0 \\ \hline\n")
+        table_file.write(f"{table_results[nb_week,2,1][2]}/0 \\\\ \hline\n")
 
         table_file.write("\n")
     table_file.close()

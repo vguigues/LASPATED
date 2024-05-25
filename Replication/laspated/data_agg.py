@@ -736,7 +736,7 @@ class DataAggregator:
             neighbors = row["neighbors"]
             features = [row[feature] for feature in self.geo_features]
             neighbors_file.write(
-                "%d %.6f %.6f %s "
+                "%d %.6f %.6f 0 %s "
                 % (id_region, lat, lon, " ".join([str(x) for x in features]))
             )
             for neighbor in neighbors:

@@ -1,6 +1,7 @@
 #ifndef LASPATED_H
 #define LASPATED_H
 
+#define USE_GUROBI 1
 /* Source code for C++ calibration functions of paper titled: LASPATED: a
    Library for the Analysis of SPAtio-TEmporal Discrete data.
 
@@ -83,7 +84,7 @@
             between x1 and x2.
     CrossValidationResult: result struct for cross validation
       Attributes:
-        wall_time: time spent, in seconds, to run cross validation
+        cpu_time: time spent, in seconds, to run cross validation
         weight: best weight found in cross validation
         lambda: solution given by best weight found in cross validation
     Free functions:
@@ -114,35 +115,6 @@
 namespace po = boost::program_options;
 
 namespace laspated {
-
-class AppParameters {
- public:
-  // Projected gradient params
-  double EPS;           // Epsilon for feasibility/convergence
-  double sigma;         // Sigma for armijo step
-  double gap;           // Stopping criterion gap.
-  int max_iter;         // Max number of iterations.
-  double lower_lambda;  // lower bound on decision variables
-  double upper_lambda;  // upper bound on decision variables
-  double beta_bar;      // Initial step size in projected gradient
-
-  // Cross validation proportion
-  double cv_proportion = 0.2;  // Cross validation proportion
-
-  // Model parameters
-  std::string model_type;          // reg | no_reg
-  std::string method;              // calibration | cross_validation
-  std::string algorithm;           // feasible | boundary
-  std::string info_file;           // path to info.dat
-  std::string arrivals_file;       // path to arrivals.dat
-  std::string neighbors_file;      // path to neighbors.dat
-  std::string alpha_regions_file;  // path to alpha matrix
-  std::string time_groups_file;    // path to time groups description
-  double duration;                 // duration of each period
-  std::string cv_weights_file;     // path to cross_validation weights
-  std::string output_file;         // Path to results file
-};
-
 class Param {
  public:
   // Projected gradient params
@@ -159,15 +131,6 @@ class Param {
 
   // Constructor methods
   Param() {}
-  Param(AppParameters &app_params)
-      : EPS(app_params.EPS),
-        sigma(app_params.sigma),
-        gap(app_params.gap),
-        max_iter(app_params.max_iter),
-        lower_lambda(app_params.lower_lambda),
-        upper_lambda(app_params.upper_lambda),
-        beta_bar(app_params.beta_bar),
-        cv_proportion(app_params.cv_proportion) {}
   Param(const Param &p)
       : EPS(p.EPS),
         sigma(p.sigma),
@@ -985,6 +948,15 @@ xt::xarray<double> regularized(Model &model, Param &param,
   xt::xarray<double> x_aux = xt::zeros<double>(x.shape());
   xt::xarray<double> gradient = xt::zeros<double>(x.shape());
 
+  // for (int c = 0; c < model.C; ++c) {
+  //   for (int r = 0; r < model.R; ++r) {
+  //     for (int t = 0; t < model.T; ++t) {
+  //       printf("initial x(%d,%d,%d) = %f\n", c, r, t, x(c, r, t));
+  //     }
+  //   }
+  // }
+  // cin.get();
+
   double fold = model.f(x);
   gradient = model.gradient(x);
   while (k < max_iter) {
@@ -995,7 +967,7 @@ xt::xarray<double> regularized(Model &model, Param &param,
     diff_aux = x - z;
     double f = model.f(z);
     double rhs = model.get_rhs(gradient, diff_aux);
-    // printf("\tk = %d, fold = %f, f = %f, rhs = %f\n", k, fold, f, rhs);
+    // printf("k = %d, fold = %f, f = %f, rhs = %f\n", k, fold, f, rhs);
     if (f > fold - sigma * rhs) {
       bool stop = false;
       while (!stop) {
@@ -1073,39 +1045,8 @@ xt::xarray<double> covariates(Model &model, Param &param,
   return x;
 }
 
-template <typename Model>
-xt::xarray<double> projected_gradient_armijo_boundary(Model &model,
-                                                      Param &param,
-                                                      xt::xarray<double> &x) {
-  int k = 0;
-  x = model.projection(x);
-  while (k < param.max_iter) {
-    double fold = model.f(x);
-    xt::xarray<double> gradient = model.gradient(x);
-    bool stop = false;
-    int j = 0;
-    xt::xarray<double> z = xt::zeros<double>(x.shape());
-    while (!stop) {
-      xt::xarray<double> x_aux = x - (param.beta_bar / pow(2.0, j)) * gradient;
-      xt::xarray<double> z = model.projection(x_aux);
-      double f = model.f(z);
-      xt::xarray<double> diff_aux = x - z;
-      double rhs = model.get_rhs(gradient, diff_aux);
-      if (f <= fold - param.sigma * rhs) {
-        stop = true;
-      } else {
-        ++j;
-      }
-    }
-    x = z;
-    ++k;
-  }
-
-  return x;
-}
-
 typedef struct {
-  double wall_time;
+  double cpu_time;
   double weight;
   xt::xarray<double> lambda;
 } CrossValidationResult;
@@ -1123,7 +1064,7 @@ CrossValidationResult cross_validation(Param &param, RegularizedModel &model,
   int nb_observations_total = sample.shape(3);
   int nb_groups = model.groups.size();
   double min_loss = GRB_INFINITY;
-  double wall_time = 0;
+  double cpu_time = 0;
   int nb_in_block = floor(nb_observations_total * param.cv_proportion);
   xt::xarray<int> initial_nb_obs = model.nb_observations;
   xt::xarray<int> initial_nb_arrivals = model.nb_arrivals;
@@ -1202,8 +1143,10 @@ CrossValidationResult cross_validation(Param &param, RegularizedModel &model,
       likelihood += f;
     }
     likelihood = likelihood / floor(1 / param.cv_proportion);
-    // printf("indexAlpha = %d, w = %f, likelihood = %f\n", index_alpha,
-    //        alphas[index_alpha], likelihood);
+    // printf("Current weight alpha %f, weight %f: likelihood = %f\n",
+    //        alphas[index_alpha], group_weights[index_alpha], likelihood);
+    // fmt::print("Likelihood current_alpha {} = {}\n", alphas[index_alpha],
+    // likelihood);
     if (likelihood < min_loss) {
       min_loss = likelihood;
       best_alpha = alphas[index_alpha];
@@ -1231,17 +1174,16 @@ CrossValidationResult cross_validation(Param &param, RegularizedModel &model,
 
   model.nb_observations = nb_observations_current;
   model.nb_arrivals = nb_calls_current;
-  param.max_iter = 30;
   xt::xarray<double> x =
       param.EPS * xt::ones<double>({model.C, model.R, model.T});
   auto f_val =
       projected_gradient_armijo_feasible<RegularizedModel>(model, param, x);
   auto dt = std::chrono::high_resolution_clock::now();
-  wall_time = std::chrono::duration_cast<std::chrono::seconds>(dt - t0).count();
+  cpu_time = std::chrono::duration_cast<std::chrono::seconds>(dt - t0).count();
   model.nb_observations = initial_nb_obs;
   model.nb_arrivals = initial_nb_arrivals;
-  // printf("best_weight = %f\n", best_weight);
-  return {wall_time, best_weight, x};
+  // fmt::print("best_weight = {}\n", best_weight);
+  return {cpu_time, best_weight, x};
 }
 
 // CrossValidationResult cross_validation2(Param &param, RegularizedModel
@@ -1259,7 +1201,7 @@ CrossValidationResult cross_validation(Param &param, RegularizedModel &model,
 //   int nb_observations_total = sample.shape(3);
 //   int nb_groups = model.groups.size();
 //   double min_loss = GRB_INFINITY;
-//   double wall_time = 0;
+//   double cpu_time = 0;
 //   int nb_in_block = floor(nb_observations_total * param.cv_proportion);
 //   xt::xarray<int> initial_nb_obs = model.nb_observations;
 //   xt::xarray<int> initial_nb_arrivals = model.nb_arrivals;
@@ -1320,14 +1262,36 @@ CrossValidationResult cross_validation(Param &param, RegularizedModel &model,
 //   }
 // }
 
-AppParameters load_options(int argc, char *argv[], po::variables_map &vm) {
+class AppParameters {
+ public:
+  // Projected gradient params
+  double EPS;
+  double sigma;
+  double gap;
+  int max_iter;
+  double lower_lambda;
+  double upper_lambda;
+  double beta_bar;
+
+  // Cross validation proportion
+  double cv_proportion = 0.2;
+
+  // Model parameters
+  std::string model_type;
+  std::string info_file;
+  std::string arrivals_file;
+  std::string neighbors_file;
+  std::string cv_weights_file;
+};
+
+void load_options(int argc, char *argv[], po::variables_map &vm) {
   std::string config_file;
   // Declare a group of options that will be
   // allowed only on command line
   po::options_description generic("Generic Options");
   generic.add_options()("help,h", "Display this help message.")(
-      "file,f", po::value<std::string>()->default_value(""),
-      "Path to configuration file.");
+      "file,f", po::value<std::string>(&config_file),
+      "Caminho do arquivo de configuração que contém os parâmetros.");
 
   // Declare a group of options that will be
   // allowed both on command line and in
@@ -1350,41 +1314,21 @@ AppParameters load_options(int argc, char *argv[], po::variables_map &vm) {
       "Initial step size for projected gradient. Default = 2.0")(
       "cv_proportion,C", po::value<double>()->default_value(0.2),
       "Proportion of samples used as training in cross validation. "
-      "Default = 0.2             ")(
-      "model_type,M", po::value<std::string>()->default_value("no_reg"),
-      "Chooses between RegularizedModel (option no_reg) or "
-      "CovariatesModel(option reg).")(
-      "method,m", po::value<std::string>()->default_value("calibration"),
-      "Specifies the method being used. Default = calibration. Options are "
-      "calibration, and cross_validation. If calibration and no_reg is set, "
-      "parameter "
-      "alpha_regions_file and time_groups_file must also be set. If "
-      "cross_validation is "
-      "set, cv_proportion and "
-      "cv_weights_file must also be set.")(
-      "algorithm,A", po::value<std::string>()->default_value("feasible"),
-      "Specifies the projected gradient algorithm. Default = feasible. Options "
-      "are feasible (projected gradient along the feasible region) and "
-      "boundary (projected gradient along the boundary).")(
-      "info_file,i", po::value<std::string>()->default_value(""),
+      "Default = 0.2")("model_type,M",
+                       po::value<std::string>()->default_value("no_reg"),
+                       "Chooses between RegularizedModel (option no_reg) or "
+                       "CovariatesModel(option reg).")(
+      "info_file,i", po::value<std::string>()->default_value("info.dat"),
       "Path to file with general information about the model. Default = "
-      "''                         ")(
-      "arrivals_file,a", po::value<std::string>()->default_value(""),
-      "Path to file with arrivals data. Default = ''")(
-      "neighbors_file,n", po::value<std::string>()->default_value(""),
-      "Path to file with neighbors data. Default = ''")(
-      "alpha_regions_file", po::value<std::string>()->default_value(""),
-      "Path to file containing weight matrix for space regularization. Default "
-      "= ''                ")(
-      "time_groups_file", po::value<std::string>()->default_value("groups.txt"),
-      "Path to file containing time groups information.")(
-      "duration,d", po::value<double>()->default_value(1.0),
-      "Duration of each period")(
-      "cv_weights_file,W", po::value<std::string>()->default_value(""),
-      "Path to file with weights that must be tested. Weights must be provided "
-      "in one line, separated by spaces. Default = ''")(
-      "output_file,O", po::value<std::string>()->default_value("output.txt"),
-      "Path where to write output. Default = output.txt");
+      "info.dat")("arrivals_file,a",
+                  po::value<std::string>()->default_value("arrivals.dat"),
+                  "Path to file with arrivals data. Default = arrivals.dat")(
+      "neighbors_file,n",
+      po::value<std::string>()->default_value("neighbors.dat"),
+      "Path to file with neighbors data. Default = neighbors.dat")(
+      "cv_weights_file,W",
+      po::value<std::string>()->default_value("weights.dat"),
+      "Path to file with weights that must be tested.");
 
   po::options_description cmdline_options;
   cmdline_options.add(generic).add(config);
@@ -1398,39 +1342,18 @@ AppParameters load_options(int argc, char *argv[], po::variables_map &vm) {
   store(po::command_line_parser(argc, argv).options(cmdline_options).run(), vm);
   notify(vm);
 
-  config_file = vm["file"].as<std::string>();
-  std::ifstream ifs(config_file);
-  if (config_file != "" && ifs) {
+  std::ifstream ifs(config_file.c_str());
+  if (vm.count("file") && !ifs) {
+    std::cout << "Could not open file: " << config_file << "\n";
+    exit(1);
+  } else if (vm.count("file") && ifs) {
     store(parse_config_file(ifs, config_file_options), vm);
     notify(vm);
-  } else if (config_file != "" && !ifs) {
-    printf("Could not open config file: %s\n", config_file.c_str());
   }
+
   if (vm.count("help")) {
     std::cout << visible << "\n";
-    exit(0);
   }
-  AppParameters app_params;
-  app_params.EPS = vm["EPS"].as<double>();
-  app_params.sigma = vm["sigma"].as<double>();
-  app_params.gap = vm["gap"].as<double>();
-  app_params.max_iter = vm["max_iter"].as<int>();
-  app_params.lower_lambda = vm["lower_lambda"].as<double>();
-  app_params.upper_lambda = vm["upper_lambda"].as<double>();
-  app_params.beta_bar = vm["beta_bar"].as<double>();
-  app_params.cv_proportion = vm["cv_proportion"].as<double>();
-  app_params.model_type = vm["model_type"].as<std::string>();
-  app_params.method = vm["method"].as<std::string>();
-  app_params.algorithm = vm["algorithm"].as<std::string>();
-  app_params.info_file = vm["info_file"].as<std::string>();
-  app_params.arrivals_file = vm["arrivals_file"].as<std::string>();
-  app_params.neighbors_file = vm["neighbors_file"].as<std::string>();
-  app_params.alpha_regions_file = vm["alpha_regions_file"].as<std::string>();
-  app_params.time_groups_file = vm["time_groups_file"].as<std::string>();
-  app_params.duration = vm["duration"].as<double>();
-  app_params.cv_weights_file = vm["cv_weights_file"].as<std::string>();
-  app_params.output_file = vm["output_file"].as<std::string>();
-  return app_params;
 }
 
 }  // namespace laspated

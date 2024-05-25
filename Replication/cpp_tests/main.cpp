@@ -4,15 +4,6 @@
 
 #include "tests.h"
 
-void print_usage() {
-  using std::cout;
-  cout << "Usage: $./ laspated -e [example] | where example in :\n ";
-  cout << "\tex_no_reg\n";  // figures 10 and 11 figure 13 , table 1
-  cout << "\tex2_reg\n";    // table 2
-  cout << "\treal_data\n";  // figures 15 to 21
-  cout << "all\n";
-}
-
 void ex_no_reg() {
   using namespace std;
   vector<vector<double>> initial_weights{
@@ -24,9 +15,9 @@ void ex_no_reg() {
   vector<int> test_neighbor_factors{0, 1};
   vector<int> test_constant_lambdas{0, 1};
 
-  // vector<int> test_nb_groups{4};
+  // vector<int> test_nb_groups{2};
   // vector<int> test_nb_weeks{10};
-  // vector<int> test_neighbor_factors{0};
+  // vector<int> test_neighbor_factors{1};
   // vector<int> test_constant_lambdas{1};
 
   for (auto constant_lambdas : test_constant_lambdas) {
@@ -109,6 +100,7 @@ void ex_no_reg() {
   }
 }
 
+#ifdef USE_GUROBI
 void ex2_reg() {
   using namespace std;
   // vector<int> test_nb_weeks{10, 50, 500};
@@ -145,7 +137,7 @@ void real_data() {
   vector<string> test_base_paths{"discretizations/rect", "discretizations/hex",
                                  "discretizations/district"};
 
-  for (auto &base_path : test_base_paths) {
+  for (auto& base_path : test_base_paths) {
     auto result = test3(base_path);
     ulong C = result.C;
     ulong R = result.R;
@@ -194,17 +186,17 @@ void real_data() {
     rates_by_r.close();
   }
 }
-
+#endif
 void test_det() {
   using namespace std;
   vector<vector<double>> initial_weights{
       {0, 0.2, 0.4, 0.6, 0.8, 1, 1.2, 1.4, 1.6, 1.8, 2, 50, 100},
       {0, 0.2, 0.4, 0.6, 0.8, 1, 1.2, 1.4, 1.6, 1.8, 2, 50, 100}};
 
-  vector<int> test_nb_groups{4};
+  vector<int> test_nb_groups{2};
   // vector<int> test_nb_weeks{1, 10, 50, 500};
-  vector<int> test_nb_weeks{1};
-  vector<string> test_samples{"sample1_1.txt"};
+  vector<int> test_nb_weeks{10};
+  vector<string> test_samples{"sample1_10.txt"};
   vector<int> test_neighbor_factors{1};
   // vector<int> test_constant_lambdas{0, 1};
   vector<int> test_constant_lambdas{1};
@@ -291,10 +283,11 @@ void test_det() {
   }
 }
 
-int main(int argc, char *argv[]) {
+int main(int argc, char* argv[]) {
   if (argc != 3) {
-    std::cout << "Wrong usage.\n";
-    print_usage();
+    printf(
+        "Error: wrong usage.\nUsage: laspated -e "
+        "[ex_no_reg|ex2_reg|real_data|all]\n");
     exit(1);
   }
   std::string example = argv[2];
@@ -318,6 +311,10 @@ int main(int argc, char *argv[]) {
 #ifdef USE_GUROBI
     ex2_reg();
     real_data();
+#else
+    printf(
+        "Warning: Skipped ex2_reg and real_data because gurobi is not being "
+        "used.\n");
 #endif
   } else {
     std::cout << "Unknown example " << example << "\n";

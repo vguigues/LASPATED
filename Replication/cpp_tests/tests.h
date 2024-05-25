@@ -8,7 +8,7 @@ typedef struct {
   double min_error;
   int min_w;
   double mean_cv;
-  int w_cv;
+  double w_cv;
   std::vector<double> error_by_weight;
   ulong C;
   ulong R;
@@ -213,16 +213,25 @@ Result1 test1(int nb_weeks, int nb_groups, int neighbor_factor,
     x0 = x;
   }
   double mean_cv = -1;
-  int w_cv = -1;
+  double w_cv = -1;
   if (do_cross_validation) {
     // alphas and weights will be set by cross_validation
     xt::xarray<double> alphas = xt::zeros<double>({R, R});
     vector<double> weights = vector<double>(groups.size(), 0);
+    type_region = vector<int>(R, 0);
+
+    param.EPS = 0.001;
+    param.cv_proportion = 0.2;
+    param.max_iter = 30;
+    param.sigma = 0.5;
+    param.beta_bar = 1;
+    param.upper_lambda = 1e3;
+    param.lower_lambda = param.EPS;
+    std::vector<double> test_alphas = test_weights;
+
     RegularizedModel model(nb_observations, nb_arrivals, durations, groups,
                            weights, alphas, distance, type_region, neighbors,
                            param);
-    param.cv_proportion = 0.2;
-    std::vector<double> test_alphas = test_weights;
     auto result = cross_validation(param, model, sample, test_weights);
     mean_cv = model.average_rate_difference(theoretical_lambda, result.lambda);
     w_cv = result.weight;
@@ -826,7 +835,7 @@ Result3 test3(std::string &base_path) {
 
   auto neighbors_file = ifstream(neighbors_file_name.str(), ios::in);
   while (true) {
-    int ind, terrain_type, s;
+    int ind, terrain_type, s, land_type;
     double lat, longi, dist;
     std::getline(neighbors_file, aux_str);
     if (aux_str == "END") {
@@ -834,8 +843,8 @@ Result3 test3(std::string &base_path) {
     }
     // std::cout << aux_str << "\n";
     std::istringstream ss(aux_str);
-    ss >> ind >> lat >> longi;
-    type_region[ind] = 0;
+    ss >> ind >> lat >> longi >> land_type;
+    type_region[ind] = land_type;
     for (int j = 0; j < nb_regressors; ++j) {
       ss >> regressors(j, ind);
     }
@@ -911,15 +920,9 @@ Result3 test3(std::string &base_path) {
   RegularizedModel m1(nb_observations_no_cov, nb_arrivals_no_cov,
                       durations_no_cov, groups, weights, alphas, distance,
                       type_region, neighbors, param);
-  // xt::xarray<double> x0_nc =
-  //     2 * pow(10.0, -3) * xt::ones<double>({C, R, 7 * T});
-  // xt::xarray<double> x_nc =
-  //     laspated::projected_gradient_armijo_feasible<RegularizedModel>(m1,
-  //     param,
-  //                                                                    x0_nc);
-  // cout << "Running Cross Validation\n";
+
+  cout << "Running Cross Validation\n";
   auto cv_result = cross_validation(param, m1, sample_no_cov, test_weights);
-  // laspated::CrossValidationResult cv_result; // TODO: remove
   xt::xarray<double> regularized_rates = cv_result.lambda;
   // cout << "CV best Weight = " << cv_result.weight << "\n";
   // cout << "OBJ CV = " << m1.f(regularized_rates) << "\n";
@@ -1027,7 +1030,7 @@ Result1 test1_deterministic(std::string &filename, int nb_weeks, int nb_groups,
     nb_arrivals(c - 1, r - 1, t - 1) += val;
   }
   sample1_1.close();
-  cin.get();
+  // cin.get();
   for (int c = 0; c < C; ++c) {
     for (int r = 0; r < R; ++r) {
       for (int t = 0; t < T; ++t) {
@@ -1123,16 +1126,19 @@ Result1 test1_deterministic(std::string &filename, int nb_weeks, int nb_groups,
   vector<double> err_by_weight;
   xt::xarray<double> min_lambda;
   param.EPS = 0.001;
+  param.sigma = 0.5;
+  param.beta_bar = 1;
   param.max_iter = 30;
   param.upper_lambda = 1e3;
   param.lower_lambda = param.EPS;
   xt::xarray<double> x0 = param.EPS * xt::ones<double>({C, R, T});
 
   for (size_t i = 0; i < test_weights.size(); ++i) {
-    // type_region = vector<int>(R, 0);
-    x0 = param.EPS * xt::ones<double>({C, R, T});
+    if (constant_lambdas) {
+      param.max_iter = 30;
+      x0 = param.EPS * xt::ones<double>({C, R, T});
+    }
     double w = test_weights[i];
-
     xt::xarray<double> alphas = w * neighbor_factor * xt::ones<double>({R, R});
     vector<double> weights = vector<double>(groups.size(), w);
     RegularizedModel model(nb_observations, nb_arrivals, durations, groups,
@@ -1155,11 +1161,20 @@ Result1 test1_deterministic(std::string &filename, int nb_weeks, int nb_groups,
   }
 
   double mean_cv = -1;
-  int w_cv = -1;
+  double w_cv = -1;
   if (do_cross_validation) {
     // alphas and weights will be set by cross_validation
     xt::xarray<double> alphas = xt::zeros<double>({R, R});
     vector<double> weights = vector<double>(groups.size(), 0);
+
+    param.EPS = 0.001;
+    param.sigma = 0.5;
+    param.beta_bar = 1;
+    param.max_iter = 30;
+    param.upper_lambda = 1e3;
+    param.lower_lambda = param.EPS;
+    xt::xarray<double> x0 = param.EPS * xt::ones<double>({C, R, T});
+
     RegularizedModel model(nb_observations, nb_arrivals, durations, groups,
                            weights, alphas, distance, type_region, neighbors,
                            param);

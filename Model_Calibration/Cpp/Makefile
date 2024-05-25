@@ -20,7 +20,6 @@ else
 	endif
 endif
 INCLUDE_BOOST = /usr/include/boost
-INCLUDE_LASPATED = -I../../Model_Calibration/Cpp
 
 # ifndef XTL_INCLUDE
 # $(error undefined XTL_INCLUDE. Please provide xtl location)
@@ -39,7 +38,7 @@ CONFIG 		= -O3
 CPP			= g++
 EXE			= laspated
 
-all: main.cpp tests.h
+all: laspated.cpp
 	$(CPP) -o $(EXE) main.cpp $(CARGS) -DUSE_GUROBI=$(USE_GUROBI) $(INCLUDE_GUROBI) $(INCLUDE_LASPATED) $(LIB_GUROBI) $(CONFIG)
 
 clean:
