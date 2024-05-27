@@ -1,9 +1,9 @@
+#include "laspated.h"
+
 #include <fstream>
 #include <sstream>
 #include <string>
 #include <vector>
-
-#include "laspated.h"
 
 void read_weights(std::ifstream& time_groups_file, int nb_groups,
                   std::vector<double>& weights) {
@@ -242,7 +242,7 @@ void laspated_no_reg(laspated::AppParameters& app_params) {
   }
 
   xt::xarray<double> alphas = xt::zeros<double>({R, R});
-  if (app_params.model_type == "no_reg") {
+  if (app_params.model_type == "no_reg" && app_params.method == "calibration") {
     read_alpha_matrix(app_params, R, alphas);
   }
   using laspated::Param;
@@ -255,8 +255,16 @@ void laspated_no_reg(laspated::AppParameters& app_params) {
                        durations_no_cov, groups, weights, alphas, distance,
                        type_region, neighbors, param);
     printf("Running Projected Gradient %s\n", app_params.algorithm.c_str());
-    lambda = laspated::projected_gradient_armijo_feasible<RegularizedModel>(
-        m, param, lambda0);
+    if (app_params.algorithm == "feasible") {
+      lambda = laspated::projected_gradient_armijo_feasible<RegularizedModel>(
+          m, param, lambda0);
+    } else if (app_params.algorithm == "boundary") {
+      lambda = laspated::projected_gradient_armijo_boundary<RegularizedModel>(
+          m, param, lambda0);
+    } else {
+      printf("ERROR: Unknown algorithm %s\n", app_params.algorithm.c_str());
+      exit(1);
+    }
   } else if (app_params.method == "cross_validation") {
     ifstream weights_file(app_params.cv_weights_file);
     if (!weights_file) {
@@ -299,13 +307,23 @@ void laspated_no_reg(laspated::AppParameters& app_params) {
            app_params.output_file.c_str());
     exit(1);
   }
-  for (int c = 0; c < C; ++c) {
-    for (int r = 0; r < R; ++r) {
-      for (int t = 0; t < T; ++t) {
+  std::vector<double> difference_l2;
+  for (int t = 0; t < T; ++t) {
+    double sum_est = 0.0;
+    double sum_emp = 0.0;
+    for (int c = 0; c < C; ++c) {
+      for (int r = 0; r < R; ++r) {
         output << c << " " << r << " " << t << " " << lambda(c, r, t) << "\n";
+        sum_est += lambda(c, r, t);
+        sum_emp += empirical_rates(c, r, t);
       }
     }
+    difference_l2.push_back(abs(sum_emp - sum_est) / sum_emp);
   }
+  double avg_diff =
+      std::accumulate(difference_l2.begin(), difference_l2.end(), 0.0) /
+      difference_l2.size();
+  printf("Avg diff empirical vs estimated = %.3f\n", avg_diff);
   printf("Intensities saved at %s\n", app_params.output_file.c_str());
 }
 
@@ -417,6 +435,9 @@ void laspated_reg(laspated::AppParameters& app_params) {
   neighbors_file.close();
 
   laspated::Param param(app_params);
+  param.upper_lambda = 1e3;
+  param.EPS = 1e-5;
+  param.max_iter = 30;
 
   laspated::CovariatesModel m(nb_observations, nb_arrivals, regressors, param);
 
@@ -444,6 +465,29 @@ void laspated_reg(laspated::AppParameters& app_params) {
            app_params.output_file.c_str());
     exit(1);
   }
+  std::vector<double> difference_l2;
+  for (int d = 0; d < D; ++d) {
+    for (int t = 0; t < T; ++t) {
+      double sum_emp = 0.0;
+      double sum_est = 0.0;
+      for (int c = 0; c < C; ++c) {
+        for (int r = 0; r < R; ++r) {
+          double rate = 0.0;
+          for (int j = 0; j < nb_regressors; ++j) {
+            rate += beta(c, d, t, j) * regressors(j, r);
+          }
+          sum_est += rate / durations[t];
+          sum_emp += empirical_rates(c, r, d * T + t);
+        }
+      }
+      difference_l2.push_back(abs(sum_emp - sum_est) / sum_emp);
+    }
+  }
+  double avg_diff =
+      std::accumulate(difference_l2.begin(), difference_l2.end(), 0.0) /
+      difference_l2.size();
+  printf("Avg diff empirical vs estimated = %.3f\n", avg_diff);
+
   for (int c = 0; c < C; ++c) {
     for (int d = 0; d < D; ++d) {
       for (int t = 0; t < T; ++t) {

@@ -1,7 +1,10 @@
+GUROBI_LIB_VER = -lgurobi110
+INCLUDE_BOOST = /usr/include/boost
+
 ifdef GUROBI_HOME
 	USE_GUROBI=1
 	INCLUDE_GUROBI = -I$(GUROBI_HOME)/include
-	LIB_GUROBI = -L$(GUROBI_HOME)/lib -lgurobi_c++ -lgurobi110
+	LIB_GUROBI = -L$(GUROBI_HOME)/lib -lgurobi_c++ $(GUROBI_LIB_VER)
 else
 	ifdef GUROBI_INCLUDE
 		ifdef GUROBI_LIB
@@ -19,7 +22,6 @@ else
 		endif
 	endif
 endif
-INCLUDE_BOOST = /usr/include/boost
 
 # ifndef XTL_INCLUDE
 # $(error undefined XTL_INCLUDE. Please provide xtl location)
@@ -39,7 +41,7 @@ CPP			= g++
 EXE			= laspated
 
 all: laspated.cpp
-	$(CPP) -o $(EXE) main.cpp $(CARGS) -DUSE_GUROBI=$(USE_GUROBI) $(INCLUDE_GUROBI) $(INCLUDE_LASPATED) $(LIB_GUROBI) $(CONFIG)
+	$(CPP) -o $(EXE) laspated.cpp $(CARGS) -DUSE_GUROBI=$(USE_GUROBI) $(INCLUDE_GUROBI) $(INCLUDE_LASPATED) $(LIB_GUROBI) $(CONFIG)
 
 clean:
 	$(RM) $(EXE)

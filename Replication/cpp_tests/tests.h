@@ -911,12 +911,7 @@ Result3 test3(std::string &base_path) {
   // Real weights and alphas will be set by cross_validation
   vector<double> weights(groups.size(), 0);
   xt::xarray<double> alphas = xt::zeros<double>({R, R});
-  // double temp_w = 0.001;
 
-  // Running without covariates
-  // weights = vector<double>(groups.size(), temp_w);
-  // alphas = temp_w * xt::ones<double>({R, R});
-  // Cross validation
   RegularizedModel m1(nb_observations_no_cov, nb_arrivals_no_cov,
                       durations_no_cov, groups, weights, alphas, distance,
                       type_region, neighbors, param);

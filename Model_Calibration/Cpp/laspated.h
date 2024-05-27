@@ -26,6 +26,23 @@
             method
         cv_proportion: proportion of samples used in each sub-iteration of the
             cross validation.
+
+    AppParameters: Application-wide parameters. This object contains all
+        attributes from Param and also the following:
+      Attributes:
+        model_type: The type of model (reg | no_reg)
+        method: The calibration method (calibration | cross_validation)
+        algorithm: The calibration algorithm (feasible | boundary)
+        info_file: The general information file
+        arrivals_file: The sample arrivals file
+        neighbors_file: The zones neighborhood file
+        alpha_regions_file: The spatial regularization matrix file
+        time_groups_file:  The temporal regularization file
+        duration:  The duration of each period
+        cv_weights_file: The weights used in cross validation
+        output_file: The intensities output file
+
+
     RegularizedModel: Model without covariates.
       Attributes:
         param: reference for parameter object.
@@ -106,6 +123,7 @@
 #include <algorithm>
 #include <boost/program_options.hpp>
 #include <cstdio>
+#include <fstream>
 #include <iostream>
 #include <random>
 #include <vector>
@@ -605,8 +623,6 @@ class CovariatesModel {
           for (int j = 0; j < nb_regressors; ++j) {
             name << "y_" << c << "_" << d << "_" << t << "_" << j;
             double ub = (j == 0) ? 1 : param.upper_lambda;
-            // double ub = (j == 0) ? 1 : pow(10,5);
-            // double ub = pow(10,5);
             y(c, d, t, j) = model.addVar(0, ub, 0, GRB_CONTINUOUS, name.str());
             name.str("");
           }
@@ -619,7 +635,10 @@ class CovariatesModel {
       for (int d = 0; d < D; ++d) {
         for (int t = 0; t < T; ++t) {
           for (int j = 0; j < nb_regressors; ++j) {
-            // printf("x(c%d,d%d,t%d,j%d) = %f\n", c, d, t, j, x(c, d, t, j));
+            if (x(c, d, t, j) != x(c, d, t, j)) {
+              printf("x(c%d,d%d,t%d,j%d) = %f\n", c, d, t, j, x(c, d, t, j));
+              cin.get();
+            }
             obj += 0.5 * y(c, d, t, j) * y(c, d, t, j) -
                    x(c, d, t, j) * y(c, d, t, j);
           }
@@ -631,6 +650,7 @@ class CovariatesModel {
       model.setObjective(obj, GRB_MINIMIZE);
     } catch (GRBException &ex) {
       cout << ex.getMessage() << "\n";
+      cin.get();
     }
 
     for (int c = 0; c < C; ++c) {
@@ -1078,19 +1098,25 @@ xt::xarray<double> projected_gradient_armijo_boundary(Model &model,
                                                       Param &param,
                                                       xt::xarray<double> &x) {
   int k = 0;
-  x = model.projection(x);
+  double beta_bar = param.beta_bar;
+  // x = model.projection(x);
   while (k < param.max_iter) {
     double fold = model.f(x);
     xt::xarray<double> gradient = model.gradient(x);
     bool stop = false;
     int j = 0;
     xt::xarray<double> z = xt::zeros<double>(x.shape());
+    xt::xarray<double> x_aux = xt::zeros<double>(x.shape());
+    xt::xarray<double> diff_aux = xt::zeros<double>(x.shape());
+    printf("k = %d, fold = %f\n", k, fold);
     while (!stop) {
-      xt::xarray<double> x_aux = x - (param.beta_bar / pow(2.0, j)) * gradient;
-      xt::xarray<double> z = model.projection(x_aux);
+      x_aux = x - (beta_bar / pow(2.0, j)) * gradient;
+      z = model.projection(x_aux);
       double f = model.f(z);
-      xt::xarray<double> diff_aux = x - z;
+      diff_aux = x - z;
       double rhs = model.get_rhs(gradient, diff_aux);
+      printf("\tj = %d, f = %f, rhs = %f, sigma = %f\n", j, f, rhs,
+             param.sigma);
       if (f <= fold - param.sigma * rhs) {
         stop = true;
       } else {
