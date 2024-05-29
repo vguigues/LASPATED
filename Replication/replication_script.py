@@ -5,6 +5,9 @@ import geopandas as gpd
 
 import matplotlib.pyplot as plt
 import numpy as np
+import sys
+import os
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../laspated/src')))
 
 import laspated as spated
 from shapely.geometry import Polygon, MultiPolygon, Point
@@ -115,9 +118,9 @@ def generate_disc(disc_type):
     app.geo_discretization["population"] /= 10**4
     app.plot_discretization(to_file=True)
 
-    app.write_arrivals(f"discretizations/{disc_type}/arrivals.dat")
-    app.write_regions(f"discretizations/{disc_type}/neighbors.dat")
-    app.write_info("dow", path=f"discretizations/{disc_type}/info.dat")
+    app.write_arrivals(f"../Data/discretizations/{disc_type}/arrivals.dat")
+    app.write_regions(f"../Data/discretizations/{disc_type}/neighbors.dat")
+    app.write_info("dow", path=f"../Data/discretizations/{disc_type}/info.dat")
 
     num_regions = int(np.max(app.events_data["gdiscr"]) + 1)
     DISCS[num_regions] = app
