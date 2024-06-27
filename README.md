@@ -1,5 +1,7 @@
 # LASPATED: Library for Analysis of Spatio-Temporal Discrete Data
 
+Arxiv paper: https://arxiv.org/abs/2401.04156
+
 This repository contains the source code for the "LASPATED: A Library for the Analysis of
 Spatio-Temporal Discrete Data" paper ([Arxiv link](https://arxiv.org/abs/2401.04156)).
 
