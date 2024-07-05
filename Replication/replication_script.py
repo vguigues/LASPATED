@@ -5,10 +5,6 @@ import geopandas as gpd
 
 import matplotlib.pyplot as plt
 import numpy as np
-import sys
-import os
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../laspated/src')))
-
 import laspated as spated
 from shapely.geometry import Polygon, MultiPolygon, Point
 
@@ -116,7 +112,8 @@ def generate_disc(disc_type):
 
     # scaling the population
     app.geo_discretization["population"] /= 10**4
-    app.plot_discretization(to_file=True)
+    R = int(np.max(app.events_data["gdiscr"]) + 1)
+    app.plot_discretization(to_file=f"replication_results/disc_r{R}.pdf")
 
     app.write_arrivals(f"../Data/discretizations/{disc_type}/arrivals.dat")
     app.write_regions(f"../Data/discretizations/{disc_type}/neighbors.dat")
@@ -137,7 +134,7 @@ def generate_discretizations():
 def run_cpp_experiments():
     try:
         with Popen(
-            ["cpp_tests/laspated", "-e", "all"],
+            ["cpp_tests/laspated", "-e", "all" , "--data_dir", "../Data"],
             bufsize=1,
             stdout=PIPE,
             stderr=PIPE,
@@ -268,6 +265,7 @@ def experiment_1():
             print(
                 f"Plot of err by weights for model {model} with {nb_weeks} weeks saved at {plot_filename}"
             )
+            plt.close()
     table_filename = "replication_results/tables/table_no_covariates_results.txt"
     table_file = open(table_filename, "w")
     table_file.write("Nb_weeks & Reg 1 & Reg 2 & Reg 3 & Reg 4 & CV & Emp\n")
@@ -335,7 +333,7 @@ def experiment_2():
             ax.set_ylabel("Intensities", fontsize=18)
             ax.legend(fontsize=18)
             plt.savefig(f"replication_results/plots/art_rates_by_t_w{nb_weeks}_r{r}.pdf", bbox_inches="tight")
-
+            plt.close()
 
 def experiment_3():
     copyfile(
@@ -424,6 +422,7 @@ def experiment_4():
         plot_filename = PLOT_BASE_DIR + f"plot_rates_by_t_R{R}_total.pdf"
         plt.savefig(plot_filename, bbox_inches="tight")
         print(f"Saved plot by time rates at {plot_filename}")
+        plt.close()
         # c = 0
         y_emp_axis = [emp[0, t] for t in range(T)]
         y_reg_axis = [reg[0, t] for t in range(T)]
@@ -463,6 +462,7 @@ def experiment_4():
         plot_filename = PLOT_BASE_DIR + f"plot_rates_by_t_R{R}_c0.pdf"
         plt.savefig(plot_filename, bbox_inches="tight")
         print(f"Saved plot by time rates at {plot_filename}")
+        plt.close()
         # c = 1
         y_emp_axis = [emp[1, t] for t in range(T)]
         y_reg_axis = [reg[1, t] for t in range(T)]
@@ -503,12 +503,12 @@ def experiment_4():
         plot_filename = PLOT_BASE_DIR + f"plot_rates_by_t_R{R}_c1.pdf"
         plt.savefig(plot_filename, bbox_inches="tight")
         print(f"Saved plot by time rates at {plot_filename}")
+        plt.close()
         # c = 2
         y_emp_axis = [emp[2, t] for t in range(T)]
         y_reg_axis = [reg[2, t] for t in range(T)]
         y_cov_axis = [cov[2, t] for t in range(T)]
-        plt.clf()
-        plt.cla()
+        plt.close()
         fig_total, ax_total = plt.subplots(figsize=(12, 10))
         plt.plot(
             x_axis,
@@ -542,8 +542,7 @@ def experiment_4():
         plot_filename = PLOT_BASE_DIR + f"plot_rates_by_t_R{R}_c2.pdf"
         plt.savefig(plot_filename, bbox_inches="tight")
         print(f"Saved plot by time rates at {plot_filename}")
-        plt.clf()
-        plt.cla()
+        plt.close()
 
         if R != min(regions):
             continue
@@ -586,40 +585,49 @@ def experiment_4():
         plt.savefig(heat_filename, bbox_inches="tight")
         print(f"Heatmap of total intensities model 1 saved at {heat_filename}")
         heat_filename = PLOT_BASE_DIR + f"heat_total_r{R}_m1.pdf"
+        plt.close()
         gd.plot(column="reg_total", legend=True, cmap="OrRd", figsize=fig_size)
         plt.savefig(heat_filename, bbox_inches="tight")
         print(f"Heatmap of total intensities model 1 saved at {heat_filename}")
+        plt.close()
         heat_filename = PLOT_BASE_DIR + f"heat_total_r{R}_m2.pdf"
         gd.plot(column="cov_total", legend=True, cmap="OrRd", figsize=fig_size)
         plt.savefig(heat_filename, bbox_inches="tight")
         print(f"Heatmap of total intensities model 2 saved at {heat_filename}")
+        plt.close()
         # c = 0
         heat_filename = PLOT_BASE_DIR + f"heat_c0_r{R}.pdf"
         gd.plot(column="reg_c0", legend=True, cmap="OrRd", figsize=fig_size)
         plt.savefig(heat_filename, bbox_inches="tight")
         print(f"Heatmap c = 0, model 1 saved at {heat_filename}")
         heat_filename = PLOT_BASE_DIR + f"heat_c0_r{R}.pdf"
+        plt.close()
         gd.plot(column="cov_c0", legend=True, cmap="OrRd", figsize=fig_size)
         plt.savefig(heat_filename, bbox_inches="tight")
         print(f"Heatmap c = 0, model 2 saved at {heat_filename}")
+        plt.close()
         # c = 1
         heat_filename = PLOT_BASE_DIR + f"heat_c1_r{R}.pdf"
         gd.plot(column="reg_c1", legend=True, cmap="OrRd", figsize=fig_size)
         plt.savefig(heat_filename, bbox_inches="tight")
         print(f"Heatmap c = 1, model 1 saved at {heat_filename}")
+        plt.close()
         heat_filename = PLOT_BASE_DIR + f"heat_c1_r{R}.pdf"
         gd.plot(column="cov_c1", legend=True, cmap="OrRd", figsize=fig_size)
         plt.savefig(heat_filename, bbox_inches="tight")
         print(f"Heatmap c = 1, model 2 saved at {heat_filename}")
+        plt.close()
         # c = 2
         heat_filename = PLOT_BASE_DIR + f"heat_c2_r{R}.pdf"
         gd.plot(column="reg_c2", legend=True, cmap="OrRd", figsize=fig_size)
         plt.savefig(heat_filename, bbox_inches="tight")
         print(f"Heatmap c = 2, model 1 saved at {heat_filename}")
+        plt.close()
         heat_filename = PLOT_BASE_DIR + f"heat_c2_r{R}.pdf"
         gd.plot(column="cov_c2", legend=True, cmap="OrRd", figsize=fig_size)
         plt.savefig(heat_filename, bbox_inches="tight")
         print(f"Heatmap c = 2, model 2 saved at {heat_filename}")
+        plt.close()
 
 
 def plot_results():

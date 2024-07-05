@@ -1,0 +1,8 @@
+numpy==1.25
+pandas==2.0.0
+geopandas==0.12.2
+matplotlib
+h3
+geovoronoi
+rtree
+descartes

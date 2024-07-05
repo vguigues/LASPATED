@@ -114,7 +114,7 @@
         corresponding time group weights. alphas and group_weights must be the
         same size.
 */
-#ifdef USE_GUROBI
+#if USE_GUROBI == 1
 #include "gurobi_c++.h"
 #else
 #define GRB_INFINITY 1e100
@@ -156,9 +156,9 @@ class AppParameters {
   std::string neighbors_file;      // path to neighbors.dat
   std::string alpha_regions_file;  // path to alpha matrix
   std::string time_groups_file;    // path to time groups description
-  double duration;                 // duration of each period
-  std::string cv_weights_file;     // path to cross_validation weights
-  std::string output_file;         // Path to results file
+  std::string durations_file;
+  std::string cv_weights_file;  // path to cross_validation weights
+  std::string output_file;      // Path to results file
 };
 
 class Param {
@@ -447,7 +447,7 @@ class RegularizedModel {
   }
 };
 
-#ifdef USE_GUROBI
+#if USE_GUROBI == 1
 class CovariatesModel {
  public:
   GRBEnv env;
@@ -1038,7 +1038,6 @@ xt::xarray<double> regularized(Model &model, Param &param,
     gradient = model.gradient(x);
     ++k;
   }
-  // cin.get();
   return x;
 }
 
@@ -1404,6 +1403,9 @@ AppParameters load_options(int argc, char *argv[], po::variables_map &vm) {
       "= ''                ")(
       "time_groups_file", po::value<std::string>()->default_value("groups.txt"),
       "Path to file containing time groups information.")(
+      "durations_file",
+      po::value<std::string>()->default_value("durations.txt"),
+      "Path to durations file. default = durations.txt")(
       "duration,d", po::value<double>()->default_value(1.0),
       "Duration of each period")(
       "cv_weights_file,W", po::value<std::string>()->default_value(""),
@@ -1453,7 +1455,7 @@ AppParameters load_options(int argc, char *argv[], po::variables_map &vm) {
   app_params.neighbors_file = vm["neighbors_file"].as<std::string>();
   app_params.alpha_regions_file = vm["alpha_regions_file"].as<std::string>();
   app_params.time_groups_file = vm["time_groups_file"].as<std::string>();
-  app_params.duration = vm["duration"].as<double>();
+  app_params.durations_file = vm["durations_file"].as<std::string>();
   app_params.cv_weights_file = vm["cv_weights_file"].as<std::string>();
   app_params.output_file = vm["output_file"].as<std::string>();
   return app_params;

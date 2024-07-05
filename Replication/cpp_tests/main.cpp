@@ -100,7 +100,7 @@ void ex_no_reg() {
   }
 }
 
-#ifdef USE_GUROBI
+#if USE_GUROBI == 1
 void ex2_reg() {
   using namespace std;
   // vector<int> test_nb_weeks{10, 50, 500};
@@ -132,10 +132,11 @@ void ex2_reg() {
   result_file.close();
 }
 
-void real_data() {
+void real_data(const std::string& data_dir) {
   using namespace std;
-  vector<string> test_base_paths{"discretizations/rect", "discretizations/hex",
-                                 "discretizations/district"};
+  const std::string base_dir = data_dir + "/discretizations";
+  vector<string> test_base_paths{base_dir + "/rect", base_dir + "/hex",
+                                 base_dir + "/district"};
 
   for (auto& base_path : test_base_paths) {
     auto result = test3(base_path);
@@ -284,33 +285,33 @@ void test_det() {
 }
 
 int main(int argc, char* argv[]) {
-  if (argc != 3) {
+  if (argc < 3 || argc > 5) {
     printf(
         "Error: wrong usage.\nUsage: laspated -e "
-        "[ex_no_reg|ex2_reg|real_data|all]\n");
+        "[ex_no_reg|ex2_reg|real_data|all] --data_dir [data_path]\n");
     exit(1);
   }
   std::string example = argv[2];
+  std::string data_path = argv[4];
   if (example == "ex_no_reg") {
     ex_no_reg();
   } else if (example == "ex2_reg") {
-#ifdef USE_GUROBI
+#if USE_GUROBI == 1
     ex2_reg();
 #else
     std::cout << "Cannot run ex2_reg because gurobi is not being used\n";
 #endif
   } else if (example == "real_data") {
-#ifdef USE_GUROBI
-    real_data();
+#if USE_GUROBI == 1
+    real_data(data_path);
 #else
     std::cout << "Cannot run real_data because gurobi is not being used\n";
 #endif
   } else if (example == "all") {
-    // test_det();
     ex_no_reg();
-#ifdef USE_GUROBI
+#if USE_GUROBI == 1
     ex2_reg();
-    real_data();
+    real_data(data_path);
 #else
     printf(
         "Warning: Skipped ex2_reg and real_data because gurobi is not being "

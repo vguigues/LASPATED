@@ -1,9 +1,12 @@
--- How to run the replication script
+# How to run the replication script
 
-The first step is to compile the C++ code. This can be done by running the command:
+In order to run the replication script you must install the laspated package and compile the C++ code. If you haven't done it already, you can install the laspated package from the Replication directory by running:
 
-$ cd Replication
-$ make -C cpp_tests
+    pip install ../laspated
+
+You can compile the C++ code from the Replication directory by running the command:
+
+    make -C cpp_tests
 
 The cpp_tests directory contains a Makefile that can be edited by the user that compiles the C++ script.  The Makefile inside directory cpp_tests access the environment variable $GUROBI_HOME. If it is set, then the code for the model with Covariates inside laspated.h is accessible. Otherwise, the script will not run the experiments that uses covariates.
 

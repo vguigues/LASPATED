@@ -1,26 +1,12 @@
-GUROBI_LIB_VER = -lgurobi110
+GUROBI_VER = 110
 INCLUDE_BOOST = /usr/include/boost
 
 ifdef GUROBI_HOME
 	USE_GUROBI=1
 	INCLUDE_GUROBI = -I$(GUROBI_HOME)/include
-	LIB_GUROBI = -L$(GUROBI_HOME)/lib -lgurobi_c++ $(GUROBI_LIB_VER)
+	LIB_GUROBI = -L$(GUROBI_HOME)/lib -lgurobi_c++ $(GUROBI_LIB) -lgurobi$(GUROBI_VER)
 else
-	ifdef GUROBI_INCLUDE
-		ifdef GUROBI_LIB
-			USE_GUROBI=1
-			INCLUDE_GUROBI = -I$(GUROBI_INCLUDE)
-			LIB_GUROBI = -L$(GUROBI_LIB)
-		else
-			$(error Missing GUROBI_INCLUDE or GUROBI_LIB. Please provide both or none of them.)
-		endif
-	else
-		ifdef GUROBI_LIB
-			$(error Missing GUROBI_INCLUDE or GUROBI_LIB. Please provide both or none of them.)	
-		else
-			USE_GUROBI=0
-		endif
-	endif
+	USE_GUROBI=0
 endif
 
 # ifndef XTL_INCLUDE

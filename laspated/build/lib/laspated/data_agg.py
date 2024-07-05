@@ -751,11 +751,11 @@ class DataAggregator:
         neighbors_file.write("END")
         neighbors_file.close()
 
-    def plot_discretization(self, to_file=False):
+    def plot_discretization(self, to_file=None):
         """Plot the current discretization. The plot contains: events as points, max_borders and subregion borders and ids.
 
         Args:
-            to_file (bool, optional): if True, save the plot to file "disc_r{R}.pdf" instead of invoking a window. R denotes the number of subregions. Defaults to False.
+            to_file (string, optional): path indicating where to save the discretization figure. 
 
         Returns:
             _type_: _description_
@@ -783,10 +783,9 @@ class DataAggregator:
                 color="black",
                 fontsize=11,
             )
-        if to_file:
-            num_regions = int(np.max(self.events_data["gdiscr"]) + 1)
-            plt.savefig(f"disc_r{num_regions}.pdf", bbox_inches="tight")
-            return f"saved discretization plot at disc_r{num_regions}.pdf"
+        if to_file != None:
+            plt.savefig(to_file, bbox_inches="tight")
+            return f"saved discretization plot at {to_file}"
         else:
             plt.show()
             return None

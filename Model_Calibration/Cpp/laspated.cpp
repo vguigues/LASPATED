@@ -75,12 +75,32 @@ void read_groups(laspated::AppParameters& app_params, ulong total_T,
     if (index_group >= nb_groups) {
       printf("ERROR: Invalid index_group %d. Must be less than %d.\n",
              index_group, nb_groups);
+      exit(1);
     }
     groups[index_group].push_back(t);
     which_group[t] = index_group;
   }
   read_weights(time_groups, nb_groups, weights);
   time_groups.close();
+}
+
+void read_durations(laspated::AppParameters& app_params,
+                    std::vector<double>& durations, const ulong T) {
+  durations = std::vector<double>(T, 1);
+  std::ifstream times_file(app_params.durations_file, std::ios::in);
+  ulong file_T;
+  times_file >> file_T;
+  if (file_T != T) {
+    printf(
+        "ERROR: number of times in durations_file (%ld) is different from T "
+        "(%ld).\n",
+        file_T, T);
+    exit(1);
+  }
+  for (ulong t = 0; t < T; ++t) {
+    times_file >> durations[t];
+  }
+  times_file.close();
 }
 
 void read_alpha_matrix(laspated::AppParameters& app_params, ulong R,
@@ -113,24 +133,24 @@ void laspated_no_reg(laspated::AppParameters& app_params) {
   info_file_name << app_params.info_file;
   arrivals_file_name << app_params.arrivals_file;
   neighbors_file_name << app_params.neighbors_file;
-
-  cout << info_file_name.str() << "\n"
-       << arrivals_file_name.str() << "\n"
-       << neighbors_file_name.str() << "\n";
+  cout << "Running laspated for the Regularized Model\n";
+  cout << "info_file_name = " << info_file_name.str() << "\n"
+       << "arrivals_file_name = " << arrivals_file_name.str() << "\n"
+       << "neighbors_file_name = " << neighbors_file_name.str() << "\n";
   ulong C, D, T, R, nb_regressors, nb_holidays_years;
   auto info_file = ifstream(info_file_name.str(), ios::in);
   info_file >> T >> D >> R >> C >> nb_regressors >> nb_holidays_years;
   std::vector<int> daily_obs(D, 0);
 
-  printf("%ld %ld %ld %ld %ld %ld\ndaily_obs = ", T, D, R, C, nb_regressors,
-         nb_holidays_years);
+  // printf("%ld %ld %ld %ld %ld %ld\ndaily_obs = ", T, D, R, C, nb_regressors,
+  //        nb_holidays_years);
   for (int d = 0; d < D; ++d) {
     info_file >> daily_obs[d];
-    printf("%d ", daily_obs[d]);
+    // printf("%d ", daily_obs[d]);
   }
-  printf("\n");
+  // printf("\n");
   info_file.close();
-
+  printf("Read info_file\n");
   xt::xarray<int> nb_observations = xt::zeros<int>({C, D, T, R});
   ulong nb_obs = *min_element(daily_obs.begin(), daily_obs.end());
   xt::xarray<vector<int>> sample = xt::zeros<vector<int>>({
@@ -152,34 +172,26 @@ void laspated_no_reg(laspated::AppParameters& app_params) {
     istringstream ss(aux_str);
     int t, d, r, c, j, val;
     ss >> t >> d >> r >> c >> j >> val;
-    // fmt::print("calls {} {} {} {} {} {} {}\n",t,d,r,c,j,val,h);
-    // cin.get();
+
+    // printf("%d %d %d %d %d %d\n", t, d, r, c, j, val);
     sample(c, d, t, r).push_back(val);
     nb_observations(c, d, t, r) += 1;
     nb_arrivals(c, d, t, r) += val;
   } while (true);
 
   arrivals_file.close();
-  auto durations = vector<double>(T, 0.5);
-  xt::xarray<double> empirical_rates = xt::zeros<double>({C, R, D * T});
+  printf("Read arrivals_file\n");
+
   for (int c = 0; c < C; ++c) {
     for (int d = 0; d < D; ++d) {
       for (int t = 0; t < T; ++t) {
         for (int r = 0; r < R; ++r) {
           nb_observations(c, d, t, r) = daily_obs[d];
-          empirical_rates(c, r, d * T + t) =
-              static_cast<double>(nb_arrivals(c, d, t, r)) /
-              (nb_observations(c, d, t, r));
-          empirical_rates(c, r, d * T + t) /= durations[t];
-          // printf("c%d r%d t%ld, emp = %f, obs = %d arr = %d\n", c, r, d * T
-          // + t,
-          //        empirical_rates(c, r, d * T + t), nb_observations(c, d, t,
-          //        r), nb_arrivals(c, d, t, r));
         }
       }
     }
   }
-  // cin.get();
+
   auto type_region = std::vector<int>(R, -1);
   xt::xarray<double> regressors = xt::zeros<double>({nb_regressors, R});
   auto neighbors = std::vector<vector<int>>(R, std::vector<int>());
@@ -206,10 +218,11 @@ void laspated_no_reg(laspated::AppParameters& app_params) {
     }
   }
   neighbors_file.close();
+  printf("Read neighbors_file\n");
   xt::xarray<int> nb_observations_no_cov = xt::zeros<int>({C, R, D * T});
   xt::xarray<int> nb_arrivals_no_cov = xt::zeros<int>({C, R, D * T});
   xt::xarray<int> sample_no_cov = xt::zeros<int>({D * T, R, C, nb_obs});
-  vector<double> durations_no_cov(D * T, 0.5);
+
   for (int c = 0; c < C; ++c) {
     for (int d = 0; d < D; ++d) {
       for (int t = 0; t < T; ++t) {
@@ -234,17 +247,19 @@ void laspated_no_reg(laspated::AppParameters& app_params) {
   vector<int> which_group(D * T, -1);
   vector<vector<int>> groups;
   vector<double> weights;
-
+  std::vector<double> durations_no_cov;
+  read_durations(app_params, durations_no_cov, D * T);
+  printf("Read durations\n");
   if (app_params.model_type == "no_reg") {
     read_groups(app_params, D * T, groups, which_group, weights);
-  } else {
-    read_groups(app_params, D * T, groups, which_group);
   }
-
+  printf("Read groups_file\n");
   xt::xarray<double> alphas = xt::zeros<double>({R, R});
   if (app_params.model_type == "no_reg" && app_params.method == "calibration") {
     read_alpha_matrix(app_params, R, alphas);
   }
+  printf("Read alpha_file\n");
+
   using laspated::Param;
   using laspated::RegularizedModel;
   Param param(app_params);
@@ -307,32 +322,18 @@ void laspated_no_reg(laspated::AppParameters& app_params) {
            app_params.output_file.c_str());
     exit(1);
   }
-  std::vector<double> difference_l2;
-  for (int t = 0; t < T; ++t) {
-    double sum_est = 0.0;
-    double sum_emp = 0.0;
-    for (int c = 0; c < C; ++c) {
-      for (int r = 0; r < R; ++r) {
+  for (int c = 0; c < C; ++c) {
+    for (int r = 0; r < R; ++r) {
+      for (int t = 0; t < T; ++t) {
         output << c << " " << r << " " << t << " " << lambda(c, r, t) << "\n";
-        sum_est += lambda(c, r, t);
-        sum_emp += empirical_rates(c, r, t);
       }
     }
-    difference_l2.push_back(abs(sum_emp - sum_est) / sum_emp);
   }
-  double avg_diff =
-      std::accumulate(difference_l2.begin(), difference_l2.end(), 0.0) /
-      difference_l2.size();
-  printf("Avg diff empirical vs estimated = %.3f\n", avg_diff);
   printf("Intensities saved at %s\n", app_params.output_file.c_str());
 }
 
+#if USE_GUROBI == 1
 void laspated_reg(laspated::AppParameters& app_params) {
-#ifndef USE_GUROBI
-  printf("ERROR: model_type set to reg but Gurobi is not available.");
-  exit(1);
-#endif
-
   using namespace std;
   stringstream info_file_name;
   stringstream arrivals_file_name;
@@ -387,7 +388,8 @@ void laspated_reg(laspated::AppParameters& app_params) {
   } while (true);
 
   arrivals_file.close();
-  auto durations = vector<double>(T, 0.5);
+  auto durations = vector<double>(T, 1);
+  read_durations(app_params, durations, T);
   xt::xarray<double> empirical_rates = xt::zeros<double>({C, R, D * T});
   for (int c = 0; c < C; ++c) {
     for (int d = 0; d < D; ++d) {
@@ -465,28 +467,6 @@ void laspated_reg(laspated::AppParameters& app_params) {
            app_params.output_file.c_str());
     exit(1);
   }
-  std::vector<double> difference_l2;
-  for (int d = 0; d < D; ++d) {
-    for (int t = 0; t < T; ++t) {
-      double sum_emp = 0.0;
-      double sum_est = 0.0;
-      for (int c = 0; c < C; ++c) {
-        for (int r = 0; r < R; ++r) {
-          double rate = 0.0;
-          for (int j = 0; j < nb_regressors; ++j) {
-            rate += beta(c, d, t, j) * regressors(j, r);
-          }
-          sum_est += rate / durations[t];
-          sum_emp += empirical_rates(c, r, d * T + t);
-        }
-      }
-      difference_l2.push_back(abs(sum_emp - sum_est) / sum_emp);
-    }
-  }
-  double avg_diff =
-      std::accumulate(difference_l2.begin(), difference_l2.end(), 0.0) /
-      difference_l2.size();
-  printf("Avg diff empirical vs estimated = %.3f\n", avg_diff);
 
   for (int c = 0; c < C; ++c) {
     for (int d = 0; d < D; ++d) {
@@ -500,6 +480,7 @@ void laspated_reg(laspated::AppParameters& app_params) {
   }
   printf("Intensities saved at %s\n", app_params.output_file.c_str());
 }
+#endif
 
 void run_model(laspated::AppParameters& app_params) {
   if (app_params.model_type == "no_reg") {
@@ -512,11 +493,18 @@ void run_model(laspated::AppParameters& app_params) {
     }
     laspated_no_reg(app_params);
   } else {
+#if USE_GUROBI == 1
     if (app_params.method == "cross_validation") {
       printf("Error: Cross validation not implemented for model_type reg.\n");
       exit(1);
     }
     laspated_reg(app_params);
+#else
+    printf(
+        "ERROR: This executable was not compiled with Gurobi support. Please "
+        "see INSTALL.md\n");
+    exit(1);
+#endif
   }
 }
 
