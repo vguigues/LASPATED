@@ -19,10 +19,10 @@ See the demo directory for examples on how to run the discretization functions a
 
 The C++ calibration functions have the following dependencies:
 
-    - Boost 1.74 ([Home page](www.boost.org))
-    - xtl ([Repository](https://github.com/xtensor-stack/xtl))
-    - xtensor ([Repository](https://github.com/xtensor-stack/xtensor))
-    - Gurobi 11.0 ([Home page](www.gurobi.com)) (Optional)
+- Boost 1.74 ([Home page](www.boost.org))
+- xtl ([Repository](https://github.com/xtensor-stack/xtl))
+- xtensor ([Repository](https://github.com/xtensor-stack/xtensor))
+- Gurobi 11.0 ([Home page](www.gurobi.com)) (Optional)
 
 xtl and xtensor are provided in the Model_Calibration/Cpp directory. However, Boost and Gurobi must be installed. The libboost-all-dev package contains Boost and can be installed via the most famous package managers, or compiled from source, following instructions from its [Home page](www.boost.org).
 
