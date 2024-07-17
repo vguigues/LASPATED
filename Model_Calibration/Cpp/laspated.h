@@ -1015,12 +1015,17 @@ xt::xarray<double> regularized(Model &model, Param &param,
     diff_aux = x - z;
     double f = model.f(z);
     double rhs = model.get_rhs(gradient, diff_aux);
-    // printf("\tk = %d, fold = %f, f = %f, rhs = %f\n", k, fold, f, rhs);
+    // double diff = f - fold + sigma * rhs;
+    // printf("\tk = %d, fold = %f, f = %f, rhs = %f diff = %f\n", k, fold, f,
+    // rhs,
+    //        diff);
     if (f > fold - sigma * rhs) {
       bool stop = false;
       while (!stop) {
         z_aux = x + (1 / pow(2.0, j)) * (z - x);
         f = model.f(z_aux);
+        // printf("\t\tj = %d, f = %f z_aux = (%f,%f)\n", j, f, z_aux(0),
+        //        z_aux(1));
         if (f <= fold - (sigma / pow(2.0, j)) * rhs) {
           stop = true;
         } else {
@@ -1037,6 +1042,7 @@ xt::xarray<double> regularized(Model &model, Param &param,
     fold = f;
     gradient = model.gradient(x);
     ++k;
+    // std::cin.get();
   }
   return x;
 }
@@ -1055,6 +1061,11 @@ xt::xarray<double> covariates(Model &model, Param &param,
   int max_iter = param.max_iter;
   x = model.projection(x);
 
+  if (!model.is_feasible(x)) {
+    printf("Projected x is not feasible!\n");
+    std::cin.get();
+  }
+
   xt::xarray<double> z = xt::zeros<double>(x.shape());
   xt::xarray<double> z_aux = xt::zeros<double>(x.shape());
   xt::xarray<double> diff_aux = xt::zeros<double>(x.shape());
@@ -1065,27 +1076,32 @@ xt::xarray<double> covariates(Model &model, Param &param,
     xt::xarray<double> gradient = model.gradient(x);
     xt::xarray<double> x_aux = x - beta_k * gradient;
     z = model.projection(x_aux);
-
     bool stop = false;
     int j = 0;
     diff_aux = x - z;
     double f = model.f(z);
     double rhs = model.get_rhs(gradient, diff_aux);
-    // printf("k = %d, fold = %.8f, rhs = %f\n", k, fold, rhs);
-    while (!stop) {
-      z_aux = x + (1 / pow(2.0, j)) * (z - x);
-      f = model.f(z_aux);
-      // printf("\tf = %f, j = %d\n", f, j);
-      if (f <= fold - (sigma / pow(2.0, j)) * rhs) {
-        stop = true;
-      } else {
-        ++j;
+    // printf("k = %d, fold = %.8f, f = %.8f, rhs = %f\n", k, fold, f, rhs);
+    if (f > fold - sigma * rhs + param.EPS) {
+      bool stop = false;
+      while (!stop) {
+        z_aux = x + (1 / pow(2.0, j)) * (z - x);
+        f = model.f(z_aux);
+        // printf("\tj = %d, f = %f, fold = %f, sigma = %f, rhs = %f\n", j, f,
+        //        fold, sigma, rhs);
+        if (f <= fold - (sigma / pow(2.0, j)) * rhs) {
+          stop = true;
+        } else {
+          ++j;
+        }
       }
+      f_val.push_back(f);
+      x = z_aux;
+      beta_k = b_param / pow(2.0, j - 1);
+    } else {
+      x = z;
+      beta_k *= 2;
     }
-    f_val.push_back(f);
-    x = z_aux;
-    beta_k = b_param / pow(2.0, j);
-    // cin.get();
     ++k;
   }
   // cin.get();

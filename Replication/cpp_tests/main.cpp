@@ -287,11 +287,18 @@ void test_det() {
 int main(int argc, char* argv[]) {
   if (argc < 3 || argc > 5) {
     printf(
-        "Error: wrong usage.\nUsage: laspated -e "
-        "[ex_no_reg|ex2_reg|real_data|all] --data_dir [data_path]\n");
+        "Error: wrong usage\nUsage: laspated -e "
+        "[ex_no_reg|ex2_reg|real_data|all] (--data_dir [data_path])\nThe "
+        "data_dir must be provided in case of testing real data\n");
     exit(1);
   }
   std::string example = argv[2];
+  if ((example == "real_data" || example == "all") && argc != 5) {
+    printf(
+        "Error: wrong usage with real data.\nUsage: laspated -e "
+        "[ex_no_reg|ex2_reg|real_data|all] --data_dir [data_path]\n");
+    exit(1);
+  }
   std::string data_path = argv[4];
   if (example == "ex_no_reg") {
     ex_no_reg();

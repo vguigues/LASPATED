@@ -1,6 +1,6 @@
 # INSTALLATION
 
-This file contains installation instructions and examples for the Python and C++ modules. The discretization code works in Windows and Linux, however the C++ calibration functions are currently tested only on Linux.
+This file contains installation instructions and examples for the Python and C++ modules. The discretization code works in Windows and Linux, however the C++ calibration functions are currently tested only on Linux. We also provide instructions for creating a [Docker](##docker) container.
 
 ## Python
 
@@ -40,6 +40,26 @@ If you don't have Gurobi installed, you can still run the laspated functions for
     cd Model_Calibration/Cpp
     make USE_GUROBI=0
 
+
+## Docker
+
+We also provide a Dockerfile. The docker container comes with all dependencies installed and can be built in the project root directory using:
+
+```
+    docker build -t laspated-dock .
+```
+
+To run the container, use:
+```
+    docker run -it laspated-dock
+```
+
+If you have a Gurobi WLS license, you can pass the license to the container with:
+```
+    docker run --volume="/absolute/path/to/gurobi.lic:/opt/gurobi/gurobi.lic:ro" -it laspated-dock
+```
+
+This will open a shell environment with all dependencies installed. Once in the container environment you can run both the Python and C++ functions, as well as running the replication script.
 
 ## Matlab/Octave
 

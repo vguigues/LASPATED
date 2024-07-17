@@ -16,7 +16,7 @@ CPP			= g++
 EXE			= laspated
 
 all: main.cpp tests.h
-	$(CPP) -o $(EXE) main.cpp $(CARGS) -DUSE_GUROBI=$(USE_GUROBI) $(INCLUDE_GUROBI) $(INCLUDE_LASPATED) $(LIB_GUROBI) $(CONFIG)
+	$(CPP) -o $(EXE) main.cpp $(CARGS) -DUSE_GUROBI=$(USE_GUROBI) $(INCLUDE_GUROBI) $(INCLUDE_LASPATED) $(LIB_GUROBI) -I. $(CONFIG)
 
 clean:
 	$(RM) $(EXE)
