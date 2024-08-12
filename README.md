@@ -5,7 +5,12 @@ Spatio-Temporal Discrete Data" paper ([Arxiv link](https://arxiv.org/abs/2401.04
 
 ## OS Support
 
-LASPATED Python and Matlab code were tested under Windows 10/Linux systems. The C++ code was tested under Linux systems only.
+LASPATED Python and MATLAB code were tested under Windows 10/Linux systems. The C++ code was tested under Linux systems only.
+
+
+## Installation
+
+For installation instructions check [INSTALL.md](INSTALL.md).
 
 ## Data
 Directory Data contains Shapefiles and data files that are used in the code examples. It includes a Rio de Janeiro and New York border Shapefiles, a csv and Shapefile with location of ambulance bases from Rio, covariates Data from Rio, and a Shapefile with Rio's administrative regions. It also includes csv files with Ambulance emergency data from Rio, and a mock csv simulating emergency data from New York. 
@@ -16,7 +21,7 @@ Contains a python module that can be installed on your system via pip (currently
 
 ## Model_Calibration
 
-Contains the source code of the Matlab, Octave and C++ functions.
+Contains the source code of the MATLAB, Octave and C++ functions.
 
 ## Replication
 
@@ -26,5 +31,6 @@ Contains a script and auxiliary files on how to replicate the results present in
 ## Docker image
 
 A docker container may be built via the Dockerfile in the project root directory. See the INSTALL.md on how to generate the container.
+
 
 
