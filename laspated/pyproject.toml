@@ -4,9 +4,10 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "laspated"
-version = "0.0.1"
+version = "0.0.5"
 requires-python = ">= 3.10"
-readme = "README.md"
+readme = {file = "README.md", content-type = "text/markdown"}
+description = "Analysis of Spatio-temporal data"
 license = {file = "LICENSE.txt"}
 dependencies = [
     "numpy==1.25",
@@ -17,6 +18,17 @@ dependencies = [
     "geovoronoi",
     "rtree",
     "descartes",
+]
+authors = [{name = "Vincent Guigues"}, 
+            {name = "Anton Kleywegt"}, 
+            {name = "Giovanni Amorim"}, 
+            {name = "André Mazal"}, 
+            {name = "Victor Nascimento"}]
+
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: BSD License",
+    "Operating System :: OS Independent",
 ]
 
 

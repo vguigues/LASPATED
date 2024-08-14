@@ -19,7 +19,7 @@ RUN if [ "$TARGETPLATFORM" = "linux/arm64" ]; then \
 # install gurobi package and copy the files
 WORKDIR /opt
 
-RUN apt-get update && apt-get install -y python2 python3 python3-pip libboost-all-dev \
+RUN apt-get update && apt-get install -y python3 python3-pip libboost-all-dev \
         build-essential vim gdal-bin libgdal-dev
 RUN pip install --upgrade pip
 

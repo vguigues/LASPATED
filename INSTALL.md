@@ -8,14 +8,14 @@ To download the C++ library and the python package, run:
 
     git clone https://github.com/vguigues/LASPATED.git
 
-Or 
+ 
 ## Python
 
 Enter the laspated directory and run:
 
     pip install .
 
-This command will download all Python dependencies and install laspated on the $PYTHONPATH, so you can use it in Python via:
+This command will download all Python dependencies and install laspated on the PYTHONPATH, so you can use it in Python via:
 
     import laspated
 
