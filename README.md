@@ -47,7 +47,7 @@ app.plot_discretization()
 
 First, the data aggregator is loaded and a Shapefile describing the city of Rio de Janeiro is used as a bounding border. Next, medical emergency data from Rio de Janeiro is loaded. Next, we define a time discretization of 30 minutes for each day and a space discretization of Rio de Janeiro into a grid with a maximum of 10 x 10 rectangles. Finally, we plot the space discretization, generating the following image:
 
-![Texto alternativo](disc_r76.pdf)
+![](disc_r76.png)
 
 
 ### C++ app
