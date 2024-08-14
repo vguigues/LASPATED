@@ -35,10 +35,10 @@ The python package is also available via PIP, with the command
 
 The C++ calibration functions have the following dependencies:
 
-    - Boost 1.74 ([Home page](www.boost.org))
-    - xtl ([Repository](https://github.com/xtensor-stack/xtl))
-    - xtensor ([Repository](https://github.com/xtensor-stack/xtensor))
-    - Gurobi 11.0 ([Home page](www.gurobi.com)) (Optional)
+- Boost 1.74 ([Home page](www.boost.org))
+- xtl ([Repository](https://github.com/xtensor-stack/xtl))
+- xtensor ([Repository](https://github.com/xtensor-stack/xtensor))
+- Gurobi 11.0 ([Home page](www.gurobi.com)) (Optional)
 
 xtl and xtensor are provided in the Model_Calibration/Cpp directory. However, Boost must be installed. The libboost-all-dev package contains Boost and can be installed via the most famous package managers, for example:
 
