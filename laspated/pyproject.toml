@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "laspated"
-version = "0.0.5"
+version = "0.0.6"
 requires-python = ">= 3.10"
 readme = {file = "README.md", content-type = "text/markdown"}
 description = "Analysis of Spatio-temporal data"

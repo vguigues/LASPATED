@@ -46,7 +46,7 @@ xtl and xtensor are provided in the Model_Calibration/Cpp directory. However, Bo
 
 Boost can also be compiled from source, following instructions from its [Home page](https://www.boost.org).
 
-The Gurobi solver can be downloaded from its [Home page](https://www.gurobi.com). The installation is done by extracting its content to some location on your system, and setting an environment variable GUROBI_HOME to the location. Since LASPATED uses the C++ interface, the user must also compile the C++ classes following this [guide](https://support.gurobi.com/hc/en-us/articles/360039093112-How-do-I-resolve-undefined-reference-errors-while-linking-Gurobi-in-C).
+The Gurobi solver can be downloaded from its [Home page](https://www.gurobi.com). The installation is done by extracting its content to some location on your system, and setting an environment variable GUROBI_HOME to the location. Since LASPATED uses the C++ interface, the user must also compile the Gurobi C++ classes following this [guide](https://support.gurobi.com/hc/en-us/articles/360039093112-How-do-I-resolve-undefined-reference-errors-while-linking-Gurobi-in-C).
 
 ### Compiling the laspated executable
 
