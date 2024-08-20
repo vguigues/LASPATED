@@ -1,5 +1,5 @@
 FROM ubuntu:22.04
-ARG USE_GUROBI=1
+ARG USE_GUROBI=0
 ARG GRB_VERSION=11.0.1
 ARG GRB_SHORT_VERSION=11.0
 ARG TARGETPLATFORM
@@ -34,18 +34,20 @@ RUN apt-get install --no-install-recommends -y\
     && python3 -m pip install gurobipy==${GRB_VERSION} \
     && rm -rf /var/lib/apt/lists/*
 
-RUN export GRB_PLATFORM=$(cat /platform.txt) && echo $GRB_PLATFORM \
-    &&apt-get update \
-    && apt-get install --no-install-recommends -y\
-       ca-certificates  \
-       wget \
-    && update-ca-certificates \
-    && wget -v https://packages.gurobi.com/${GRB_SHORT_VERSION}/gurobi${GRB_VERSION}_$GRB_PLATFORM.tar.gz \
-    && tar -xvf gurobi${GRB_VERSION}_$GRB_PLATFORM.tar.gz  \
-    && rm -f gurobi${GRB_VERSION}_$GRB_PLATFORM.tar.gz \
-    && mv -f gurobi* gurobi \
-    && rm -rf gurobi/$GRB_PLATFORM/docs \
-    && mv -f gurobi/$GRB_PLATFORM*  gurobi/linux
+RUN if [ "$USE_GUROBI" = "1" ]; then \
+        export GRB_PLATFORM=$(cat /platform.txt) && echo $GRB_PLATFORM \
+        && apt-get update \
+        && apt-get install --no-install-recommends -y\
+        ca-certificates  \
+        wget \
+        && update-ca-certificates \
+        && wget -v https://packages.gurobi.com/${GRB_SHORT_VERSION}/gurobi${GRB_VERSION}_$GRB_PLATFORM.tar.gz \
+        && tar -xvf gurobi${GRB_VERSION}_$GRB_PLATFORM.tar.gz  \
+        && rm -f gurobi${GRB_VERSION}_$GRB_PLATFORM.tar.gz \
+        && mv -f gurobi* gurobi \
+        && rm -rf gurobi/$GRB_PLATFORM/docs \
+        && mv -f gurobi/$GRB_PLATFORM*  gurobi/linux; \
+    fi
 
     
 WORKDIR $PROJECT_DIR

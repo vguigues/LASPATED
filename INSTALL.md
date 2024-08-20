@@ -63,18 +63,26 @@ If you don't have Gurobi installed, you can still run the laspated functions for
 
 ## Docker
 
-We also provide a Dockerfile. The docker container comes with all dependencies installed and can be built in the project root directory using:
+We also provide a Dockerfile. The docker container comes with all dependencies installed and can be built in the project root directory. To build the container, run:
 
 ```
 docker build -t laspated-dock .
 ```
+
+If you have a Gurobi Web License, you can build the container with Gurobi support by running:
+
+```
+docker build --build-arg USE_GUROBI=1 -t laspated-dock .
+```
+
+The above command will build the container with Gurobi 11.0.1 installed.
 
 To run the container, use:
 ```
 docker run -it laspated-dock
 ```
 
-If you have a Gurobi WLS license, you can pass the license to the container with:
+To run the container with Gurobi support, you can pass the license to the container with:
 ```
 docker run --volume="/absolute/path/to/gurobi.lic:/opt/gurobi/gurobi.lic:ro" -it laspated-dock
 ```
