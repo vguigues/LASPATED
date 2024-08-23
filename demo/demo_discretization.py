@@ -21,7 +21,7 @@ if not disc_type in ['rectangle','hexagon','custom']:
     raise ValueError(f"<disc_type> must be in ['rectangle','hexagon','custom']")
 
 app = spated.DataAggregator(crs="epsg:4326")
-events = pd.read_csv(r"../Data/sorted_events.csv", encoding="ISO-8859-1", sep=",")
+events = pd.read_csv(r"sorted_events.csv", encoding="ISO-8859-1", sep=",")
 app.add_events_data(
     events,
     datetime_col="data_hora",
@@ -33,7 +33,7 @@ app.add_events_data(
 
 if region_type == "custom":
     max_borders = gpd.read_file(
-        r"../Data/rj/rj.shp"
+        r"rj/rj.shp"
     )  # Load the geometry of region of interest
     app.add_max_borders(max_borders)
 else:
@@ -41,8 +41,8 @@ else:
 
 # Time discretizations
 app.add_time_discretization("m", 30, 60 * 24, column_name="hhs")
-
 app.add_time_discretization("D", 1, 7, column_name="dow")
+
 
 time_disc_df = pd.DataFrame([
     ["2016-01-01", "2016-01-01", 1, "yearly"],
@@ -63,14 +63,14 @@ elif disc_type == "hexagon":
         hex_discr_param=7
     ) 
 else:
-    custom_map = gpd.read_file(r'../Data/rio_de_janeiro_neighborhoods/rio_neighborhoods.shp')
+    custom_map = gpd.read_file(r'rio_de_janeiro_neighborhoods/rio_neighborhoods.shp')
     app.add_geo_discretization('C', custom_data=custom_map)
 
 # Plot discretization
 app.plot_discretization()
 
 # Geo Features
-population = gpd.read_file(r"../Data/regressores/populacao/")
+population = gpd.read_file(r"populacao/")
 population = population[["population", "geometry"]].copy()
 app.add_geo_variable(population)
 
@@ -79,3 +79,5 @@ print("Writing output files...")
 app.write_arrivals("disc_data/arrivals.dat")
 app.write_regions("disc_data/neighbors.dat")
 app.write_info(obs_index_column="dow", path="disc_data/info.dat")
+
+print("Output files written at disc_data directory.")
