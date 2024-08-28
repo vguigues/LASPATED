@@ -37,6 +37,8 @@ jobs:
         with:
           context: .
           file: ./Dockerfile
+          build-args: |
+            USE_GUROBI=0
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
