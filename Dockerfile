@@ -62,9 +62,3 @@ RUN if [ "${USE_GUROBI}" = "1" ]; then \
         make -C Model_Calibration/Cpp USE_GUROBI=0 && \
         make -C Model_Calibration/Cpp USE_GUROBI=0 test; \
     fi
-
-RUN if [ ${USE_GUROBI} = 1 ]; then \ 
-        make -C Replication/cpp_tests USE_GUROBI=1 GUROBI_VER=110; \
-    else \
-        make -C Replication/cpp_tests USE_GUROBI=0; \
-    fi
