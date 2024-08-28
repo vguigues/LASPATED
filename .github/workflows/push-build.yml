@@ -7,7 +7,7 @@ on:
     branches: [ "main" ]
 
 env:
-  IMAGE_NAME: laspated
+  IMAGE_NAME: victorvhrn/laspated
 
 jobs:
   push_to_registry:
