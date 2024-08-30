@@ -77,14 +77,9 @@ Contains the laspated python module source code, that can be installed on your s
 
 Contains the source code of the MATLAB, Octave and C++ functions. 
 
-## Replication
-
-Contains a script and auxiliary files on how to replicate the results present in the paper. The README file inside contains a tutorial on how to compile and run the script
-
-
 ## Docker image
 
-A docker container may be built via the Dockerfile in the project root directory. See the INSTALL.md on how to generate the container.
+A docker container is available at [DockerHub](https://dockerhub.com) and also via the Dockerfile in the project root directory. See the INSTALL.md on how to generate the container. 
 
 
 

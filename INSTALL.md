@@ -63,23 +63,42 @@ If you don't have Gurobi installed, you can still run the laspated functions for
 
 ## Docker
 
-We also provide a Dockerfile. The docker container comes with all dependencies installed and can be built in the project root directory. To build the container, run:
+We also provide a Docker container. It is available at [DockerHub](https://dockerhub.com) or via the Dockerfile in the repository. The docker container comes with all dependencies installed and the library ready to use. 
+
+### Dockerfile
+
+To build the container via the repository Dockerfile, run:
 
 ```
-docker build -t laspated-dock .
+docker build -t laspated .
 ```
 
 If you have a Gurobi Web License, you can build the container with Gurobi support by running:
 
 ```
-docker build --build-arg USE_GUROBI=1 -t laspated-dock .
+docker build --build-arg USE_GUROBI=1 -t laspated .
 ```
 
 The above command will build the container with Gurobi 11.0.1 installed.
 
+
+### DockerHub
+
+To download the container from DockerHub, just run:
+
+```
+docker pull victorvhrn/laspated
+```
+
+**Note:** The DockerHub container comes without Gurobi support by default. To enable Gurobi support, you will need to recompile the C++ libraries inside the container. See how to run the container in the next section and how to recompile the C++ in [here](##C++).
+
+
+
+### Running the container
+
 To run the container, use:
 ```
-docker run -it laspated-dock
+docker run -it laspated
 ```
 
 To run the container with Gurobi support, you can pass the license to the container with:
@@ -87,7 +106,7 @@ To run the container with Gurobi support, you can pass the license to the contai
 docker run --volume="/absolute/path/to/gurobi.lic:/opt/gurobi/gurobi.lic:ro" -it laspated-dock
 ```
 
-This will open a shell environment with all dependencies installed. Once in the container environment you can run both the Python and C++ functions, as well as run the replication script.
+This will open a shell environment with all dependencies installed. Once in the container environment you can run both the Python and C++ functions.
 
 ## Matlab/Octave
 
