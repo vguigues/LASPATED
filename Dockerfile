@@ -55,7 +55,7 @@ RUN pip3 install ${PROJECT_DIR}/laspated/.
 
 RUN ln -s $(which python3) /usr/local/bin/python
 
-RUN if [ "${USE_GUROBI}" = "1" ]; then \
+RUN if [ "$USE_GUROBI" = "1" ]; then \
         make -C Model_Calibration/Cpp USE_GUROBI=1 GUROBI_VER=110 && \
         make -C Model_Calibration/Cpp USE_GUROBI=1 GUROBI_VER=110 test; \
     else \

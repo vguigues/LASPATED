@@ -63,7 +63,7 @@ If you don't have Gurobi installed, you can still run the laspated functions for
 
 ## Docker
 
-We also provide a Docker container. It is available at [DockerHub](https://dockerhub.com) or via the Dockerfile in the repository. The docker container comes with all dependencies installed and the library ready to use. 
+We also provide a Docker container. It is available at [DockerHub](https://hub.docker.com/r/victorvhrn/laspated) or via the Dockerfile in the repository. The docker container comes with all dependencies installed and the library ready to use. 
 
 ### Dockerfile
 
