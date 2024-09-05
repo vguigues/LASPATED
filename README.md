@@ -1,5 +1,7 @@
 # LASPATED: Library for Analysis of Spatio-Temporal Discrete Data
 
+[![DOI](https://zenodo.org/badge/615381218.svg)](https://zenodo.org/doi/10.5281/zenodo.13619571)
+
 This repository contains the source code for the "LASPATED: A Library for the Analysis of
 Spatio-Temporal Discrete Data" paper ([Arxiv link](https://arxiv.org/abs/2401.04156)).
 
@@ -79,7 +81,7 @@ Contains the source code of the MATLAB, Octave and C++ functions.
 
 ## Docker image
 
-A docker container is available at [DockerHub](https://dockerhub.com) and also via the Dockerfile in the project root directory. See the INSTALL.md on how to generate the container. 
+A docker container is available at [DockerHub](https://hub.docker.com) and also via the Dockerfile in the project root directory. See the INSTALL.md on how to generate the container. 
 
 
 
