@@ -18,8 +18,6 @@ double rhs(xt::xarray<double>& grad, xt::xarray<double>& dir) {
   return rhs;
 }
 
-#if USE_GUROBI == 1
-#include "gurobi_c++.h"
 class ModelUncProblem3 {
  public:
   Param& params;
@@ -57,6 +55,8 @@ class ModelUncProblem3 {
   bool is_feasible(xt::xarray<double>& x) { return x(0) > 0.0 && x(1) > 0.0; }
 };
 
+#if USE_GUROBI == 1
+#include "gurobi_c++.h"
 class ModelProblem3 {
  public:
   GRBEnv& env;
