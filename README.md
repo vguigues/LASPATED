@@ -79,7 +79,7 @@ Contains the source code of the MATLAB, Octave and C++ functions.
 
 ## Docker image
 
-A docker container is available at [DockerHub](https://dockerhub.com) and also via the Dockerfile in the project root directory. See the INSTALL.md on how to generate the container. 
+A docker container is available at [DockerHub](https://hub.docker.com) and also via the Dockerfile in the project root directory. See the INSTALL.md on how to generate the container. 
 
 
 
