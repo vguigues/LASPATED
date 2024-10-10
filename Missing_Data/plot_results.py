@@ -95,3 +95,61 @@ all_stats = []
 for w in test_weights:
     lam = read_model2(f"results/lambda_model2_w{w}.txt")
     all_stats.append(Stats(lam))
+
+
+COLORS = ["black", "red"]
+LINES = ["solid", "dotted", "dashed", (0, (3, 1, 1, 1)), (0, (1, 1))]
+
+for i, w in enumerate(test_weights):
+    plt.plot(
+        [t for t in range(T)],
+        all_stats[i].mean_total,
+        label=f"W{w}",
+        color=COLORS[i % 2],
+        linestyle=LINES[i],
+    )
+plt.xlabel("Time")
+plt.ylabel("Intensities")
+plt.savefig("results/model1_weights.pdf", bbox_inches="tight")
+plt.close()
+
+for i, w in enumerate(test_weights):
+    plt.plot(
+        [t for t in range(T)],
+        all_stats[i].mean_p0,
+        label=f"W{w}",
+        color=COLORS[i % 2],
+        linestyle=LINES[i],
+    )
+plt.xlabel("Time")
+plt.ylabel("Intensities")
+plt.savefig("results/model1_weights_p0.pdf", bbox_inches="tight")
+plt.close()
+
+
+for i, w in enumerate(test_weights):
+    plt.plot(
+        [t for t in range(T)],
+        all_stats[i].mean_p1,
+        label=f"W{w}",
+        color=COLORS[i % 2],
+        linestyle=LINES[i],
+    )
+plt.xlabel("Time")
+plt.ylabel("Intensities")
+plt.savefig("results/model1_weights_p1.pdf", bbox_inches="tight")
+plt.close()
+
+
+for i, w in enumerate(test_weights):
+    plt.plot(
+        [t for t in range(T)],
+        all_stats[i].mean_p2,
+        label=f"W{w}",
+        color=COLORS[i % 2],
+        linestyle=LINES[i],
+    )
+plt.xlabel("Time")
+plt.ylabel("Intensities")
+plt.savefig("results/model1_weights_p2.pdf", bbox_inches="tight")
+plt.close()
