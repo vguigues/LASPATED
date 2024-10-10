@@ -236,3 +236,4 @@ Data/rj/Rio.osm
 laspated/src/laspated.egg-info
 laspated/src/laspated.egg-info/PKG-INFO
 Model_Calibration/Cpp/test_problems
+Missing_Data/Rect10x10/mn_samples.dat
