@@ -1,27 +1,5 @@
 #include "laspated.h"
 
-int factorial(int n) {
-  int prod = 1;
-  for (int i = 1; i <= n; ++i) {
-    prod *= i;
-  }
-
-  return prod;
-}
-
-class AppParams {
- public:
-  double EPS;           // Epsilon for feasibility/convergence
-  double sigma;         // Sigma for armijo step
-  int max_iter;         // Max number of iterations.
-  double lower_lambda;  // lower bound on decision variables
-  double beta_bar;      // Initial step size in projected gradient
-  std::string info_file;
-  std::string arrivals_file;
-  std::string neighbors_file;
-  std::string missing_file;
-};
-
 class MissingLambdaModel {
  public:
   std::string name = "Regularized";
@@ -213,6 +191,14 @@ class MissingLambdaModel {
   }
 };
 
+int factorial(int n) {
+  int prod = 1;
+  for (int i = 1; i <= n; ++i) {
+    prod *= i;
+  }
+
+  return prod;
+}
 class MissingModel2 {
  public:
   std::string name = "Regularized";
@@ -384,17 +370,3 @@ class MissingModel2 {
     return 0.0;
   }
 };
-
-typedef struct {
-  double prob;
-  xt::xarray<double> probs;
-  xt::xarray<double> lambda_missing;
-  xt::xarray<double> lambda_no_missing;
-} ResultModel1;
-
-ResultModel1 run_model1(xt::xarray<int>& nb_observations,
-                        xt::xarray<int>& nb_arrivals,
-                        xt::xarray<int>& nb_missing_arrivals,
-                        xt::xarray<double>& durations);
-
-AppParams load_options(int argc, char* argv[]);
