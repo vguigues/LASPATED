@@ -159,6 +159,7 @@ class AppParameters {
   std::string durations_file;
   std::string cv_weights_file;  // path to cross_validation weights
   std::string output_file;      // Path to results file
+  bool relax_empirical_fix;
 };
 
 class Param {
@@ -174,6 +175,7 @@ class Param {
 
   // Cross validation proportion
   double cv_proportion = 0.2;
+  bool relax_empirical_fix = false;
 
   // Constructor methods
   Param() {}
@@ -185,7 +187,8 @@ class Param {
         lower_lambda(app_params.lower_lambda),
         upper_lambda(app_params.upper_lambda),
         beta_bar(app_params.beta_bar),
-        cv_proportion(app_params.cv_proportion) {}
+        cv_proportion(app_params.cv_proportion),
+        relax_empirical_fix(app_params.relax_empirical_fix) {}
   Param(const Param &p)
       : EPS(p.EPS),
         sigma(p.sigma),
@@ -194,7 +197,8 @@ class Param {
         lower_lambda(p.lower_lambda),
         upper_lambda(p.upper_lambda),
         beta_bar(p.beta_bar),
-        cv_proportion(p.cv_proportion) {}
+        cv_proportion(p.cv_proportion),
+        relax_empirical_fix(p.relax_empirical_fix) {}
 
   Param &operator=(const Param &p) {
     if (this == &p) return *this;
@@ -210,6 +214,7 @@ class Param {
 
     // Cross validation proportion
     cv_proportion = p.cv_proportion;
+    relax_empirical_fix = p.relax_empirical_fix;
     return *this;
   }
   friend std::ostream &operator<<(std::ostream &out, const Param &p) {
@@ -230,7 +235,7 @@ class RegularizedModel {
   std::string name = "Regularized";
   xt::xarray<int> nb_observations;
   xt::xarray<int> nb_arrivals;
-  std::vector<double> durations;
+  xt::xarray<double> durations;
   std::vector<std::vector<int>> groups;
   std::vector<double> weights;
   xt::xarray<double> alpha;
@@ -238,11 +243,12 @@ class RegularizedModel {
   std::vector<int> type_region;
   std::vector<std::vector<int>> neighbors;
   std::vector<int> which_group;
+  std::vector<double> emp_rates_by_class;
 
   ulong C, R, T;
 
   RegularizedModel(xt::xarray<int> &N, xt::xarray<int> &M,
-                   std::vector<double> &a_durations,
+                   xt::xarray<double> &a_durations,
                    std::vector<std::vector<int>> &a_groups,
                    std::vector<double> &a_weights, xt::xarray<double> &a_alphas,
                    xt::xarray<double> &a_distance, std::vector<int> &a_type,
@@ -286,6 +292,16 @@ class RegularizedModel {
         which_group[i] = g;
       }
     }
+
+    emp_rates_by_class = std::vector<double>(C, 0.0);
+    for (int c = 0; c < C; ++c) {
+      for (int r = 0; r < R; ++r) {
+        for (int t = 0; t < T; ++t) {
+          emp_rates_by_class[c] += static_cast<double>(nb_arrivals(c, r, t)) /
+                                   nb_observations(c, r, t);
+        }
+      }
+    }
   }
 
   double f(xt::xarray<double> &x) {
@@ -295,8 +311,8 @@ class RegularizedModel {
       for (int r = 0; r < R; ++r) {
         for (int t = 0; t < T; ++t) {
           double current_lambda = x(c, r, t);
-          obj += nb_observations(c, r, t) * current_lambda * durations[t] -
-                 nb_arrivals(c, r, t) * log(current_lambda * durations[t]);
+          obj += nb_observations(c, r, t) * current_lambda * durations(t) -
+                 nb_arrivals(c, r, t) * log(current_lambda * durations(t));
 
           for (int s : neighbors[r]) {
             if (true /*type_region[r] == type_region[s] */) {
@@ -338,7 +354,7 @@ class RegularizedModel {
       for (int r = 0; r < R; ++r) {
         for (int t = 0; t < T; ++t) {
           double current_lambda = x(c, r, t);
-          double grad_component = nb_observations(c, r, t) * durations[t] -
+          double grad_component = nb_observations(c, r, t) * durations(t) -
                                   (nb_arrivals(c, r, t) / current_lambda);
           // double prev_comp = grad_component;
           // double sum_neighbors = 0;
@@ -383,22 +399,81 @@ class RegularizedModel {
       }
     }
 
+    if (!param.relax_empirical_fix) {
+      for (int c = 0; c < C; ++c) {
+        for (int r = 0; r < R; ++r) {
+          for (int t = 0; t < T; ++t) {
+            z(c, r, t) = std::max(x(c, r, t), param.lower_lambda);
+          }
+        }
+      }
+      for (int c = 0; c < C; ++c) {
+        double sum = 0.0;
+        for (int r = 0; r < R; ++r) {
+          for (int t = 0; t < T; ++t) {
+            sum += z(c, r, t) * durations(t);
+          }
+        }
+        double diff = emp_rates_by_class[c] - sum;
+        if (diff > 0.0) {
+          double amt = abs(diff) / (R * T);
+          for (int r = 0; r < R; ++r) {
+            for (int t = 0; t < T; ++t) {
+              z(c, r, t) += amt;
+            }
+          }
+        } else if (diff < 0.0) {
+          double abs_diff = abs(diff);
+          double diff_spent = 0.0;
+          int r = 0;
+          int t = 0;
+          while (diff_spent < abs_diff) {
+            double amt = abs_diff - diff_spent;
+            if (z(c, r, t) - amt >= param.lower_lambda) {
+              z(c, r, t) -= amt;
+              break;
+            } else {
+              diff_spent += z(c, r, t) - param.lower_lambda;
+              z(c, r, t) = param.lower_lambda;
+              t += 1;
+              if (t >= T) {
+                t = 0;
+                r += 1;
+                if (r >= R) {
+                  std::cout << "ERROR: amount of difference could not be "
+                               "subtracted from all variables.\n";
+                  exit(1);
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+
     return z;
   }
 
   bool is_feasible(xt::xarray<double> &x) {
     for (int c = 0; c < C; ++c) {
+      double sum_c = 0.0;
       for (int r = 0; r < R; ++r) {
         for (int t = 0; t < T; ++t) {
           if (x(c, r, t) < param.lower_lambda - param.EPS) {
-            std::cout << "x(" << c << "," << r << "," << t << ") = ";
-            std::cout << x(c, r, t) << " is less than lower_bound "
-                      << param.lower_lambda << "\n";
+            // std::cout << "x(" << c << "," << r << "," << t << ") = ";
+            // std::cout << x(c, r, t) << " is less than lower_bound "
+            //           << param.lower_lambda << "\n";
             return false;
           }
+          sum_c += x(c, r, t) * durations(t);
         }
       }
+      if (!param.relax_empirical_fix &&
+          abs(sum_c - emp_rates_by_class[c]) > param.EPS) {
+        return false;
+      }
     }
+
     return true;
   }
 
@@ -456,10 +531,14 @@ class CovariatesModel {
   xt::xarray<int> nb_observations;
   xt::xarray<int> nb_arrivals;
   xt::xarray<double> regressors;
+  xt::xarray<double> durations;
+  std::vector<double> emp_rates_by_class;
+
   ulong C, D, T, R, nb_regressors;
 
   CovariatesModel(xt::xarray<int> &N, xt::xarray<int> &M,
-                  xt::xarray<double> &reg, Param &param)
+                  xt::xarray<double> &a_durations, xt::xarray<double> &reg,
+                  Param &param)
       : param(param) {
     if (N.dimension() != 4) {  // N should be C,D,T,R
       std::cout << "Error: N has " << N.dimension()
@@ -478,6 +557,11 @@ class CovariatesModel {
       exit(1);
     }
 
+    if (a_durations.dimension() != 2) {
+      std::cout << "Error: durations has " << a_durations.dimension()
+                << " dimensions but should be 2\n";
+    }
+
     if (reg.dimension() != 2) {  // R should be nb_regressors,R
       std::cout << "Error: regressors has " << reg.dimension()
                 << "dimensions but should be 2.\n";
@@ -491,11 +575,25 @@ class CovariatesModel {
     D = N.shape(1);
     T = N.shape(2);
     R = N.shape(3);
+    durations = a_durations;
     nb_regressors = reg.shape(0);
 
     nb_observations = N;
     nb_arrivals = M;
     regressors = reg;
+
+    emp_rates_by_class = std::vector<double>(C, 0.0);
+    for (int c = 0; c < C; ++c) {
+      for (int d = 0; d < D; ++d) {
+        for (int t = 0; t < T; ++t) {
+          for (int r = 0; r < R; ++r) {
+            emp_rates_by_class[c] +=
+                static_cast<double>(nb_arrivals(c, d, t, r)) /
+                nb_observations(c, d, t, r);
+          }
+        }
+      }
+    }
   }
 
   double f(xt::xarray<double> &x) {
@@ -582,13 +680,8 @@ class CovariatesModel {
             vector<double> v2_aux;
             v2_aux.reserve(R);
             for (int r = 0; r < R; ++r) {
-              if (rates(c, d, t, r) == 0.0) {
-                cout << "ERROR, rates = 0 in gradient.\n";
-                cin.get();
-              } else {
-                v1_aux.push_back(nb_arrivals(c, d, t, r) * regressors(j, r) /
-                                 rates(c, d, t, r));
-              }
+              v1_aux.push_back(nb_arrivals(c, d, t, r) * regressors(j, r) /
+                               rates(c, d, t, r));
             }
             sort(v2_aux.begin(), v2_aux.end());
             for (int r = 0; r < R; ++r) {
@@ -617,6 +710,7 @@ class CovariatesModel {
     xt::xarray<GRBVar> y({C, D, T, nb_regressors});
     GRBModel model(env);
     stringstream name;
+
     for (int c = 0; c < C; ++c) {
       for (int d = 0; d < D; ++d) {
         for (int t = 0; t < T; ++t) {
@@ -635,10 +729,6 @@ class CovariatesModel {
       for (int d = 0; d < D; ++d) {
         for (int t = 0; t < T; ++t) {
           for (int j = 0; j < nb_regressors; ++j) {
-            if (x(c, d, t, j) != x(c, d, t, j)) {
-              printf("x(c%d,d%d,t%d,j%d) = %f\n", c, d, t, j, x(c, d, t, j));
-              cin.get();
-            }
             obj += 0.5 * y(c, d, t, j) * y(c, d, t, j) -
                    x(c, d, t, j) * y(c, d, t, j);
           }
@@ -650,7 +740,7 @@ class CovariatesModel {
       model.setObjective(obj, GRB_MINIMIZE);
     } catch (GRBException &ex) {
       cout << ex.getMessage() << "\n";
-      cin.get();
+      exit(1);
     }
 
     for (int c = 0; c < C; ++c) {
@@ -670,6 +760,26 @@ class CovariatesModel {
       }
     }
 
+    if (!param.relax_empirical_fix) {
+      for (int c = 0; c < C; ++c) {
+        GRBLinExpr con = 0;
+        for (int d = 0; d < D; ++d) {
+          for (int t = 0; t < T; ++t) {
+            for (int r = 0; r < R; ++r) {
+              GRBLinExpr rate = 0;
+              for (int j = 0; j < nb_regressors; ++j) {
+                rate += y(c, d, t, j) * regressors(j, r);
+              }
+              con += rate;
+            }
+          }
+        }
+        name << "empirical_fix_" << c;
+        model.addConstr(con, GRB_EQUAL, emp_rates_by_class[c], name.str());
+        name.str("");
+      }
+    }
+
     model.update();
     model.set(GRB_IntParam_OutputFlag, 0);
     model.set(GRB_IntParam_NumericFocus, 3);
@@ -681,15 +791,18 @@ class CovariatesModel {
     xt::xarray<double> y_val = GRB_INFINITY * xt::ones<double>(y.shape());
     if (status == GRB_OPTIMAL) {
       for (int c = 0; c < C; ++c) {
+        double sum_c = 0.0;
         for (int d = 0; d < D; ++d) {
           for (int t = 0; t < T; ++t) {
             for (int j = 0; j < nb_regressors; ++j) {
               y_val(c, d, t, j) = y(c, d, t, j).get(GRB_DoubleAttr_X);
+              for (int r = 0; r < R; ++r) {
+                sum_c += y_val(c, d, t, j) * regressors(j, r);
+              }
             }
           }
         }
       }
-      // cin.get();
     } else {
       cout << "Error. Projection problem solved with status = " << status
            << "\n";
@@ -702,18 +815,24 @@ class CovariatesModel {
 
   bool is_feasible(xt::xarray<double> &x) {
     for (int c = 0; c < C; ++c) {
+      double sum_c = 0.0;
       for (int d = 0; d < D; ++d) {
         for (int t = 0; t < T; ++t) {
           for (int r = 0; r < R; ++r) {
             double rates = 0;
             for (int j = 0; j < nb_regressors; ++j) {
               rates += x(c, d, t, j) * regressors(j, r);
+              sum_c += x(c, d, t, j) * regressors(j, r);
             }
             if (rates < param.EPS) {
               return false;
             }
           }
         }
+      }
+      if (!param.relax_empirical_fix &&
+          abs(sum_c - emp_rates_by_class[c]) > param.EPS) {
+        return false;
       }
     }
     return true;
@@ -972,7 +1091,7 @@ xt::xarray<double> projected_gradient_armijo_feasible(Model &model,
                 << " | upper - lower = " << abs(upper_bound - lower_bound)
                 << " abs(ub) = " << abs(upper_bound) << " gap = " << gap
                 << "\n";
-      std::cin.get();
+      exit(1);
     }
     if (this_gap < gap) {
       // printf("Gap closed!\n");
@@ -1005,9 +1124,11 @@ xt::xarray<double> regularized(Model &model, Param &param,
   xt::xarray<double> x_aux = xt::zeros<double>(x.shape());
   xt::xarray<double> gradient = xt::zeros<double>(x.shape());
 
+  x = model.projection(x);
   double fold = model.f(x);
   gradient = model.gradient(x);
-  while (k < max_iter) {
+  int iter_without_improv = 0;
+  while (k < max_iter && (k < 30 || iter_without_improv < 5)) {
     x_aux = x - beta_k * gradient;
     z = model.projection(x_aux);
 
@@ -1039,6 +1160,12 @@ xt::xarray<double> regularized(Model &model, Param &param,
       x = z;
       beta_k *= 2;
     }
+    if (abs(fold - f) / f < 0.0001) {
+      ++iter_without_improv;
+    } else {
+      iter_without_improv = 0;
+    }
+
     fold = f;
     gradient = model.gradient(x);
     ++k;
@@ -1061,11 +1188,6 @@ xt::xarray<double> covariates(Model &model, Param &param,
   int max_iter = param.max_iter;
   x = model.projection(x);
 
-  if (!model.is_feasible(x)) {
-    printf("Projected x is not feasible!\n");
-    std::cin.get();
-  }
-
   xt::xarray<double> z = xt::zeros<double>(x.shape());
   xt::xarray<double> z_aux = xt::zeros<double>(x.shape());
   xt::xarray<double> diff_aux = xt::zeros<double>(x.shape());
@@ -1082,7 +1204,7 @@ xt::xarray<double> covariates(Model &model, Param &param,
     double f = model.f(z);
     double rhs = model.get_rhs(gradient, diff_aux);
     // printf("k = %d, fold = %.8f, f = %.8f, rhs = %f\n", k, fold, f, rhs);
-    if (f > fold - sigma * rhs + param.EPS) {
+    if (f > fold - sigma * rhs) {
       bool stop = false;
       while (!stop) {
         z_aux = x + (1 / pow(2.0, j)) * (z - x);
@@ -1123,15 +1245,15 @@ xt::xarray<double> projected_gradient_armijo_boundary(Model &model,
     xt::xarray<double> z = xt::zeros<double>(x.shape());
     xt::xarray<double> x_aux = xt::zeros<double>(x.shape());
     xt::xarray<double> diff_aux = xt::zeros<double>(x.shape());
-    printf("k = %d, fold = %f\n", k, fold);
+    // printf("k = %d, fold = %f\n", k, fold);
     while (!stop) {
       x_aux = x - (beta_bar / pow(2.0, j)) * gradient;
       z = model.projection(x_aux);
       double f = model.f(z);
       diff_aux = x - z;
       double rhs = model.get_rhs(gradient, diff_aux);
-      printf("\tj = %d, f = %f, rhs = %f, sigma = %f\n", j, f, rhs,
-             param.sigma);
+      // printf("\tj = %d, f = %f, rhs = %f, sigma = %f\n", j, f, rhs,
+      //        param.sigma);
       if (f <= fold - param.sigma * rhs) {
         stop = true;
       } else {
@@ -1168,11 +1290,9 @@ CrossValidationResult cross_validation(Param &param, RegularizedModel &model,
   int nb_in_block = floor(nb_observations_total * param.cv_proportion);
   xt::xarray<int> initial_nb_obs = model.nb_observations;
   xt::xarray<int> initial_nb_arrivals = model.nb_arrivals;
-  // fmt::print("cross validation weights.size = {}\n", group_weights.size());
+
   double best_alpha = GRB_INFINITY;
   double best_weight = GRB_INFINITY;
-  // fmt::print("Running cross validation with proportion = {} and weights =
-  // {}\n", proportion, group_weights);
   for (int index_alpha = 0; index_alpha < alphas.size(); ++index_alpha) {
     double likelihood = 0;
     model.alpha = alphas[index_alpha] * xt::ones<double>({model.R, model.R});
@@ -1232,13 +1352,11 @@ CrossValidationResult cross_validation(Param &param, RegularizedModel &model,
           for (int t = 0; t < model.T; ++t) {
             double current_lambda = x(c, r, t);
             f += (nb_observations_total - nb_in_block) * current_lambda *
-                     model.durations[t] -
+                     model.durations(t) -
                  nb_calls_remaining(c, r, t) * log(current_lambda);
           }
         }
       }
-      // fmt::print("\tf test set {} = {}, first f_val = {:.1f}, last f_val =
-      // {:.1f}\n",index_cross, f, f_val[0], f_val.back());
       // std::cout << "\t\t f = " << f << "\n";
       likelihood += f;
     }
@@ -1352,7 +1470,7 @@ CrossValidationResult cross_validation(Param &param, RegularizedModel &model,
 //         for (int r = 0; r < model.R; ++r) {
 //           for (int t = 0; t < model.T; ++t) {
 //             double current_lambda = result_x(c, r, t);
-//             f += current_lambda * model.durations[t] -
+//             f += current_lambda * model.durations(t) -
 //                  nb_calls_remaining(c, r, t) * log(current_lambda);
 //           }
 //         }
@@ -1428,7 +1546,8 @@ AppParameters load_options(int argc, char *argv[], po::variables_map &vm) {
       "Path to file with weights that must be tested. Weights must be provided "
       "in one line, separated by spaces. Default = ''")(
       "output_file,O", po::value<std::string>()->default_value("output.txt"),
-      "Path where to write output. Default = output.txt");
+      "Path where to write output. Default = output.txt")(
+      "relax_empirical_fix", po::bool_switch()->default_value(false));
 
   po::options_description cmdline_options;
   cmdline_options.add(generic).add(config);
@@ -1474,6 +1593,7 @@ AppParameters load_options(int argc, char *argv[], po::variables_map &vm) {
   app_params.durations_file = vm["durations_file"].as<std::string>();
   app_params.cv_weights_file = vm["cv_weights_file"].as<std::string>();
   app_params.output_file = vm["output_file"].as<std::string>();
+  app_params.relax_empirical_fix = vm["relax_empirical_fix"].as<bool>();
   return app_params;
 }
 

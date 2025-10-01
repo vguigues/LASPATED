@@ -6,7 +6,8 @@ n_x = 10
 n_y = 10
 C = 1
 R = n_x * n_y
-T = 4 * 7
+D = 7
+T = 4 * D
 nb_groups = 2
 nb_weeks = 10
 groups = [[] for _ in range(nb_groups)]
@@ -57,7 +58,7 @@ for r in range(R):
 
 nb_observations_total = nb_weeks
 sample = np.zeros((T,R,C,nb_observations_total), dtype=int)
-durations = np.ones(T,dtype=float)
+durations = np.ones(D*T,dtype=float)
 theoretical_lambda = np.zeros((C,R,T), dtype=float)
 for t in range(T):
     for r in range(R):
@@ -92,9 +93,10 @@ def write_groups(path, groups, which_group, weights):
     
 def write_durations(path,durations):
     times = open(path,"w")
-    times.write(f"{len(durations)}\n")
-    for t in range(len(durations)):
-        times.write(f"{durations[t]}\n")
+    times.write(f"{D} {T // D}\n")
+    for d in range(D):
+        for t in range(T // D):
+            times.write(f"{d} {t} {durations[d*(T//D) + t]}\n")
     times.close()
 
 def write_alpha(path, alpha):
@@ -235,7 +237,3 @@ try:
 except:
     print(f"Error with C++ experiments")
     exit(1)
-
-
-
-

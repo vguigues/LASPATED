@@ -19,7 +19,7 @@ D = 7
 
 nb_weeks = 52
 nb_obs = nb_weeks * 7
-durations = np.ones(T, dtype=float)
+durations = np.ones(D*T, dtype=float)
 nb_land_types = 2
 nb_regressors = 1 + nb_land_types
 theoretical_beta = np.zeros((C,D,T,nb_regressors), dtype=float)
@@ -110,9 +110,11 @@ def write_neighbors(path,  R, regressors, type_region):
 
 def write_durations(path,durations):
     times = open(path,"w")
-    times.write(f"{len(durations)}\n")
-    for t in range(len(durations)):
-        times.write(f"{durations[t]}\n")
+    times.write(f"{D} {T}\n")
+    for i in range(len(durations)):
+        d = i // T
+        t = i % T
+        times.write(f"{d} {t} {durations[t]}\n")
     times.close()
     
 base_dir = "calib_data_covariates"    

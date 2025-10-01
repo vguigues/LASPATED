@@ -308,7 +308,8 @@ class MissingModel2 {
                               sample_arrivals(c, d, t, r, n);
                 double faux = exp(-x(c, d, t, r) * durations(d, t)) *
                               pow(x(c, d, t, r), power_r) *
-                              (-durations(d, t) * x(c, d, t, r) + power_r);
+                              (-durations(d, t) + power_r / x(c, d, t, r));
+                // (-durations(d, t) * x(c, d, t, r) + power_r);
                 double iaux1 = 1;
                 for (int k = 0; k < R; ++r) {
                   int power_k = mn_samples(c, d, t, n, s, k) +

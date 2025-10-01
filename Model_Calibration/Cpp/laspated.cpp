@@ -84,21 +84,54 @@ void read_groups(laspated::AppParameters& app_params, ulong total_T,
   time_groups.close();
 }
 
-void read_durations(laspated::AppParameters& app_params,
-                    std::vector<double>& durations, const ulong T) {
-  durations = std::vector<double>(T, 1);
+void read_durations_reg(laspated::AppParameters& app_params,
+                        xt::xarray<double>& durations, const ulong D,
+                        const ulong T) {
+  durations = xt::zeros<double>({D, T});
   std::ifstream times_file(app_params.durations_file, std::ios::in);
-  ulong file_T;
-  times_file >> file_T;
-  if (file_T != T) {
+  ulong file_D, file_T;
+  times_file >> file_D >> file_T;
+  if (file_D != D || file_T != T) {
     printf(
-        "ERROR: number of times in durations_file (%ld) is different from T "
-        "(%ld).\n",
-        file_T, T);
+        "ERROR: number of days (%ld) or time periods is different from the "
+        "info file (D = %ld, T = %ld). The first line "
+        "of the durations file "
+        "must be the number of days D and of time indexes T. Each subsequent "
+        "line must contain the day index d, the time index t and the duration "
+        "of the period (d,t)",
+        file_T, D, T);
     exit(1);
   }
-  for (ulong t = 0; t < T; ++t) {
-    times_file >> durations[t];
+  int d, t;
+  double duration;
+  while (times_file >> d >> t >> duration) {
+    durations(d, t) = duration;
+  }
+  times_file.close();
+}
+
+void read_durations_no_reg(laspated::AppParameters& app_params,
+                           xt::xarray<double>& durations, const ulong D,
+                           const ulong T) {
+  durations = xt::zeros<double>({D * T});
+  std::ifstream times_file(app_params.durations_file, std::ios::in);
+  ulong file_D, file_T;
+  times_file >> file_D >> file_T;
+  if (file_D != D || file_T != T) {
+    printf(
+        "ERROR: number of days (%ld) or time periods is different from the "
+        "info file (D = %ld, T = %ld). The first line "
+        "of the durations file "
+        "must be the number of days D and of time indexes T. Each subsequent "
+        "line must contain the day index d, the time index t and the duration "
+        "of the period (d,t)",
+        file_T, D, T);
+    exit(1);
+  }
+  int d, t;
+  double duration;
+  while (times_file >> d >> t >> duration) {
+    durations(d * T + t) = duration;
   }
   times_file.close();
 }
@@ -247,8 +280,8 @@ void laspated_no_reg(laspated::AppParameters& app_params) {
   vector<int> which_group(D * T, -1);
   vector<vector<int>> groups;
   vector<double> weights;
-  std::vector<double> durations_no_cov;
-  read_durations(app_params, durations_no_cov, D * T);
+  xt::xarray<double> durations_no_cov;
+  read_durations_no_reg(app_params, durations_no_cov, D, T);
   printf("Read durations\n");
   if (app_params.model_type == "no_reg") {
     read_groups(app_params, D * T, groups, which_group, weights);
@@ -388,8 +421,8 @@ void laspated_reg(laspated::AppParameters& app_params) {
   } while (true);
 
   arrivals_file.close();
-  auto durations = vector<double>(T, 1);
-  read_durations(app_params, durations, T);
+  xt::xarray<double> cov_durations = xt::zeros<double>({D, T});
+  read_durations_reg(app_params, cov_durations, D, T);
   xt::xarray<double> empirical_rates = xt::zeros<double>({C, R, D * T});
   for (int c = 0; c < C; ++c) {
     for (int d = 0; d < D; ++d) {
@@ -399,7 +432,7 @@ void laspated_reg(laspated::AppParameters& app_params) {
           empirical_rates(c, r, d * T + t) =
               static_cast<double>(nb_arrivals(c, d, t, r)) /
               (nb_observations(c, d, t, r));
-          empirical_rates(c, r, d * T + t) /= durations[t];
+          empirical_rates(c, r, d * T + t) /= cov_durations(d, t);
           // printf("c%d r%d t%ld, emp = %f, obs = %d arr = %d\n", c, r, d * T
           // + t,
           //        empirical_rates(c, r, d * T + t), nb_observations(c, d, t,
@@ -441,7 +474,8 @@ void laspated_reg(laspated::AppParameters& app_params) {
   param.EPS = 1e-5;
   param.max_iter = 30;
 
-  laspated::CovariatesModel m(nb_observations, nb_arrivals, regressors, param);
+  laspated::CovariatesModel m(nb_observations, nb_arrivals, cov_durations,
+                              regressors, param);
 
   xt::xarray<double> beta0 =
       2 * pow(10.0, -3) * xt::ones<double>({C, D, T, nb_regressors});

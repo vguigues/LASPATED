@@ -134,7 +134,6 @@ int test_problem30(Param& param) {
 
   return 0;
 }
-
 #endif
 
 int main(int argc, char const* argv[]) {

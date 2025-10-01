@@ -1,11 +1,10 @@
 GUROBI_VER = 110
 INCLUDE_BOOST = /usr/include/boost
 
+USE_GUROBI ?= 0
 ifeq ($(USE_GUROBI), 1)
 	INCLUDE_GUROBI = -I$(GUROBI_HOME)/include
 	LIB_GUROBI = -L$(GUROBI_HOME)/lib -lgurobi_c++ $(GUROBI_LIB) -lgurobi$(GUROBI_VER)
-else
-	USE_GUROBI=0
 endif
 
 # Detectar o SO
