@@ -2,13 +2,15 @@ FROM ubuntu:22.04
 ARG USE_GUROBI=0
 ENV USE_GUROBI=${USE_GUROBI}
 ARG MISSING_DATA=0
-ARG GRB_VERSION=11.0.1
-ENV GRB_VERSION=11.0.1
-ARG GRB_SHORT_VERSION=11.0
-ENV GRB_SHORT_VERSION=11.0
+ARG GRB_VERSION=13.0.2
+ENV GRB_VERSION=13.0.2
+ARG GRB_SHORT_VERSION=13.0
+ENV GRB_SHORT_VERSION=13.0
 ARG TARGETPLATFORM
 ARG PROJECT_DIR=/LASPATED
 ENV GUROBI_HOME=/opt/gurobi/linux
+ENV DEBIAN_FRONTEND=noninteractive
+ENV TZ=Etc/UTC
 # ENV PATH=$PATH:$GUROBI_HOME/bin
 ENV PATH="${PATH}:${GUROBI_HOME}/bin"
 # ENV LD_LIBRARY_PATH=$GUROBI_HOME/lib
@@ -22,23 +24,40 @@ RUN if [ "$TARGETPLATFORM" = "linux/arm64" ]; then \
     echo "linux64" > /platform.txt; \
     fi
 
-# install gurobi package and copy the files
+# install Python 3.13 explicitly on Ubuntu 22.04
 WORKDIR /opt
 
-RUN apt-get update && apt-get install -y python3 python3-pip libboost-all-dev \
-    build-essential vim gdal-bin libgdal-dev
-RUN pip install --upgrade pip
-
-
-
-# update system and certificates
-RUN apt-get install --no-install-recommends -y\
-    ca-certificates  \
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    software-properties-common \
+    ca-certificates \
+    curl \
+    gnupg \
+    tzdata \
+    && add-apt-repository -y ppa:deadsnakes/ppa \
+    && apt-get update && apt-get install -y --no-install-recommends \
+    python3.13 \
+    python3.13-dev \
+    python3.13-venv \
+    libboost-all-dev \
+    build-essential \
+    vim \
+    gdal-bin \
+    libgdal-dev \
     p7zip-full \
     zip \
     && update-ca-certificates \
-    && python3 -m pip install gurobipy==${GRB_VERSION} \
+    && curl -sS https://bootstrap.pypa.io/get-pip.py -o /tmp/get-pip.py \
+    && python3.13 /tmp/get-pip.py \
+    && python3.13 -m pip install --upgrade pip \
+    && update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.13 100 \
+    && ln -sf /usr/bin/python3.13 /usr/local/bin/python \
+    && ln -sf /usr/bin/python3.13 /usr/local/bin/python3 \
+    && ln -sf /usr/local/bin/pip3.13 /usr/local/bin/pip \
+    && ln -sf /usr/local/bin/pip3.13 /usr/local/bin/pip3 \
+    && rm -f /tmp/get-pip.py \
     && rm -rf /var/lib/apt/lists/*
+
+RUN python3.13 -m pip install gurobipy==${GRB_VERSION}
 
 RUN if [ "${USE_GUROBI}" = "1" ]; then \
     export GRB_PLATFORM=$(cat /platform.txt) && echo $GRB_PLATFORM \
@@ -58,14 +77,16 @@ RUN if [ "${USE_GUROBI}" = "1" ]; then \
 
 WORKDIR $PROJECT_DIR
 # RUN pip3 install ${PROJECT_DIR}/laspated/.
-RUN pip3 install laspated
+RUN python3.13 -m pip install laspated scipy
 
-RUN ln -s $(which python3) /usr/local/bin/python
+RUN update-alternatives --set python3 /usr/bin/python3.13 \
+    && ln -sf /usr/bin/python3.13 /usr/local/bin/python \
+    && ln -sf /usr/bin/python3.13 /usr/local/bin/python3
 
 RUN if [ "$USE_GUROBI" = "1" ]; then \
     rm -rf Model_Calibration/Cpp/laspated && \
-    make -C Model_Calibration/Cpp USE_GUROBI=1 && \
-    make -C Model_Calibration/Cpp USE_GUROBI=1 test; \
+    make -C Model_Calibration/Cpp USE_GUROBI=1 GUROBI_VER=130 && \
+    make -C Model_Calibration/Cpp USE_GUROBI=1 GUROBI_VER=130 test; \
     else \
     rm -rf Model_Calibration/Cpp/test_problems && \
     make -C Model_Calibration/Cpp USE_GUROBI=0 && \

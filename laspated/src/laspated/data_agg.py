@@ -6,9 +6,6 @@ from typing import List
 from shapely.ops import unary_union
 from shapely.geometry import Polygon, MultiPolygon, Point
 
-from geovoronoi.plotting import subplot_for_map, plot_voronoi_polys_with_points_in_area
-from geovoronoi import voronoi_regions_from_coords, points_to_coords
-
 from .time_discretization_utils import calculate_seasonality, apply_custom_time_events
 from .geo_discretization_utils import get_voronoi_regions, distance
 from .squares import rectangle_discretization
@@ -98,26 +95,24 @@ class DataAggregator:
             x_std = self.events_data.geometry.x.std() * 0.1
             y_std = self.events_data.geometry.y.std() * 0.1
             # concatenate list of mini event-polygons
-            d_polys = self.events_data.drop(
+            valid_points = self.events_data.drop(
                 self.events_data.loc[self.events_data.geometry.x.isna()].index
-            ).geometry.apply(
-                lambda pt: (
-                    Polygon(
-                        [
-                            (pt.x - x_std, pt.y - y_std),
-                            (pt.x - x_std, pt.y + y_std),
-                            (pt.x + x_std, pt.y + y_std),
-                            (pt.x + x_std, pt.y - y_std),
-                        ]
-                    )
-                    if pt.x >= -np.inf
-                    else pt
+            ).geometry
+            d_polys = [
+                Polygon(
+                    [
+                        (pt.x - x_std, pt.y - y_std),
+                        (pt.x - x_std, pt.y + y_std),
+                        (pt.x + x_std, pt.y + y_std),
+                        (pt.x + x_std, pt.y - y_std),
+                    ]
                 )
-            )
+                for pt in valid_points
+            ]
             # replace self.max_borders
             self.max_borders = gpd.GeoDataFrame()
             self.max_borders["geometry"] = [
-                MultiPolygon(list(d_polys.values)).convex_hull
+                MultiPolygon(d_polys).convex_hull
             ]
             self.max_borders = self.max_borders.set_crs(self.crs)
 
@@ -183,10 +178,11 @@ class DataAggregator:
         # transform datetime_col data to datetime
         if datetime_col is not None:
             ts = self.events_data[datetime_col]
-            if ts.dtype == "O":
-                self.events_data["ts"] = pd.to_datetime(ts, format=datetime_format)
-            else:
+            if pd.api.types.is_datetime64_any_dtype(ts):
                 self.events_data["ts"] = ts.copy()
+            else:
+                self.events_data["ts"] = pd.to_datetime(ts, format=datetime_format)
+
             self.events_data.sort_values("ts", ascending=True, inplace=True)
 
         # filter only necessary cols
@@ -287,6 +283,7 @@ class DataAggregator:
         rect_discr_param_x: int = None,
         rect_discr_param_y: int = None,
         custom_data: gpd.GeoDataFrame = None,
+        keep_invalid_index: bool = False,
     ) -> gpd.GeoDataFrame:
         """
         Calculates geographical discretization and apply index
@@ -523,8 +520,11 @@ class DataAggregator:
             .drop("index_right", axis=1)
             .rename({"id": "gdiscr"}, axis=1)
         )
-
-        self.events_data = self.events_data.dropna()
+        if not keep_invalid_index:
+            self.events_data = self.events_data.dropna()
+        else:
+            # map invalid events as -1
+            self.events_data["gdiscr"] = self.events_data["gdiscr"].fillna(-1).astype(int)
 
     def add_geo_variable(
         self, data: gpd.GeoDataFrame, type_geo_variable: str = "feature"
@@ -628,7 +628,7 @@ class DataAggregator:
         limits = []
         for time_index in self.time_indexes:
             limits.append(np.max(self.events_data[time_index]) + 1)
-        limits.append(int(np.max(self.events_data["gdiscr"]) + 1))
+        limits.append(int(np.max(self.events_data["gdiscr"]) + 2))
         for feature in self.events_features:
             limits.append(np.max(self.events_data[feature]) + 1)
 
@@ -637,22 +637,28 @@ class DataAggregator:
             samples[index] = []
 
         i = 0
-        self.events_data.dropna()
+        self.events_data = self.events_data.dropna()
+        R = int(np.max(self.events_data["gdiscr"]) + 1)
         while i < len(self.events_data):
             row = self.events_data.iloc[i]
             times_i = [row[time_index] for time_index in self.time_indexes]
+            geo_index_i = int(row["gdiscr"])
+            geo_index_i = geo_index_i if geo_index_i >= 0 else R
             index_i = (
-                times_i
-                + [int(row["gdiscr"])]
-                + [row[feature] for feature in self.events_features]
-            )
+                    times_i
+                    + [geo_index_i]
+                    + [row[feature] for feature in self.events_features]
+                )
+                
             count = 1
             for j in range(i + 1, len(self.events_data)):
                 row_j = self.events_data.iloc[j]
                 times_j = [row_j[time_index] for time_index in self.time_indexes]
+                geo_index_j = int(row_j["gdiscr"])
+                geo_index_j = geo_index_j if geo_index_j >= 0 else R
                 index_j = (
                     times_j
-                    + [int(row_j["gdiscr"])]
+                    + [geo_index_j]
                     + [row_j[feature] for feature in self.events_features]
                 )
 
@@ -704,7 +710,7 @@ class DataAggregator:
         samples = self.get_events_aggregated()
         arrivals_file = open(path, "w")
         # arrivals_file.write("%s\n" % (" ".join([str(x) for x in samples.shape])))
-        for index, sample in np.ndenumerate(samples):
+        for index, sample in np.ndenumerate(samples): 
             for i, val in enumerate(sample):
                 line = "%s %d %d\n" % (" ".join([str(x) for x in index]), i, val)
                 arrivals_file.write(line)
@@ -725,7 +731,12 @@ class DataAggregator:
         centers = self.geo_discretization.geometry.to_crs("epsg:29193").centroid.to_crs(
             self.geo_discretization.crs
         )
-        coords = centers.apply(lambda x: x.representative_point().coords[:][0])
+        coords = dict(
+            zip(
+                self.geo_discretization["id"],
+                [center.representative_point().coords[0] for center in centers],
+            )
+        )
         neighbors_file = open(path, "w")
         # neighbors_file.write("%d %d\n" % (len(centers), len(self.geo_features)))
         # print(f"Writing geo_features {self.geo_features}")
@@ -765,13 +776,19 @@ class DataAggregator:
         self.geo_discretization["center"] = self.geo_discretization.geometry.to_crs(
             "epsg:29193"
         ).centroid.to_crs(self.geo_discretization.crs)
-        self.geo_discretization["coords"] = self.geo_discretization["center"].apply(
-            lambda x: x.representative_point().coords[:][0]
-        )
+        self.geo_discretization["coords"] = [
+            center.representative_point().coords[0]
+            for center in self.geo_discretization["center"]
+        ]
+        
+        
+        
 
         fig, ax = plt.subplots(figsize=(24, 16))
         self.geo_discretization.boundary.plot(ax=ax, aspect=1)
-        self.events_data.dropna(subset=["gdiscr"]).plot(
+        valid_events = self.events_data.dropna(subset=["gdiscr"])
+        valid_events = valid_events[valid_events["gdiscr"] != -1]
+        valid_events.plot(
             markersize=5, color="red", ax=ax
         )
         for _, row in self.geo_discretization.iterrows():

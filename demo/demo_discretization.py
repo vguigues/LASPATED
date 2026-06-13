@@ -79,5 +79,6 @@ print("Writing output files...")
 app.write_arrivals("disc_data/arrivals.dat")
 app.write_regions("disc_data/neighbors.dat")
 app.write_info(obs_index_column="dow", path="disc_data/info.dat")
+app.plot_discretization(to_file="disc_data/discretization_plot.png")
 
 print("Output files written at disc_data directory.")

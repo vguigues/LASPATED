@@ -4,12 +4,96 @@ import numpy as np
 
 import matplotlib.pyplot as plt
 
-from shapely.ops import unary_union
-# from scipy.spatial import Voronoi
-from shapely.geometry import Polygon, MultiPolygon, Point
+from shapely.ops import split, unary_union
+from shapely.geometry import LineString, MultiPolygon, Point, Polygon
 
-from geovoronoi import voronoi_regions_from_coords, points_to_coords
 
+def points_to_coords(points):
+    coords = []
+    for point in points:
+        if point is None or point.is_empty:
+            raise ValueError("Voronoi points cannot be empty.")
+        if point.geom_type != "Point":
+            raise TypeError("Voronoi discretization expects Point geometries.")
+        coords.append((point.x, point.y))
+    return np.asarray(coords, dtype=float)
+
+
+def _line_split_scale(boundary_shape):
+    minx, miny, maxx, maxy = boundary_shape.bounds
+    diagonal = np.hypot(maxx - minx, maxy - miny)
+    return max(diagonal * 4, 1.0)
+
+
+def _point_belongs_to_site(point_coords, site_coords, other_coords):
+    return np.linalg.norm(point_coords - site_coords) <= np.linalg.norm(
+        point_coords - other_coords
+    )
+
+
+def _clip_with_bisector(cell, site_coords, other_coords, split_scale):
+    if np.allclose(site_coords, other_coords):
+        return cell
+
+    midpoint = (site_coords + other_coords) / 2
+    normal = other_coords - site_coords
+    direction = np.array([-normal[1], normal[0]], dtype=float)
+    direction_norm = np.linalg.norm(direction)
+    if direction_norm == 0:
+        return cell
+
+    direction = direction / direction_norm * split_scale
+    bisector = LineString([midpoint - direction, midpoint + direction])
+    parts = list(split(cell, bisector).geoms)
+    if len(parts) <= 1:
+        return cell
+
+    kept_parts = []
+    for part in parts:
+        representative = part.representative_point()
+        representative_coords = np.array([representative.x, representative.y])
+        if _point_belongs_to_site(representative_coords, site_coords, other_coords):
+            kept_parts.append(part)
+
+    if not kept_parts:
+        return cell
+
+    return unary_union(kept_parts)
+
+
+def voronoi_regions_from_coords(
+    coords,
+    boundary_shape,
+    return_unassigned_points=False,
+    per_geom=False,
+):
+    del per_geom
+
+    if len(coords) == 0:
+        result = ({}, [], [])
+        if return_unassigned_points:
+            return result
+        return result[0], result[1]
+
+    unique_coords, inverse = np.unique(coords, axis=0, return_inverse=True)
+    split_scale = _line_split_scale(boundary_shape)
+
+    region_polygons = {}
+    for unique_idx, site_coords in enumerate(unique_coords):
+        cell = boundary_shape
+        for other_idx, other_coords in enumerate(unique_coords):
+            if unique_idx == other_idx:
+                continue
+            cell = _clip_with_bisector(cell, site_coords, other_coords, split_scale)
+            if cell.is_empty:
+                break
+        region_polygons[unique_idx] = cell
+
+    point_regions = {point_idx: region_polygons[unique_idx] for point_idx, unique_idx in enumerate(inverse)}
+    unassigned_points = []
+    if return_unassigned_points:
+        return point_regions, coords, unassigned_points
+    return point_regions, coords
 
 
 def get_voronoi_regions(voro_points: gpd.GeoDataFrame, borders: gpd.GeoDataFrame):
@@ -33,27 +117,22 @@ def get_voronoi_regions(voro_points: gpd.GeoDataFrame, borders: gpd.GeoDataFrame
     boundary_shape = unary_union(max_borders.geometry)
     coords = points_to_coords(bases_proj.geometry)
 
-    # gc = voronoi_polygons(bases["geometry"], extend_to=max_borders["geometry"])
-    poly_shapes, pts, unassigned = voronoi_regions_from_coords(coords, boundary_shape, return_unassigned_points=True,per_geom=False)
+    poly_shapes, _, _ = voronoi_regions_from_coords(
+        coords,
+        boundary_shape,
+        return_unassigned_points=True,
+        per_geom=False,
+    )
 
-    items = poly_shapes.items()
-    bases_poly_map = {}
-    for key,poly in poly_shapes.items():
-        bases_poly_map[key] = []
-        for i,row in bases_proj.iterrows():
-            if poly.contains(row["geometry"]):
-                bases_poly_map[key].append(i)
-
-    voros = pd.DataFrame()
-    voros["id"] = [x[0] for x in items]
-    voros["geometry"] = [x[1] for x in items]
-    voros["id"].replace(bases_poly_map,inplace=True)
-    voros = voros.sort_values(by="id")
-
+    voros = pd.DataFrame(
+        {
+            "id": list(poly_shapes.keys()),
+            "geometry": list(poly_shapes.values()),
+        }
+    ).sort_values(by="id")
 
     voros = gpd.GeoDataFrame(voros, geometry="geometry")
     bases = bases.merge(voros, left_on="id", right_on="id")
-
     bases = bases.rename(columns={"geometry_y": "geometry"})
     bases = gpd.GeoDataFrame(bases[["geometry"]].copy(), geometry="geometry")
     bases = bases.set_crs(epsg=3395)

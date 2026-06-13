@@ -4,21 +4,20 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "laspated"
-version = "0.0.8"
+version = "0.0.9"
 requires-python = ">= 3.10"
 readme = { file = "README.md", content-type = "text/markdown" }
 description = "Analysis of Spatio-temporal data"
 license = { file = "LICENSE.txt" }
 dependencies = [
-    "numpy==1.25",
-    "pandas==2.0.0",
-    "geopandas==0.12.2",
-    "fiona==1.8.22",
-    "matplotlib",
-    "h3==3.7.7",
-    "geovoronoi==0.4.0",
-    "rtree==1.2.0",
-    "descartes==1.1.0",
+    "numpy>=2.4.6",
+    "pandas>=3.0.3",
+    "geopandas>=0.12.2",
+    "fiona>=1.9.6",
+    "matplotlib>=3.10.9",
+    "h3>=4.5.0",
+    "rtree>=1.4.1",
+    "descartes>=1.1.0",
 ]
 authors = [
     { name = "Vincent Guigues" },

@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 from datetime import timedelta
+from pandas.api.types import is_datetime64_any_dtype
 
 
 def apply_time_frequency(ts: pd.Series, window: str, window_size: int):
@@ -162,7 +163,7 @@ def apply_custom_time_events(
 
     # validate column type
     for col in ["start", "end"]:
-        if time_disc_df[col].dtype == "O":
+        if not is_datetime64_any_dtype(time_disc_df[col]):
             time_disc_df[col] = pd.to_datetime(time_disc_df[col])
 
     # check for time inversion
@@ -195,7 +196,7 @@ def apply_custom_time_events(
                         None
                     ], index=time_disc_df.columns))
 
-        elif rep is not None:
+        elif not pd.isna(rep):
             raise ValueError(f"Repetition {rep} is not supported.")
 
     full_time_disc_df = pd.concat([

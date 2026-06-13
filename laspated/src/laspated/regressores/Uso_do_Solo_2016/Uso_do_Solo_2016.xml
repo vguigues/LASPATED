@@ -1,0 +1,446 @@
+<?xml version="1.0" encoding="UTF-8"?><mdb:MD_Metadata xmlns:msr="http://standards.iso.org/iso/19115/-3/msr/1.0" xmlns:cit="http://standards.iso.org/iso/19115/-3/cit/1.0" xmlns:mex="http://standards.iso.org/iso/19115/-3/mex/1.0" xmlns:gcx="http://standards.iso.org/iso/19115/-3/gcx/1.0" xmlns:mmi="http://standards.iso.org/iso/19115/-3/mmi/1.0" xmlns:mac="http://standards.iso.org/iso/19115/-3/mac/1.0" xmlns:esri="http://www.esri.com/metadata/" xmlns:mdb="http://standards.iso.org/iso/19115/-3/mdb/1.0" xmlns:mda="http://standards.iso.org/iso/19115/-3/mda/1.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:mpc="http://standards.iso.org/iso/19115/-3/mpc/1.0" xmlns:cat="http://standards.iso.org/iso/19115/-3/cat/1.0" xmlns:gco="http://standards.iso.org/iso/19115/-3/gco/1.0" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:lan="http://standards.iso.org/iso/19115/-3/lan/1.0" xmlns:t="http://www.esri.com/xslt/translator" xmlns:mco="http://standards.iso.org/iso/19115/-3/mco/1.0" xmlns:mrs="http://standards.iso.org/iso/19115/-3/mrs/1.0" xmlns:dqc="http://standards.iso.org/iso/19157/-2/dqc/1.0" xmlns:gml="http://www.opengis.net/gml/3.2" xmlns:mrl="http://standards.iso.org/iso/19115/-3/mrl/1.0" xmlns:gex="http://standards.iso.org/iso/19115/-3/gex/1.0" xmlns:mdt="http://standards.iso.org/iso/19115/-3/mdt/1.0" xmlns:mri="http://standards.iso.org/iso/19115/-3/mri/1.0" xmlns:mas="http://standards.iso.org/iso/19115/-3/mas/1.0" xmlns:mds="http://standards.iso.org/iso/19115/-3/mds/1.0" xmlns:mcc="http://standards.iso.org/iso/19115/-3/mcc/1.0" xmlns:srv="http://standards.iso.org/iso/19115/-3/srv/2.0" xmlns:mdq="http://standards.iso.org/iso/19157/-2/mdq/1.0" xmlns:mrd="http://standards.iso.org/iso/19115/-3/mrd/1.0" xmlns:res="http://www.esri.com/metadata/res/" xmlns:mrc="http://standards.iso.org/iso/19115/-3/mrc/1.0">
+    <mdb:metadataIdentifier>
+        <mcc:MD_Identifier>
+            <mcc:code>
+                <gco:CharacterString>1f47aafdbe8c4d66b7da4a2f1f395eb3</gco:CharacterString>
+            </mcc:code>
+        </mcc:MD_Identifier>
+    </mdb:metadataIdentifier>
+    <mdb:defaultLocale>
+        <lan:PT_Locale>
+            <lan:language>
+                <lan:LanguageCode codeList="http://www.loc.gov/standards/iso639-2/php/code_list.php" codeListValue="por">por</lan:LanguageCode>
+            </lan:language>
+            <lan:country>
+                <lan:CountryCode codeList="http://www.iso.org/iso/country_codes/iso_3166_code_lists.htm" codeListValue="BR">BR</lan:CountryCode>
+            </lan:country>
+            <lan:characterEncoding>
+                <lan:MD_CharacterSetCode codeList="standards.iso.org/19115/-3/lan/1.0/codelists.xml#MD_CharacterSetCode" codeListValue="utf8">utf8</lan:MD_CharacterSetCode>
+            </lan:characterEncoding>
+        </lan:PT_Locale>
+    </mdb:defaultLocale>
+    <mdb:metadataScope>
+        <mdb:MD_MetadataScope>
+            <mdb:resourceScope>
+                <mcc:MD_ScopeCode codeList="standards.iso.org/19115/-3/lan/1.0/codelists.xml#MD_ScopeCode" codeListValue="dataset">dataset</mcc:MD_ScopeCode>
+            </mdb:resourceScope>
+        </mdb:MD_MetadataScope>
+    </mdb:metadataScope>
+    <mdb:contact>
+        <cit:CI_Responsibility>
+            <cit:role>
+                <cit:CI_RoleCode codeList="standards.iso.org/19115/-3/lan/1.0/codelists.xml#CI_RoleCode" codeListValue="pointOfContact">pointOfContact</cit:CI_RoleCode>
+            </cit:role>
+            <cit:party>
+                <cit:CI_Organisation>
+                    <cit:name>
+                        <gco:CharacterString>SIURB</gco:CharacterString>
+                    </cit:name>
+                    <cit:contactInfo>
+                        <cit:CI_Contact>
+                            <cit:phone>
+                                <cit:CI_Telephone>
+                                    <cit:number>
+                                        <gco:CharacterString>552129766666</gco:CharacterString>
+                                    </cit:number>
+                                    <cit:numberType>
+                                        <cit:CI_TelephoneTypeCode codeList="standards.iso.org/19115/-3/lan/1.0/codelists.xml#CI_TelephoneTypeCode" codeListValue="voice">voice</cit:CI_TelephoneTypeCode>
+                                    </cit:numberType>
+                                </cit:CI_Telephone>
+                            </cit:phone>
+                            <cit:address>
+                                <cit:CI_Address>
+                                    <cit:deliveryPoint>
+                                        <gco:CharacterString>Rua Gago Coutinho, 52</gco:CharacterString>
+                                    </cit:deliveryPoint>
+                                    <cit:city>
+                                        <gco:CharacterString>Rio de Janeiro</gco:CharacterString>
+                                    </cit:city>
+                                    <cit:administrativeArea>
+                                        <gco:CharacterString>RJ</gco:CharacterString>
+                                    </cit:administrativeArea>
+                                    <cit:postalCode>
+                                        <gco:CharacterString>22221070</gco:CharacterString>
+                                    </cit:postalCode>
+                                    <cit:country>
+                                        <lan:CountryCode codeList="http://www.iso.org/iso/country_codes/iso_3166_code_lists.htm" codeListValue="BR">BR</lan:CountryCode>
+                                    </cit:country>
+                                    <cit:electronicMailAddress>
+                                        <gco:CharacterString>sirub.ipp@gmail.com</gco:CharacterString>
+                                    </cit:electronicMailAddress>
+                                </cit:CI_Address>
+                            </cit:address>
+                        </cit:CI_Contact>
+                    </cit:contactInfo>
+                </cit:CI_Organisation>
+            </cit:party>
+        </cit:CI_Responsibility>
+    </mdb:contact>
+    <mdb:dateInfo>
+        <cit:CI_Date>
+            <cit:date>
+                <gco:DateTime>2018-06-30T00:00:00</gco:DateTime>
+            </cit:date>
+            <cit:dateType>
+                <cit:CI_DateTypeCode codeList="standards.iso.org/19115/-3/lan/1.0/codelists.xml#CI_DateTypeCode" codeListValue="revision">revision</cit:CI_DateTypeCode>
+            </cit:dateType>
+        </cit:CI_Date>
+    </mdb:dateInfo>
+    <mdb:metadataStandard>
+        <cit:CI_Citation>
+            <cit:title>
+                <gco:CharacterString>ISO 19115-3 Geographic Information - Metadata - Part 1: Fundamentals</gco:CharacterString>
+            </cit:title>
+            <cit:edition>
+                <gco:CharacterString>2014</gco:CharacterString>
+            </cit:edition>
+        </cit:CI_Citation>
+    </mdb:metadataStandard>
+    <mdb:spatialRepresentationInfo>
+        <msr:MD_VectorSpatialRepresentation>
+            <msr:topologyLevel>
+                <msr:MD_TopologyLevelCode codeList="standards.iso.org/19115/-3/lan/1.0/codelists.xml#MD_TopologyLevelCode" codeListValue="geometryOnly">geometryOnly</msr:MD_TopologyLevelCode>
+            </msr:topologyLevel>
+        </msr:MD_VectorSpatialRepresentation>
+    </mdb:spatialRepresentationInfo>
+    <mdb:referenceSystemInfo>
+        <mrs:MD_ReferenceSystem/>
+    </mdb:referenceSystemInfo>
+    <mdb:identificationInfo>
+        <mri:MD_DataIdentification>
+            <mri:citation>
+                <cit:CI_Citation>
+                    <cit:title>
+                        <gco:CharacterString>Uso do Solo 2016</gco:CharacterString>
+                    </cit:title>
+                    <cit:citedResponsibleParty>
+                        <cit:CI_Responsibility>
+                            <cit:role>
+                                <cit:CI_RoleCode codeList="standards.iso.org/19115/-3/lan/1.0/codelists.xml#CI_RoleCode" codeListValue="pointOfContact">pointOfContact</cit:CI_RoleCode>
+                            </cit:role>
+                            <cit:party>
+                                <cit:CI_Organisation>
+                                    <cit:name>
+                                        <gco:CharacterString>SIURB</gco:CharacterString>
+                                    </cit:name>
+                                    <cit:contactInfo>
+                                        <cit:CI_Contact>
+                                            <cit:phone>
+                                                <cit:CI_Telephone>
+                                                    <cit:number>
+                                                        <gco:CharacterString>552129766666</gco:CharacterString>
+                                                    </cit:number>
+                                                    <cit:numberType>
+                                                        <cit:CI_TelephoneTypeCode codeList="standards.iso.org/19115/-3/lan/1.0/codelists.xml#CI_TelephoneTypeCode" codeListValue="voice">voice</cit:CI_TelephoneTypeCode>
+                                                    </cit:numberType>
+                                                </cit:CI_Telephone>
+                                            </cit:phone>
+                                            <cit:address>
+                                                <cit:CI_Address>
+                                                    <cit:deliveryPoint>
+                                                        <gco:CharacterString>Rua Gago Coutinho, 52</gco:CharacterString>
+                                                    </cit:deliveryPoint>
+                                                    <cit:city>
+                                                        <gco:CharacterString>Rio de Janeiro</gco:CharacterString>
+                                                    </cit:city>
+                                                    <cit:administrativeArea>
+                                                        <gco:CharacterString>RJ</gco:CharacterString>
+                                                    </cit:administrativeArea>
+                                                    <cit:postalCode>
+                                                        <gco:CharacterString>22221070</gco:CharacterString>
+                                                    </cit:postalCode>
+                                                    <cit:country>
+                                                        <lan:CountryCode codeList="http://www.iso.org/iso/country_codes/iso_3166_code_lists.htm" codeListValue="BR">BR</lan:CountryCode>
+                                                    </cit:country>
+                                                    <cit:electronicMailAddress>
+                                                        <gco:CharacterString>sirub.ipp@gmail.com</gco:CharacterString>
+                                                    </cit:electronicMailAddress>
+                                                </cit:CI_Address>
+                                            </cit:address>
+                                        </cit:CI_Contact>
+                                    </cit:contactInfo>
+                                </cit:CI_Organisation>
+                            </cit:party>
+                        </cit:CI_Responsibility>
+                    </cit:citedResponsibleParty>
+                    <cit:presentationForm>
+                        <cit:CI_PresentationFormCode codeList="standards.iso.org/19115/-3/lan/1.0/codelists.xml#CI_PresentationFormCode" codeListValue="mapDigital">mapDigital</cit:CI_PresentationFormCode>
+                    </cit:presentationForm>
+                </cit:CI_Citation>
+            </mri:citation>
+            <mri:abstract>
+                <gco:CharacterString>Uso do Solo 2016Classes do mapeamento:Grupo áreas urbanizadas:Áreas residenciais – o uso predominante é residencial, incluindo-se ruas, avenidas, estradas, canteiros, edificações unifamiliares e multifamiliares, conjuntos habitacionais (predominantemente de baixa renda, construídos para fins sociais, e outros relevantes pela sua extensão), e ainda pequenos espaços e edificações, tais como comercio, uso misto, corredores de comércio, indústrias, lotes, quadras vazias, sede de fazendas, granjas etc.Áreas não edificadas – áreas inseridas na malha urbana, compreendendo grandes espaços vazios ou subutilizados, loteamentos em implantação ou não consolidados, E.F.A. (espaço físico alterado) com ruínas ou abandonados e movimentos de terra esparsos.Áreas institucionais e de infraestrutura pública – áreas e equipamentos ocupados pela administração pública, instituições governamentais, de pesquisa, religiosas, militares, presídios, usinas de asfalto, obras sociais, abrigos, quartéis, prestadores de serviços públicos (água, esgoto, lixo, energia, elétrica, iluminação, gás, telefonia, comunicação, correios etc), torres de telecomunicações, oleodutos, gasodutos, adutoras etc.Áreas de comércio e serviços – áreas de uso predominantemente comercial e/ou de serviços, incluindo shoppings centers, centros de bairro, centro da Cidade, centrais de abastecimento, hotéis e motéis, bancos, empresas de ônibus, depósitos de container, de gêneros alimentícios, de lojas de departamentos, cemitérios, hipermercados, estúdios de gravação, incluindo as áreas para estacionamento correlacionadas.Favela – áreas identificadas e cadastradas como favelas no Sistema de Assentamento de Baixa Renda do IPP (SABREN). Esta informação é produzida pela Gerência de Estudos Habitacionais/IPP.Áreas de lazer – áreas destinadas ao lazer, contemplativo, esportivo e cultural, como praças, parques, vilas olímpicas, clubes, complexos esportivos, temáticos, estádios, museus, bibliotecas, planetário, observatórios, centros culturais etc, ressaltando que as áreas verdes expressivas dentro de grandes parques públicos estão representadas nos seus respectivos temas relativos à vegetação.Áreas de educação e saúde – áreas ocupadas por escolas, universidades, instituições de ensino, hospitais, postos de saúde, maternidades, creches, ambulatórios etc.Áreas industriais – áreas ocupadas por grandes equipamentos e distritos industriais.Áreas de transportes – formados por aeroportos, terminais rodoviários, ferroviários, hidroviários, linha férrea, oficinas ferroviárias/metroviárias, estações de metrô, estações de trem, barcas, helipontos e grandes estacionamentos.Áreas de exploração mineral – que estejam em atividade ou não.Grupo áreas não urbanizadas:Áreas com cobertura vegetal arbórea e arbustiva – floresta (ombrófila); restinga e mangue (formações pioneiras); capoeira em diferentes estágios (vegetação secundária) e reflorestamentos.Áreas com cobertura vegetal gramíneo-lenhosa (campo) – áreas com vegetação rasteira, graminóides, situadas em planícies ou encostas, utilizadas ou não para atividades pastoris.Áreas agrícolas – áreas ocupadas por atividades agrícolas, incluindo horticulturas, fruticulturas etc.Afloramentos rochosos e depósitos sedimentares – áreas cobertas por afloramento rochoso natural (escarpas, pontões, costões, matacões), e as ocupadas por areais, incluindo praias.Corpos hídricos – áreas formadas por águas continentais e ambientes estuarinos, lagoas, rios, canais, açudes e represas.Áreas sujeitas à inundação - áreas ocupadas por brejos, baixios, com a vegetação característica desses ambientes.</gco:CharacterString>
+            </mri:abstract>
+            <mri:purpose>
+                <gco:CharacterString>Uso do Solo 2016</gco:CharacterString>
+            </mri:purpose>
+            <mri:credit>
+                <gco:CharacterString>Prefeitura da Cidade do Rio de Janeiro</gco:CharacterString>
+            </mri:credit>
+            <mri:status>
+                <mcc:MD_ProgressCode codeList="standards.iso.org/19115/-3/lan/1.0/codelists.xml#MD_ProgressCode" codeListValue="completed">completed</mcc:MD_ProgressCode>
+            </mri:status>
+            <mri:pointOfContact>
+                <cit:CI_Responsibility>
+                    <cit:role>
+                        <cit:CI_RoleCode codeList="standards.iso.org/19115/-3/lan/1.0/codelists.xml#CI_RoleCode" codeListValue="pointOfContact">pointOfContact</cit:CI_RoleCode>
+                    </cit:role>
+                    <cit:party>
+                        <cit:CI_Organisation>
+                            <cit:name>
+                                <gco:CharacterString>SIURB</gco:CharacterString>
+                            </cit:name>
+                            <cit:contactInfo>
+                                <cit:CI_Contact>
+                                    <cit:phone>
+                                        <cit:CI_Telephone>
+                                            <cit:number>
+                                                <gco:CharacterString>552129766666</gco:CharacterString>
+                                            </cit:number>
+                                            <cit:numberType>
+                                                <cit:CI_TelephoneTypeCode codeList="standards.iso.org/19115/-3/lan/1.0/codelists.xml#CI_TelephoneTypeCode" codeListValue="voice">voice</cit:CI_TelephoneTypeCode>
+                                            </cit:numberType>
+                                        </cit:CI_Telephone>
+                                    </cit:phone>
+                                    <cit:address>
+                                        <cit:CI_Address>
+                                            <cit:deliveryPoint>
+                                                <gco:CharacterString>Rua Gago Coutinho, 52</gco:CharacterString>
+                                            </cit:deliveryPoint>
+                                            <cit:city>
+                                                <gco:CharacterString>Rio de Janeiro</gco:CharacterString>
+                                            </cit:city>
+                                            <cit:administrativeArea>
+                                                <gco:CharacterString>RJ</gco:CharacterString>
+                                            </cit:administrativeArea>
+                                            <cit:postalCode>
+                                                <gco:CharacterString>22221070</gco:CharacterString>
+                                            </cit:postalCode>
+                                            <cit:country>
+                                                <lan:CountryCode codeList="http://www.iso.org/iso/country_codes/iso_3166_code_lists.htm" codeListValue="BR">BR</lan:CountryCode>
+                                            </cit:country>
+                                            <cit:electronicMailAddress>
+                                                <gco:CharacterString>sirub.ipp@gmail.com</gco:CharacterString>
+                                            </cit:electronicMailAddress>
+                                        </cit:CI_Address>
+                                    </cit:address>
+                                </cit:CI_Contact>
+                            </cit:contactInfo>
+                        </cit:CI_Organisation>
+                    </cit:party>
+                </cit:CI_Responsibility>
+            </mri:pointOfContact>
+            <mri:spatialRepresentationType>
+                <mcc:MD_SpatialRepresentationTypeCode codeList="standards.iso.org/19115/-3/lan/1.0/codelists.xml#MD_SpatialRepresentationTypeCode" codeListValue="vector">vector</mcc:MD_SpatialRepresentationTypeCode>
+            </mri:spatialRepresentationType>
+            <mri:spatialResolution>
+                <mri:MD_Resolution>
+                    <mri:equivalentScale>
+                        <mri:MD_RepresentativeFraction>
+                            <mri:denominator>
+                                <gco:Integer>2000</gco:Integer>
+                            </mri:denominator>
+                        </mri:MD_RepresentativeFraction>
+                    </mri:equivalentScale>
+                </mri:MD_Resolution>
+            </mri:spatialResolution>
+            <mri:topicCategory>
+                <mri:MD_TopicCategoryCode>society</mri:MD_TopicCategoryCode>
+            </mri:topicCategory>
+            <mri:extent>
+                <gex:EX_Extent>
+                    <gex:geographicElement>
+                        <gex:EX_GeographicBoundingBox>
+                            <gex:extentTypeCode>
+                                <gco:Boolean>false</gco:Boolean>
+                            </gex:extentTypeCode>
+                            <gex:westBoundLongitude>
+                                <gco:Decimal>-43.85</gco:Decimal>
+                            </gex:westBoundLongitude>
+                            <gex:eastBoundLongitude>
+                                <gco:Decimal>-42.9</gco:Decimal>
+                            </gex:eastBoundLongitude>
+                            <gex:southBoundLatitude>
+                                <gco:Decimal>-23.17</gco:Decimal>
+                            </gex:southBoundLatitude>
+                            <gex:northBoundLatitude>
+                                <gco:Decimal>-22.62</gco:Decimal>
+                            </gex:northBoundLatitude>
+                        </gex:EX_GeographicBoundingBox>
+                    </gex:geographicElement>
+                </gex:EX_Extent>
+            </mri:extent>
+            <mri:resourceMaintenance>
+                <mmi:MD_MaintenanceInformation>
+                    <mmi:maintenanceAndUpdateFrequency>
+                        <mmi:MD_MaintenanceFrequencyCode codeList="standards.iso.org/19115/-3/lan/1.0/codelists.xml#MD_MaintenanceFrequencyCode" codeListValue="asNeeded">asNeeded</mmi:MD_MaintenanceFrequencyCode>
+                    </mmi:maintenanceAndUpdateFrequency>
+                    <mmi:contact>
+                        <cit:CI_Responsibility>
+                            <cit:role>
+                                <cit:CI_RoleCode codeList="standards.iso.org/19115/-3/lan/1.0/codelists.xml#CI_RoleCode" codeListValue="pointOfContact">pointOfContact</cit:CI_RoleCode>
+                            </cit:role>
+                            <cit:party>
+                                <cit:CI_Organisation>
+                                    <cit:name>
+                                        <gco:CharacterString>SIURB</gco:CharacterString>
+                                    </cit:name>
+                                    <cit:contactInfo>
+                                        <cit:CI_Contact>
+                                            <cit:phone>
+                                                <cit:CI_Telephone>
+                                                    <cit:number>
+                                                        <gco:CharacterString>552129766666</gco:CharacterString>
+                                                    </cit:number>
+                                                    <cit:numberType>
+                                                        <cit:CI_TelephoneTypeCode codeList="standards.iso.org/19115/-3/lan/1.0/codelists.xml#CI_TelephoneTypeCode" codeListValue="voice">voice</cit:CI_TelephoneTypeCode>
+                                                    </cit:numberType>
+                                                </cit:CI_Telephone>
+                                            </cit:phone>
+                                            <cit:address>
+                                                <cit:CI_Address>
+                                                    <cit:deliveryPoint>
+                                                        <gco:CharacterString>Rua Gago Coutinho, 52</gco:CharacterString>
+                                                    </cit:deliveryPoint>
+                                                    <cit:city>
+                                                        <gco:CharacterString>Rio de Janeiro</gco:CharacterString>
+                                                    </cit:city>
+                                                    <cit:administrativeArea>
+                                                        <gco:CharacterString>RJ</gco:CharacterString>
+                                                    </cit:administrativeArea>
+                                                    <cit:postalCode>
+                                                        <gco:CharacterString>22221070</gco:CharacterString>
+                                                    </cit:postalCode>
+                                                    <cit:country>
+                                                        <lan:CountryCode codeList="http://www.iso.org/iso/country_codes/iso_3166_code_lists.htm" codeListValue="BR">BR</lan:CountryCode>
+                                                    </cit:country>
+                                                    <cit:electronicMailAddress>
+                                                        <gco:CharacterString>sirub.ipp@gmail.com</gco:CharacterString>
+                                                    </cit:electronicMailAddress>
+                                                </cit:CI_Address>
+                                            </cit:address>
+                                        </cit:CI_Contact>
+                                    </cit:contactInfo>
+                                </cit:CI_Organisation>
+                            </cit:party>
+                        </cit:CI_Responsibility>
+                    </mmi:contact>
+                </mmi:MD_MaintenanceInformation>
+            </mri:resourceMaintenance>
+            <mri:descriptiveKeywords>
+                <mri:MD_Keywords>
+                    <mri:keyword>
+                        <gco:CharacterString>Uso do Solo</gco:CharacterString>
+                    </mri:keyword>
+                </mri:MD_Keywords>
+            </mri:descriptiveKeywords>
+            <mri:resourceConstraints>
+                <mco:MD_Constraints>
+                    <mco:useLimitation>
+                        <gco:CharacterString>This work is licensed under a Creative Commons Attribution 4.0 International License</gco:CharacterString>
+                    </mco:useLimitation>
+                </mco:MD_Constraints>
+            </mri:resourceConstraints>
+            <mri:defaultLocale>
+                <lan:PT_Locale>
+                    <lan:language>
+                        <lan:LanguageCode codeList="http://www.loc.gov/standards/iso639-2/php/code_list.php" codeListValue="por">por</lan:LanguageCode>
+                    </lan:language>
+                    <lan:country>
+                        <lan:CountryCode codeList="http://www.iso.org/iso/country_codes/iso_3166_code_lists.htm" codeListValue="BR">BR</lan:CountryCode>
+                    </lan:country>
+                    <lan:characterEncoding>
+                        <lan:MD_CharacterSetCode codeList="standards.iso.org/19115/-3/lan/1.0/codelists.xml#MD_CharacterSetCode" codeListValue="utf8">utf8</lan:MD_CharacterSetCode>
+                    </lan:characterEncoding>
+                </lan:PT_Locale>
+            </mri:defaultLocale>
+        </mri:MD_DataIdentification>
+    </mdb:identificationInfo>
+    <mdb:distributionInfo>
+        <mrd:MD_Distribution>
+            <mrd:distributionFormat>
+                <mrd:MD_Format>
+                    <mrd:formatSpecificationCitation>
+                        <cit:CI_Citation>
+                            <cit:title gco:nilReason="missing"/>
+                            <cit:edition>
+                                <gco:CharacterString>Versão do formato</gco:CharacterString>
+                            </cit:edition>
+                        </cit:CI_Citation>
+                    </mrd:formatSpecificationCitation>
+                </mrd:MD_Format>
+            </mrd:distributionFormat>
+        </mrd:MD_Distribution>
+    </mdb:distributionInfo>
+    <mdb:resourceLineage>
+        <mrl:LI_Lineage>
+            <mrl:statement>
+                <gco:CharacterString>Serviços de feature elaborado na plataforma ArcGIS da ESRI usando dados existentes nos bancos de dados da  Prefeitura do Rio de Janeiro.</gco:CharacterString>
+            </mrl:statement>
+            <mrl:scope>
+                <mcc:MD_Scope>
+                    <mcc:level>
+                        <mcc:MD_ScopeCode codeList="standards.iso.org/19115/-3/lan/1.0/codelists.xml#MD_ScopeCode" codeListValue="dataset">dataset</mcc:MD_ScopeCode>
+                    </mcc:level>
+                </mcc:MD_Scope>
+            </mrl:scope>
+        </mrl:LI_Lineage>
+    </mdb:resourceLineage>
+    <mdb:metadataMaintenance>
+        <mmi:MD_MaintenanceInformation>
+            <mmi:maintenanceAndUpdateFrequency>
+                <mmi:MD_MaintenanceFrequencyCode codeList="standards.iso.org/19115/-3/lan/1.0/codelists.xml#MD_MaintenanceFrequencyCode" codeListValue="asNeeded">asNeeded</mmi:MD_MaintenanceFrequencyCode>
+            </mmi:maintenanceAndUpdateFrequency>
+            <mmi:contact>
+                <cit:CI_Responsibility>
+                    <cit:role>
+                        <cit:CI_RoleCode codeList="standards.iso.org/19115/-3/lan/1.0/codelists.xml#CI_RoleCode" codeListValue="pointOfContact">pointOfContact</cit:CI_RoleCode>
+                    </cit:role>
+                    <cit:party>
+                        <cit:CI_Organisation>
+                            <cit:name>
+                                <gco:CharacterString>SIURB</gco:CharacterString>
+                            </cit:name>
+                            <cit:contactInfo>
+                                <cit:CI_Contact>
+                                    <cit:phone>
+                                        <cit:CI_Telephone>
+                                            <cit:number>
+                                                <gco:CharacterString>552129766666</gco:CharacterString>
+                                            </cit:number>
+                                            <cit:numberType>
+                                                <cit:CI_TelephoneTypeCode codeList="standards.iso.org/19115/-3/lan/1.0/codelists.xml#CI_TelephoneTypeCode" codeListValue="voice">voice</cit:CI_TelephoneTypeCode>
+                                            </cit:numberType>
+                                        </cit:CI_Telephone>
+                                    </cit:phone>
+                                    <cit:address>
+                                        <cit:CI_Address>
+                                            <cit:deliveryPoint>
+                                                <gco:CharacterString>Rua Gago Coutinho, 52</gco:CharacterString>
+                                            </cit:deliveryPoint>
+                                            <cit:city>
+                                                <gco:CharacterString>Rio de Janeiro</gco:CharacterString>
+                                            </cit:city>
+                                            <cit:administrativeArea>
+                                                <gco:CharacterString>RJ</gco:CharacterString>
+                                            </cit:administrativeArea>
+                                            <cit:postalCode>
+                                                <gco:CharacterString>22221070</gco:CharacterString>
+                                            </cit:postalCode>
+                                            <cit:country>
+                                                <lan:CountryCode codeList="http://www.iso.org/iso/country_codes/iso_3166_code_lists.htm" codeListValue="BR">BR</lan:CountryCode>
+                                            </cit:country>
+                                            <cit:electronicMailAddress>
+                                                <gco:CharacterString>sirub.ipp@gmail.com</gco:CharacterString>
+                                            </cit:electronicMailAddress>
+                                        </cit:CI_Address>
+                                    </cit:address>
+                                </cit:CI_Contact>
+                            </cit:contactInfo>
+                        </cit:CI_Organisation>
+                    </cit:party>
+                </cit:CI_Responsibility>
+            </mmi:contact>
+        </mmi:MD_MaintenanceInformation>
+    </mdb:metadataMaintenance>
+</mdb:MD_Metadata>

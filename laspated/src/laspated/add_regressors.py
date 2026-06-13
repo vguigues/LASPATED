@@ -87,9 +87,7 @@ def addRegressorUniformDistribution(
     ).rename({"geometry": "geometry_regr"}, axis=1)
 
     # calculate percentage of regressor areas on each overlay
-    areas = overlay_df["geometry_regr"].area.apply(
-        lambda x: 10**-4 if x < 10**-4 else x
-    )
+    areas = overlay_df["geometry_regr"].area.clip(lower=10**-4)
     overlay_df["overlay_area_percentage"] = overlay_df["geo_overlay"].area / areas
 
     # apply regressor columns multiplying merged values with

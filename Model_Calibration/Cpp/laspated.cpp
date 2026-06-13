@@ -175,8 +175,8 @@ void laspated_no_reg(laspated::AppParameters& app_params) {
   info_file >> T >> D >> R >> C >> nb_regressors >> nb_holidays_years;
   std::vector<int> daily_obs(D, 0);
 
-  // printf("%ld %ld %ld %ld %ld %ld\ndaily_obs = ", T, D, R, C, nb_regressors,
-  //        nb_holidays_years);
+  printf("%ld %ld %ld %ld %ld %ld\ndaily_obs = ", T, D, R, C, nb_regressors,
+         nb_holidays_years);
   for (int d = 0; d < D; ++d) {
     info_file >> daily_obs[d];
     // printf("%d ", daily_obs[d]);
